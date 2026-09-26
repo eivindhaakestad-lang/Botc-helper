@@ -635,6 +635,17 @@ function timer() {
     tm ? h('button', { class: 'btn small ghost', onclick: () => { clearInterval(app.timerInt); app.timer = null; sendTimer(0); render(); } }, t('stop')) : null);
 }
 
+// Bare den siste «Si høyt til alle» vises; resten av dagens kan foldes ut.
+function publicToday(s, list) {
+  const open = app.showAllPublic === s.phase.number;
+  const older = list.length - 1;
+  return h('div', { class: 'stack tight' },
+    open ? list.slice(0, -1).map((m) => messageCard(s, m)) : null,
+    older > 0 ? h('button', { class: 'btn small ghost public-more', onclick: () => { app.showAllPublic = open ? null : s.phase.number; render(); } },
+      open ? '▴ ' + t('hideOlderPublic') : '▾ ' + t('showOlderPublic', { n: older })) : null,
+    messageCard(s, list[list.length - 1]));
+}
+
 function dayPanel(s) {
   const lang = ui();
   const df = app.dayForm || (app.dayForm = { nominator: null, nominee: null, slayer: null, slayTarget: null, execTarget: undefined, changingExec: false });
@@ -698,7 +709,7 @@ function dayPanel(s) {
         h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: revealDawn }, '📣 ' + t('dawnReveal') + '  ⏎'))));
   }
   return h('div', { class: 'stack day-panel' },
-    dawn.length ? h('div', { class: 'stack tight' }, dawn.map((m) => messageCard(s, m))) : null,
+    dawn.length ? publicToday(s, dawn) : null,
     timer(),
     h('section', { class: 'panel' },
       h('div', { class: 'row between wrap' },
