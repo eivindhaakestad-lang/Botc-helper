@@ -19,6 +19,7 @@ export const live = {
   board: null,
   hands: [],
   vote: null,
+  chats: {}, // trådnøkkel → meldinger
   offset: 0, // servertid − lokal tid
   lastSync: '',
   error: null,
@@ -36,7 +37,7 @@ export async function startLive() {
   live.error = null;
   try {
     const { code, stToken } = await createRoom();
-    store.game.live = { code, stToken, acks: {}, responses: {}, sent: {}, settings: { dream: true, decoys: true } };
+    store.game.live = { code, stToken, acks: {}, responses: {}, sent: {}, settings: { dream: true, decoys: true, chat: 'day' } };
     store.saveGame();
     connectLive();
   } catch {
@@ -60,7 +61,7 @@ export function connectLive() {
 
 export function disconnectLive() {
   if (live.client) live.client.close();
-  Object.assign(live, { client: null, status: 'off', room: null, claimed: {}, online: {}, board: null, hands: [], vote: null, lastSync: '', error: null });
+  Object.assign(live, { client: null, status: 'off', room: null, claimed: {}, online: {}, board: null, hands: [], vote: null, chats: {}, lastSync: '', error: null });
 }
 
 export function closeRoom() {
@@ -79,6 +80,7 @@ function onMessage(m) {
       live.online = m.online || {};
       live.hands = m.hands || [];
       live.vote = m.vote || null;
+      live.chats = m.chats || {};
       scheduleAutoFinish();
       for (const [seatId, cards] of Object.entries(m.cards || {})) {
         for (const c of cards) {
@@ -129,6 +131,17 @@ function onMessage(m) {
       scheduleAutoFinish();
       render();
       break;
+    case 'chat': {
+      const list = live.chats[m.key] || (live.chats[m.key] = []);
+      if (!list.some((x) => x.id === m.msg.id)) list.push(m.msg);
+      if (m.key.startsWith('st|') && m.msg.from !== 'st') {
+        const s = store.state();
+        const g = s && getSeat(s, m.msg.from);
+        toast('💬 ' + (g ? seatName(g) : '?') + ': ' + m.msg.text.slice(0, 80));
+      }
+      render();
+      break;
+    }
     case 'error':
       if (m.code === 'noroom' || m.code === 'auth') { live.error = m.code; render(); }
       break;
@@ -267,4 +280,30 @@ function scheduleAutoFinish() {
 export function sendTimer(ms, label = '') {
   if (!liveOpen()) return;
   live.client.send({ t: 'timer', durationMs: ms || 0, label });
+}
+
+// ——— chat ———
+export function sendChat(seatId, text) {
+  const tx = String(text || '').trim();
+  if (!liveOpen() || !tx) return false;
+  live.client.send({ t: 'chat', seatId, text: tx.slice(0, 500) });
+  return true;
+}
+
+// Uleste meldinger til deg (bare tråder mellom elev og Storyteller teller).
+export function chatUnread(key) {
+  const l = L();
+  const list = live.chats[key] || [];
+  const read = (l && l.chatRead && l.chatRead[key]) || 0;
+  return list.slice(read).filter((m) => m.from !== 'st').length;
+}
+export function markChatRead(key) {
+  const l = L();
+  if (!l) return;
+  const n = (live.chats[key] || []).length;
+  l.chatRead = { ...(l.chatRead || {}), [key]: n };
+  store.saveGame();
+}
+export function totalChatUnread() {
+  return Object.keys(live.chats).filter((k) => k.startsWith('st|')).reduce((a, k) => a + chatUnread(k), 0);
 }

@@ -9,7 +9,7 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -884,6 +884,68 @@ function liveBadge(s) {
     h('span', { class: 'dot' + (on ? ' on' : live.status === 'dead' ? ' dead' : '') }), `${n}/${s.seats.length}`);
 }
 
+// ——— chat ———
+// Du kan lese alle trådene: elev ↔ deg og nabo ↔ nabo. Du svarer bare i trådene til deg.
+function chatPanel(s) {
+  const l = store.game.live;
+  const settings = l.settings || {};
+  const name = (id) => (id === 'st' ? t('you') : seatName(getSeat(s, id)));
+  const stKeys = s.seats.map((x) => 'st|' + x.id);
+  const pairKeys = Object.keys(live.chats).filter((k) => !k.startsWith('st|'))
+    .sort((a, b) => ((live.chats[b].slice(-1)[0] || {}).at || 0) - ((live.chats[a].slice(-1)[0] || {}).at || 0));
+  if (!app.chatKey || !(stKeys.includes(app.chatKey) || pairKeys.includes(app.chatKey))) {
+    app.chatKey = stKeys.find((k) => chatUnread(k)) || stKeys.find((k) => (live.chats[k] || []).length) || stKeys[0];
+  }
+  const key = app.chatKey;
+  const isSt = key.startsWith('st|');
+  const list = live.chats[key] || [];
+  if (isSt && chatUnread(key)) markChatRead(key);
+  const [a, b] = key.split('|');
+  const title = isSt ? seatName(getSeat(s, b)) : `${name(a)} ↔ ${name(b)}`;
+  const drafts = app.chatDraft || (app.chatDraft = {});
+  const send = () => {
+    const seatId = b;
+    if (sendChat(seatId, drafts[key])) { drafts[key] = ''; render(); }
+  };
+  const last = (k) => (live.chats[k] || []).slice(-1)[0];
+  queueMicrotask(() => { const el = document.getElementById('chat-log'); if (el) el.scrollTop = el.scrollHeight; });
+  return h('div', { class: 'stack chat-panel' },
+    liveOpen() ? null : h('p', { class: 'callout warn small' }, t('chatOffline')),
+    h('div', { class: 'row between wrap' },
+      h('span', { class: 'label' }, t('chatNeighbours')),
+      segmented({ label: t('chatNeighbours'), value: settings.chat || 'day', options: [{ value: 'always', label: t('chatAlways') }, { value: 'day', label: t('chatDay') }, { value: 'off', label: t('chatOff') }], onChange: (v) => { setLiveSetting('chat', v); render(); } })),
+    h('div', { class: 'chat-grid' },
+      h('nav', { class: 'chat-threads' },
+        h('span', { class: 'label' }, t('chatToYou')),
+        stKeys.map((k) => {
+          const n = chatUnread(k); const m = last(k);
+          return h('button', { class: 'chat-thread' + (k === key ? ' active' : '') + (n ? ' unread' : ''), onclick: () => { app.chatKey = k; render(); } },
+            h('span', { class: 'grow' }, seatName(getSeat(s, k.slice(3)))),
+            n ? h('span', { class: 'badge' }, String(n)) : m ? h('span', { class: 'muted small' }, '✓') : null);
+        }),
+        h('span', { class: 'label' }, t('chatPairs')),
+        pairKeys.length ? pairKeys.map((k) => {
+          const [x, y] = k.split('|');
+          return h('button', { class: 'chat-thread' + (k === key ? ' active' : ''), onclick: () => { app.chatKey = k; render(); } },
+            h('span', { class: 'grow' }, `${name(x)} ↔ ${name(y)}`), h('span', { class: 'muted small' }, String(live.chats[k].length)));
+        }) : h('p', { class: 'muted small' }, t('chatNoPairs'))),
+      h('section', { class: 'chat-thread-view' },
+        h('h3', { class: 'section-title' }, (isSt ? '💬 ' : '👀 ') + title),
+        isSt ? null : h('p', { class: 'muted small' }, t('chatReadOnly')),
+        h('div', { class: 'chat-log', id: 'chat-log' },
+          list.length ? list.map((m) => h('div', { class: 'chat-msg' + (m.from === 'st' ? ' mine st' : isSt ? '' : m.from === a ? ' left' : ' right') },
+            h('span', { class: 'chat-meta' }, `${name(m.from)} · ${new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`),
+            h('span', { class: 'chat-text' }, m.text))) : h('p', { class: 'muted small center' }, t('chatEmpty'))),
+        isSt ? h('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); send(); } },
+          h('textarea', {
+            id: 'st-chat-input', class: 'input', rows: 2, maxlength: 500, placeholder: t('chatPlaceholder', { name: title }),
+            value: drafts[key] || '',
+            oninput: (e) => { drafts[key] = e.target.value; },
+            onkeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } e.stopPropagation(); },
+          }),
+          h('button', { class: 'btn primary', type: 'submit', disabled: !liveOpen() }, t('chatSend'))) : null)));
+}
+
 function livePanel(s) {
   const l = store.game.live;
   if (!l) {
@@ -958,11 +1020,16 @@ export function viewGame() {
     ['log', t('log')],
     ['live', '📡 ' + t('live')],
   ];
+  if (store.game.live) {
+    const unread = totalChatUnread();
+    tabs.splice(4, 0, ['chat', '💬 ' + t('chat') + (unread ? ` (${unread})` : '')]);
+  }
   let content;
   if (app.gameTab === 'messages') content = messagesPanel(s);
   else if (app.gameTab === 'notes') content = notesPanel(s);
   else if (app.gameTab === 'log') content = logPanel(s);
   else if (app.gameTab === 'live') content = livePanel(s);
+  else if (app.gameTab === 'chat' && store.game.live) content = chatPanel(s);
   else if (s.phase.type === 'setup') content = setupPanel(s);
   else if (s.phase.type === 'night') content = nightPanel(s);
   else if (s.phase.type === 'day') content = dayPanel(s);

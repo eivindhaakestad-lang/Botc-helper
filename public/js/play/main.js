@@ -30,6 +30,10 @@ const TXT = {
     nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', voteBefore: 'Stem før viseren når deg!',
     lockedYes: '🔒 Stemmen din er låst: du stemte for', lockedNo: '🔒 Viseren har passert deg: du stemte ikke', votelocked: 'For sent – viseren har passert deg.',
     timer: 'Tid', timeUp: 'Tiden er ute!', sound: 'Lyd',
+    lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
+    chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
+    chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
+    newChat: 'Ny melding fra {name}',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -51,6 +55,10 @@ const TXT = {
     nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', voteBefore: 'Vote before the hand reaches you!',
     lockedYes: '🔒 Your vote is locked: you voted yes', lockedNo: '🔒 The hand has passed you: you did not vote', votelocked: 'Too late – the hand has passed you.',
     timer: 'Time', timeUp: 'Time is up!', sound: 'Sound',
+    lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
+    chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
+    chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
+    newChat: 'New message from {name}',
   },
 };
 
@@ -60,6 +68,7 @@ const P = {
   me: null, roleCard: null, inbox: [], board: null,
   view: 'home', overlay: [], shown: {}, choiceSel: {}, revealMsg: null,
   dream: null, decoyTimers: [], hands: [], vote: null, timer: null, offset: 0,
+  chats: {}, chatTab: 'st', chatDraft: {},
 };
 
 const lang = () => (P.pub && P.pub.lang === 'en' ? 'en' : 'no');
@@ -112,6 +121,7 @@ function onMessage(m) {
       saveCred(P.me);
       P.roleCard = m.roleCard;
       P.inbox = m.inbox || [];
+      P.chats = m.chats || {};
       P.overlay = P.inbox.filter((c) => c.status === 'new');
       P.error = null;
       if (isNight()) planDecoys(P.pub.phase.number);
@@ -124,6 +134,16 @@ function onMessage(m) {
       if (i >= 0) P.inbox[i] = m.card; else P.inbox.push(m.card);
       if (m.card.status === 'new' && !P.overlay.some((c) => c.id === m.card.id)) { P.overlay.push(m.card); P.shown[m.card.id] = false; }
       else if (m.card.status !== 'new') P.overlay = P.overlay.filter((c) => c.id !== m.card.id);
+      break;
+    }
+    case 'chat': {
+      const list = P.chats[m.key] || (P.chats[m.key] = []);
+      if (!list.some((x) => x.id === m.msg.id)) list.push(m.msg);
+      if (P.me && m.msg.from !== P.me.seatId) {
+        const who = m.msg.from === 'st' ? T('chatSt') : seatName(m.msg.from);
+        if (!(P.view === 'home' && chatKeyFor(P.chatTab) === m.key && document.getElementById('chat-log'))) toast('💬 ' + T('newChat', { name: who }));
+        sfx.pop();
+      }
       break;
     }
     case 'decoy':
@@ -140,6 +160,7 @@ function onMessage(m) {
       if (m.code === 'badtoken') { saveCred(null); P.me = null; }
       else if (m.code === 'noghost') toast(T('noGhost'), 'warn');
       else if (m.code === 'votelocked') toast(T('votelocked'), 'warn');
+      else if (m.code === 'chatnotneighbour' || m.code === 'chatclosed') toast(T(m.code), 'warn');
       else P.error = { locked: 'locked', taken: 'seatTaken', noseat: 'noseat', noroom: 'noroom', auth: 'noroom' }[m.code] || null;
       break;
     case 'closed':
@@ -280,6 +301,78 @@ function boardView() {
       : h('p', { class: 'muted small' }, T('noScores')));
 }
 
+// ——— siste melding (alle har boksen, så ingen ser hvem som har fått noe) ———
+function lastMessageView() {
+  const last = P.inbox.filter((c) => c.kind !== 'choice').slice(-1)[0];
+  return holdReveal(T('lastMsg'), h('p', { class: 'card-text' + (last ? '' : ' muted') }, last ? last.text : T('noMsgYet')), 'msg-hold');
+}
+
+// ——— chat ———
+function neighbours() {
+  const seats = P.pub.seats;
+  const n = seats.length;
+  const i = seats.findIndex((x) => x.id === P.me.seatId);
+  if (i < 0 || n < 2) return [];
+  return [...new Set([seats[(i - 1 + n) % n].id, seats[(i + 1) % n].id])].filter((x) => x !== P.me.seatId);
+}
+function chatKeyFor(tab) {
+  if (!P.me) return '';
+  return tab === 'st' ? 'st|' + P.me.seatId : [P.me.seatId, tab].sort().join('|');
+}
+function neighbourChatOpen() {
+  const c = P.pub.chat || 'day';
+  if (c === 'always') return true;
+  if (c === 'off') return false;
+  return P.pub.phase.type === 'setup' || P.pub.phase.type === 'day';
+}
+const readKey = () => 'botc-chatread-' + P.code + '-' + (P.me ? P.me.seatId : '');
+function chatRead() { try { return JSON.parse(localStorage.getItem(readKey()) || '{}'); } catch { return {}; } }
+function setChatRead(key, n) { try { const r = chatRead(); r[key] = n; localStorage.setItem(readKey(), JSON.stringify(r)); } catch { /* */ } }
+function unread(key) {
+  const list = P.chats[key] || [];
+  const read = chatRead()[key] || 0;
+  return list.slice(read).filter((m) => m.from !== P.me.seatId).length;
+}
+
+function chatView() {
+  const nbs = (P.pub.chat || 'day') === 'off' ? [] : neighbours();
+  if (P.chatTab !== 'st' && !nbs.includes(P.chatTab)) P.chatTab = 'st';
+  const tab = P.chatTab;
+  const key = chatKeyFor(tab);
+  const list = P.chats[key] || [];
+  setChatRead(key, list.length);
+  const isSt = tab === 'st';
+  const closed = !isSt && !neighbourChatOpen();
+  const who = isSt ? T('chatSt') : seatName(tab);
+  const send = () => {
+    const text = (P.chatDraft[key] || '').trim();
+    if (!text) return;
+    P.client.send({ t: 'chat', to: tab, text: text.slice(0, 500) });
+    P.chatDraft[key] = '';
+    render();
+  };
+  queueMicrotask(() => { const el = document.getElementById('chat-log'); if (el) el.scrollTop = el.scrollHeight; });
+  return h('div', { class: 'panel chat-box' },
+    h('h3', { class: 'section-title' }, '💬 ' + T('chat')),
+    h('div', { class: 'segmented chat-tabs' }, ['st', ...nbs].map((id) => {
+      const n = unread(chatKeyFor(id));
+      return h('button', { type: 'button', class: 'seg' + (id === tab ? ' active' : ''), onclick: () => { P.chatTab = id; render(); } },
+        id === 'st' ? '🕯 ' + T('chatSt') : seatName(id), n && id !== tab ? h('span', { class: 'badge' }, String(n)) : null);
+    })),
+    h('p', { class: 'muted small' }, isSt ? T('chatStHelp') : T('chatNbHelp', { name: who })),
+    h('div', { class: 'chat-log', id: 'chat-log' },
+      list.length ? list.map((m) => h('div', { class: 'chat-msg' + (m.from === P.me.seatId ? ' mine' : m.from === 'st' ? ' st' : '') },
+        h('span', { class: 'chat-meta' }, (m.from === P.me.seatId ? T('you') : m.from === 'st' ? T('chatSt') : seatName(m.from)) + ' · ' + new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })),
+        h('span', { class: 'chat-text' }, m.text))) : h('p', { class: 'muted small center' }, T('chatEmpty'))),
+    closed ? h('p', { class: 'small warn-text' }, T('chatClosed')) : h('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); send(); } },
+      h('textarea', {
+        id: 'chat-input', class: 'input', rows: 2, maxlength: 500, placeholder: T('chatPlaceholder', { name: who }), value: P.chatDraft[key] || '',
+        oninput: (e) => { P.chatDraft[key] = e.target.value; },
+        onkeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } },
+      }),
+      h('button', { class: 'btn primary', type: 'submit' }, T('chatSend'))));
+}
+
 function townView() {
   return h('div', { class: 'panel' },
     h('h3', { class: 'section-title' }, T('town')),
@@ -395,13 +488,16 @@ function homeView() {
     phaseBanner(),
     timerView(),
     voteView(),
-    P.roleCard
-      ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
-      : h('p', { class: 'muted' }, T('noRole')),
+    h('div', { class: 'hold-row' },
+      P.roleCard
+        ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
+        : h('p', { class: 'muted' }, T('noRole')),
+      lastMessageView()),
     handView(),
     dreamPhase() ? h('button', { class: 'btn primary big dream-btn', onclick: openDream }, '🐑 ' + T('playDream')) : null,
     dreamPhase() ? boardView() : null,
     dayView(),
+    chatView(),
     h('div', { class: 'panel' },
       h('h3', { class: 'section-title' }, T('messages')),
       P.inbox.length
@@ -476,6 +572,8 @@ function render() {
     root.querySelector('.conn').replaceChildren(connView());
     return;
   }
+  const act = document.activeElement;
+  const refocus = act && act.id === 'chat-input' ? act.selectionStart : null;
   root.replaceChildren(
     h('header', { class: 'play-top' },
       h('span', { class: 'brand-name' }, '✦ Botc Helper'),
@@ -484,6 +582,10 @@ function render() {
       soundToggle()),
     h('main', { class: 'play-main' + (P.view === 'dream' && dreamPhase() ? ' wide' : '') }, main),
     h('div', { class: 'overlay-slot' }, P.me ? overlayView() || '' : ''));
+  if (refocus !== null) {
+    const el = document.getElementById('chat-input');
+    if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(refocus, refocus); } catch { /* */ } }
+  }
   if (P.view === 'dream' && dreamPhase() && P.me) {
     if (P.dream) P.dream.destroy();
     const canvas = document.getElementById('dream-canvas');

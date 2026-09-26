@@ -142,6 +142,10 @@ const NO = {
 
   handsQueue: 'Håndsopprekning', handDone: 'Har snakket – ta ned hånden', clearHands: 'Tøm', handsKey: 'H fjerner den første',
   openVote: 'Åpne avstemning', reopenVote: 'Åpne avstemningen igjen', closeVote: 'Lukk avstemningen ({n} stemmer)', votingOpen: 'Elevene stemmer nå',
+  chat: 'Chat', chatOffline: 'Live-rommet er ikke tilkoblet. Meldinger sendes når forbindelsen er tilbake.', chatNeighbours: 'Chat mellom naboer',
+  chatAlways: 'Alltid', chatDay: 'Før spillet og om dagen', chatOff: 'Av', chatToYou: 'Til deg', chatPairs: 'Naboprat (bare lesing)',
+  chatNoPairs: 'Ingen har skrevet til naboen ennå.', chatReadOnly: 'Elevene ser ikke at du leser.', chatEmpty: 'Ingen meldinger ennå.',
+  chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', you: 'Du',
   startClock: 'Start klokka', clockRunning: 'Viseren går', clockDone: 'Viseren har gått rundt: {name} fikk {n} stemmer',
   clockSettings: 'Avstemningsklokka', clockStartLabel: 'Hvor viseren starter', clockStartOfficial: 'Etter den nominerte (offisielt)', clockStartNominator: 'Hos den som nominerer', clockStepLabel: 'Tid per plass',
   clockHelp: 'Åpne avstemningen og trykk «Start klokka». Etter 3 sekunder går viseren rundt, og hver elev må stemme før viseren når dem. Stemmene lagres av seg selv når viseren er ferdig.',
@@ -292,6 +296,10 @@ const EN = {
 
   handsQueue: 'Raised hands', handDone: 'Has spoken – lower the hand', clearHands: 'Clear', handsKey: 'H removes the first one',
   openVote: 'Open the vote', reopenVote: 'Reopen the vote', closeVote: 'Close the vote ({n} votes)', votingOpen: 'Students are voting',
+  chat: 'Chat', chatOffline: 'The live room is not connected. Messages are sent when the connection is back.', chatNeighbours: 'Chat between neighbours',
+  chatAlways: 'Always', chatDay: 'Before the game and by day', chatOff: 'Off', chatToYou: 'To you', chatPairs: 'Neighbour chats (read only)',
+  chatNoPairs: 'Nobody has written to a neighbour yet.', chatReadOnly: 'Students do not see that you read this.', chatEmpty: 'No messages yet.',
+  chatPlaceholder: 'Write to {name} …', chatSend: 'Send', you: 'You',
   startClock: 'Start the clock', clockRunning: 'Clock hand moving', clockDone: 'The clock hand went round: {name} got {n} votes',
   clockSettings: 'Voting clock', clockStartLabel: 'Where the hand starts', clockStartOfficial: 'After the nominee (official)', clockStartNominator: 'At the nominator', clockStepLabel: 'Time per seat',
   clockHelp: 'Open the vote and press “Start the clock”. After 3 seconds the hand goes round, and each student must vote before the hand reaches them. Votes are saved automatically when the hand is done.',

@@ -255,3 +255,40 @@ test('rom: avstemningsklokka låser stemmer når viseren når plassen, og timer'
   await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'night', number: 2 } }, roleCards: {} });
   assert.equal(screen.last('public').timer, null, 'timeren forsvinner ved faseskifte');
 });
+
+test('rom: chat med Storytelleren og naboer, Storytelleren leser alt', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const seats = [...PUB.seats, { id: 's4', names: ['Ida'], alive: true, ghostVote: true }];
+  await say(room, st, { t: 'sync', public: { ...PUB, seats, chat: 'day', phase: { type: 'day', number: 1 } }, roleCards: {} });
+  const ps = {};
+  for (const id of ['s1', 's2', 's3', 's4']) { ps[id] = await connect(room, 'player'); await say(room, ps[id], { t: 'claim', seatId: id }); }
+  // Til Storytelleren
+  await say(room, ps.s1, { t: 'chat', to: 'st', text: 'Hei ST' });
+  assert.equal(st.last('chat').key, 'st|s1');
+  assert.equal(ps.s2.last('chat'), undefined, 'andre ser ikke');
+  await say(room, st, { t: 'chat', seatId: 's1', text: 'Hei Markus' });
+  assert.equal(ps.s1.last('chat').msg.from, 'st');
+  // Nabo: s1 sitter ved s2 og s4, ikke s3
+  await say(room, ps.s1, { t: 'chat', to: 's2', text: 'Hei nabo' });
+  assert.equal(ps.s2.last('chat').msg.text, 'Hei nabo');
+  assert.equal(st.last('chat').key, 's1|s2', 'Storytelleren leser nabopraten');
+  assert.equal(ps.s3.last('chat'), undefined);
+  await say(room, ps.s1, { t: 'chat', to: 's3', text: 'Hemmelig' });
+  assert.equal(ps.s1.last('error').code, 'chatnotneighbour');
+  // Om natten er naboprat stengt, men Storytelleren kan fortsatt nås
+  await say(room, st, { t: 'sync', public: { ...PUB, seats, chat: 'day', phase: { type: 'night', number: 2 } }, roleCards: {} });
+  await say(room, ps.s1, { t: 'chat', to: 's4', text: 'psst' });
+  assert.equal(ps.s1.last('error').code, 'chatclosed');
+  await say(room, ps.s1, { t: 'chat', to: 'st', text: 'Natt' });
+  assert.equal(st.last('chat').msg.text, 'Natt');
+  // Gjenoppkobling gir historikken
+  const again = await connect(room, 'player');
+  await say(room, again, { t: 'resume', seatId: 's1', token: ps.s1.last('you').token });
+  assert.deepEqual(Object.keys(again.last('you').chats).sort(), ['s1|s2', 'st|s1']);
+  assert.equal(again.last('you').chats['st|s1'].length, 3);
+  const st2 = await connect(room, 'st', 'secret');
+  assert.equal(Object.keys(st2.sent[0].chats).length, 2);
+});

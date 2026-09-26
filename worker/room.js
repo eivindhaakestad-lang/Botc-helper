@@ -9,6 +9,8 @@
 
 const IDLE_MS = 12 * 60 * 60 * 1000;
 const MAX_INBOX = 80;
+const MAX_CHAT = 200;
+const CHAT_LEN = 500;
 
 function token() {
   const b = new Uint8Array(16);
@@ -42,6 +44,7 @@ function cleanPublic(p) {
     dream: p.dream !== false,
     decoys: p.decoys !== false,
     winner: p.winner === 'good' || p.winner === 'evil' ? p.winner : null,
+    chat: ['always', 'day', 'off'].includes(p.chat) ? p.chat : 'day',
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
@@ -81,6 +84,7 @@ export class Room {
     this.room = undefined;
     this.board = undefined;
     this.seats = {};
+    this.chats = {};
     // Ping/pong uten å vekke rommet (sparer kvote på Cloudflare).
     if (typeof WebSocketRequestResponsePair !== 'undefined' && state.setWebSocketAutoResponse) {
       state.setWebSocketAutoResponse(new WebSocketRequestResponsePair('{"t":"ping"}', '{"t":"pong"}'));
@@ -96,6 +100,41 @@ export class Room {
   async seat(id) {
     if (!this.seats[id]) this.seats[id] = (await this.state.storage.get('seat:' + id)) || { roleCard: null, inbox: [] };
     return this.seats[id];
+  }
+  // Chat: én tråd per par. «st|s1» er eleven og Storytelleren, «s1|s2» er to naboer.
+  async chat(key) {
+    if (!this.chats[key]) this.chats[key] = (await this.state.storage.get('chat:' + key)) || [];
+    return this.chats[key];
+  }
+  async addChat(key, from, text) {
+    const list = await this.chat(key);
+    const msg = { id: token().slice(0, 12), from, text, at: Date.now() };
+    list.push(msg);
+    if (list.length > MAX_CHAT) list.splice(0, list.length - MAX_CHAT);
+    await this.state.storage.put('chat:' + key, list);
+    if (!(this.room.chatKeys || []).includes(key)) { this.room.chatKeys = [...(this.room.chatKeys || []), key]; await this.saveRoom(); }
+    return msg;
+  }
+  neighbours(seatId) {
+    const seats = this.room.public.seats;
+    const n = seats.length;
+    const i = seats.findIndex((x) => x.id === seatId);
+    if (i < 0 || n < 2) return [];
+    return [...new Set([seats[(i - 1 + n) % n].id, seats[(i + 1) % n].id])].filter((x) => x !== seatId);
+  }
+  neighbourChatOpen() {
+    const p = this.room.public;
+    if (p.chat === 'always') return true;
+    if (p.chat === 'off') return false;
+    return p.phase.type === 'setup' || p.phase.type === 'day';
+  }
+  async chatsFor(seatId) {
+    const out = {};
+    for (const key of this.room.chatKeys || []) {
+      const [a, b] = key.split('|');
+      if (a === seatId || b === seatId) out[key] = await this.chat(key);
+    }
+    return out;
   }
   async saveSeat(id) { await this.state.storage.put('seat:' + id, this.seats[id]); }
   async saveRoom() {
@@ -236,11 +275,13 @@ export class Room {
       const seat = await this.seat(s.id);
       cards[s.id] = seat.inbox.map((c) => ({ id: c.id, status: c.status, response: c.response || null }));
     }
-    return { t: 'hello', room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
+    const chats = {};
+    for (const key of this.room.chatKeys || []) chats[key] = await this.chat(key);
+    return { t: 'hello', chats, room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
   }
   async youMsg(seatId, tok) {
     const seat = await this.seat(seatId);
-    return { t: 'you', seatId, token: tok, roleCard: seat.roleCard, inbox: seat.inbox };
+    return { t: 'you', seatId, token: tok, roleCard: seat.roleCard, inbox: seat.inbox, chats: await this.chatsFor(seatId) };
   }
 
   // ——— meldinger ———
@@ -349,6 +390,16 @@ export class Room {
         this.broadcastVote();
         break;
       }
+      case 'chat': {
+        const seatId = str(msg.seatId, 80);
+        const text = str(msg.text, CHAT_LEN).trim();
+        if (!text || !r.public.seats.some((x) => x.id === seatId)) return;
+        const key = 'st|' + seatId;
+        const m = await this.addChat(key, 'st', text);
+        for (const p of this.playersOf(seatId)) send(p, { t: 'chat', key, msg: m });
+        this.toSt({ t: 'chat', key, msg: m });
+        break;
+      }
       case 'voteClock': {
         // Viseren starter om 3 sekunder og går én plass per stepMs, i rekkefølgen Storytelleren sender.
         if (!r.vote || !r.vote.open) return;
@@ -408,6 +459,7 @@ export class Room {
         try { await this.state.storage.deleteAlarm(); } catch { /* */ }
         this.room = null;
         this.seats = {};
+        this.chats = {};
         send(ws, { t: 'closed' });
         break;
       }
@@ -466,6 +518,27 @@ export class Room {
         for (const p of this.playersOf(seatId)) send(p, { t: 'card', card });
         break;
       }
+      case 'chat': {
+        // Eleven skriver til Storytelleren eller til en nabo. Storytelleren kan lese alle trådene.
+        const seatId = meta.seatId;
+        if (!seatId) return;
+        const text = str(msg.text, CHAT_LEN).trim();
+        if (!text) return;
+        const to = str(msg.to, 80);
+        let key;
+        let targets = [];
+        if (to === 'st') key = 'st|' + seatId;
+        else {
+          if (!this.neighbours(seatId).includes(to)) { send(ws, { t: 'error', code: 'chatnotneighbour' }); return; }
+          if (!this.neighbourChatOpen()) { send(ws, { t: 'error', code: 'chatclosed' }); return; }
+          key = [seatId, to].sort().join('|');
+          targets = this.playersOf(to);
+        }
+        const m = await this.addChat(key, seatId, text);
+        for (const p of [...this.playersOf(seatId), ...targets]) send(p, { t: 'chat', key, msg: m });
+        this.toSt({ t: 'chat', key, msg: m });
+        break;
+      }
       case 'voteCast': {
         // Eleven stemmer på egen PC. Døde kan bare stemme hvis de har ghost vote igjen.
         const seatId = meta.seatId;
@@ -516,5 +589,6 @@ export class Room {
     await this.state.storage.deleteAll();
     this.room = null;
     this.seats = {};
+    this.chats = {};
   }
 }
