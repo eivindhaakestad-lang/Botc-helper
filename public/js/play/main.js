@@ -19,8 +19,8 @@ const TXT = {
     playDream: 'Spill drømmespill', dreamClosed: 'Drømmespillet åpner når natten kommer.', back: 'Tilbake',
     messages: 'Mine meldinger', noMessages: 'Ingen meldinger ennå.', holdRead: 'Hold inne for å lese', tapShow: 'Trykk for å vise', hide: 'Skjul',
     wake: 'Storytelleren vekker deg', read: 'Jeg har lest', send: 'Send valg', chooseN: 'Velg {n}', decoy: '🌙 Ingenting skjer. Du sover videre.', ok: 'OK',
-    town: 'Byen', alive: 'lever', dead: 'død', ghost: 'ghost vote', board: 'Drømmetoppliste', noScores: 'Ingen har talt sauer ennå.',
-    sheep: 'Sauer', best: 'Din rekord', start: 'Trykk eller mellomrom for å hoppe', woke: 'Du våknet!', sheepCounted: 'sauer', again: 'Trykk for å prøve igjen', paused: 'Pause',
+    town: 'Byen', alive: 'lever', dead: 'død', ghost: 'ghost vote', board: 'Drømmetoppliste', noScores: 'Ingen har hoppet over hinder ennå.',
+    sheep: 'Hinder', best: 'Din rekord', start: 'Trykk eller mellomrom for å hoppe', woke: 'Du våknet!', sheepCounted: 'hinder', eagle: '🦅 Ørn! Ikke hopp – løp under!', again: 'Trykk for å prøve igjen', paused: 'Pause',
     morning: 'Solen står opp – drømmen er over.', you: 'Du', answered: 'Svar sendt', winnerGood: 'Det gode laget vinner!', winnerEvil: 'Det onde laget vinner!',
     reveal: 'Rollene var', leave: 'Bytt plass', revealTitle: 'Grim reveal', revealWait: 'Storytelleren avslører rollene …',
     beforeGame: 'Før spillet', raiseHand: '✋ Rekk opp hånden', lowerHand: 'Ta ned hånden', handPos: 'Hånden din er oppe – du er nr. {n}', handQueue: 'Talerekkefølge',
@@ -44,8 +44,8 @@ const TXT = {
     playDream: 'Play the dream game', dreamClosed: 'The dream game opens when night falls.', back: 'Back',
     messages: 'My messages', noMessages: 'No messages yet.', holdRead: 'Press and hold to read', tapShow: 'Tap to show', hide: 'Hide',
     wake: 'The Storyteller wakes you', read: 'I have read it', send: 'Send choice', chooseN: 'Choose {n}', decoy: '🌙 Nothing happens. You keep sleeping.', ok: 'OK',
-    town: 'The town', alive: 'alive', dead: 'dead', ghost: 'ghost vote', board: 'Dream leaderboard', noScores: 'Nobody has counted sheep yet.',
-    sheep: 'Sheep', best: 'Your best', start: 'Tap or press space to jump', woke: 'You woke up!', sheepCounted: 'sheep', again: 'Tap to try again', paused: 'Paused',
+    town: 'The town', alive: 'alive', dead: 'dead', ghost: 'ghost vote', board: 'Dream leaderboard', noScores: 'Nobody has cleared an obstacle yet.',
+    sheep: 'Obstacles', best: 'Your best', start: 'Tap or press space to jump', woke: 'You woke up!', sheepCounted: 'obstacles', eagle: '🦅 Eagle! Don’t jump – run under it!', again: 'Tap to try again', paused: 'Paused',
     morning: 'The sun rises – the dream is over.', you: 'You', answered: 'Choice sent', winnerGood: 'Good wins!', winnerEvil: 'Evil wins!',
     reveal: 'The characters were', leave: 'Change seat', revealTitle: 'Grim reveal', revealWait: 'The Storyteller is revealing the characters …',
     beforeGame: 'Before the game', raiseHand: '✋ Raise your hand', lowerHand: 'Lower your hand', handPos: 'Your hand is up – you are no. {n}', handQueue: 'Speaking order',
@@ -297,7 +297,7 @@ function phaseBanner() {
 function boardView() {
   const b = P.board;
   return h('div', { class: 'panel' },
-    h('h3', { class: 'section-title' }, '🐑 ' + T('board')),
+    h('h3', { class: 'section-title' }, '🏃 ' + T('board')),
     b && b.board.length
       ? h('ol', { class: 'board' }, b.board.map((x) => h('li', { class: P.me && x.seatId === P.me.seatId ? 'me' : '' }, h('span', { class: 'grow' }, x.name), h('span', { class: 'strong' }, String(x.score)))))
       : h('p', { class: 'muted small' }, T('noScores')));
@@ -493,7 +493,7 @@ function homeView() {
         : h('p', { class: 'muted' }, T('noRole')),
       lastMessageView()),
     handView(),
-    dreamPhase() ? h('button', { class: 'btn primary big dream-btn', onclick: openDream }, '🐑 ' + T('playDream')) : null,
+    dreamPhase() ? h('button', { class: 'btn primary big dream-btn', onclick: openDream }, '💤 ' + T('playDream')) : null,
     dreamPhase() ? boardView() : null,
     dayView(),
     chatView(),
