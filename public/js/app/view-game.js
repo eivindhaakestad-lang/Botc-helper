@@ -45,15 +45,13 @@ function runPostDeath(killed, aliveBefore, cause) {
   const s = store.state();
   if (!killed.length) return;
   const list = postDeathChecks(s, killed, aliveBefore, cause, ui(), s.style);
-  // Scarlet Woman blir Demon med en gang (regelen er fast). Du kan angre, og meldingen går rett til eleven.
+  // Scarlet Woman blir Demon med en gang i grimen (regelen er fast, du kan angre).
+  // Eleven får vite det først i natt, i night order.
   const out = list.map((p) => {
     if (p.type !== 'sw') return p;
     dispatch({ type: 'EFFECTS', effects: p.effects, messages: p.messages, log: p.text });
     const s2 = store.state();
-    const m = s2.messages.filter((x) => x.kind === 'private' && x.seatId === p.seatId).slice(-1)[0];
-    const sent = m && liveOpen() ? sendCard(p.seatId, { id: m.id, kind: 'info', text: m.text }) : false;
-    if (m && sent) store.game.copied[m.id] = true;
-    return { type: 'swDone', text: p.text, sub: sent ? t('swSent', { name: seatName(getSeat(s2, p.seatId)) }) : t('swCopy', { name: seatName(getSeat(s2, p.seatId)) }) };
+    return { type: 'swDone', text: p.text, sub: t('swTonight', { name: seatName(getSeat(s2, p.seatId)) }) };
   });
   app.pending = [...app.pending.filter((p) => p.type === 'virgin'), ...out];
 }

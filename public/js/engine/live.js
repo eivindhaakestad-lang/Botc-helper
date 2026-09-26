@@ -62,7 +62,8 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
 export function roleCardsFor(s) {
   const out = {};
   for (const seat of s.seats) {
-    const shownId = actingId(seat);
+    // Har eleven fått en ny rolle som ikke er fortalt ennå, vises den gamle rollen.
+    const shownId = seat.newRole && !seat.newRole.told && seat.newRole.from ? seat.newRole.from : actingId(seat);
     const info = charInfo(shownId);
     out[seat.id] = {
       character: info.name,

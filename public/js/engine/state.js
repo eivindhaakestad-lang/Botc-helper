@@ -108,8 +108,13 @@ export function applyEffect(s, e, phase) {
         seat.characterId = e.characterId;
         seat.shownCharacterId = e.shownCharacterId || null;
         seat.alignment = e.alignment || teamAlignment(charInfo(e.characterId).team);
+        // tellAtNight: eleven får vite den nye rollen først i night order (f.eks. Scarlet Woman → Demon).
+        seat.newRole = e.tellAtNight ? { from: e.from || null, told: false, toldNight: null } : null;
         seat.characterSince = { ...phase };
       }
+      break;
+    case 'roleTold':
+      if (seat && seat.newRole) { seat.newRole.told = true; seat.newRole.toldNight = phase.number; }
       break;
     case 'setAlignment':
       if (seat) seat.alignment = e.alignment;

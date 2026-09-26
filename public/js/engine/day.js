@@ -117,8 +117,8 @@ export function postDeathChecks(s, killed, aliveBefore, cause, lang, style) {
         out.push({
           type: 'sw', seatId: sw.id,
           text: st(lang, 'dSW', { n: aliveBefore, name: seatName(sw) }),
-          effects: [{ t: 'setCharacter', seatId: sw.id, characterId: seat.characterId }],
-          messages: [{ seatId: sw.id, text: msg(lang, style, 'becameDemon', { char: charInfo(seat.characterId).name }) }],
+          effects: [{ t: 'setCharacter', seatId: sw.id, characterId: seat.characterId, from: 'scarletwoman', tellAtNight: true }],
+          messages: [],
         });
       }
     }

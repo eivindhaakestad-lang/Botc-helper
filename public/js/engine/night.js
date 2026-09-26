@@ -46,12 +46,23 @@ export function nightQueue(s) {
     }
     for (const seat of s.seats) {
       if (actingId(seat) !== id) continue;
+      // Ny rolle (Scarlet Woman ble Demon i dag): fortell det rett før rollens første steg i natt.
+      const nr = seat.newRole;
+      if (nr && seat.alive && (!nr.told || nr.toldNight === n) && !steps.some((x) => x.kind === 'newRole' && x.seatId === seat.id)) {
+        steps.push({ key: `n${n}:newrole:${seat.id}`, kind: 'newRole', characterId: nr.from || seat.characterId, seatId: seat.id, def: {}, autoSkip: false });
+      }
       const info = charInfo(id);
       let nd = info.def ? (first ? info.def.first : info.def.other) : { kind: 'manual' };
       if (!nd) continue;
       if (nd.when && CONDITIONS[nd.when] && !CONDITIONS[nd.when](s, seat)) continue;
       const autoSkip = !seat.alive && !nd.whenDead;
       steps.push({ key: `n${n}:${id}:${seat.id}`, kind: nd.kind, characterId: id, seatId: seat.id, def: nd, autoSkip });
+    }
+  }
+  for (const seat of s.seats) {
+    const nr = seat.newRole;
+    if (nr && seat.alive && (!nr.told || nr.toldNight === n) && !steps.some((x) => x.kind === 'newRole' && x.seatId === seat.id)) {
+      steps.push({ key: `n${n}:newrole:${seat.id}`, kind: 'newRole', characterId: nr.from || seat.characterId, seatId: seat.id, def: {}, autoSkip: false });
     }
   }
   steps.forEach((x, i) => { x.index = i; x.status = statusOf(s, x.key, x.autoSkip); });
@@ -466,6 +477,21 @@ const KINDS = {
     },
   },
 
+  newRole: {
+    suggest() { return {}; },
+    model(s, step, input, lang, m) {
+      const seat = getSeat(s, step.seatId);
+      const from = seat.newRole && seat.newRole.from ? cname(seat.newRole.from) : '?';
+      m.title = `${from} → ${cname(seat.characterId)}`;
+      m.instruction = st(lang, 'newRoleDo', { name: seatName(seat), from, char: cname(seat.characterId) });
+    },
+    resolve(s, step, input, lang, style) {
+      const seat = getSeat(s, step.seatId);
+      const info = charInfo(seat.characterId);
+      const text = info.team === 'demon' ? msg(lang, style, 'becameDemon', { char: info.name }) : msg(lang, style, 'becameDemon', { char: info.name }).replace(/^🔥[^.]*\./, `🎭 ${info.name}.`);
+      return { messages: [{ seatId: seat.id, text }], effects: [{ t: 'roleTold', seatId: seat.id }] };
+    },
+  },
   manual: {
     suggest() { return { text: '' }; },
     model(s, step, input, lang, m) {
@@ -576,6 +602,9 @@ const CHOICE = {
 export function choiceRequest(s, step, lang = s.lang, style = s.style) {
   const c = CHOICE[step.kind];
   if (!c || !step.seatId) return null;
+  // Ikke be om valg før eleven har fått vite den nye rollen (f.eks. Scarlet Woman som ble Demon).
+  const seat = getSeat(s, step.seatId);
+  if (seat && seat.newRole && !seat.newRole.told) return null;
   return {
     cardId: 'choice:' + step.key, seatId: step.seatId, fields: c.fields,
     card: { id: 'choice:' + step.key, kind: 'choice', text: msg(lang, style, c.key), choice: { count: c.count, allowSelf: c.allowSelf } },

@@ -321,11 +321,34 @@ test('Scarlet Woman: forgiftet SW blir ikke Demon, og appen sier fra', async () 
   assert.equal(ok[0].type, 'sw');
   ev.push({ type: 'EFFECTS', effects: ok[0].effects, messages: ok[0].messages }, { type: 'NIGHT_START' });
   s = replay(g, ev);
-  const imp = nightQueue(s).filter((x) => x.characterId === 'imp');
-  assert.deepEqual(imp.map((x) => [x.seatId, x.autoSkip]), [['s5', true], ['s6', false]], 'den døde Imp hoppes over, SW våkner som Imp');
+  const { roleCardsFor } = await import('../public/js/engine/live.js');
+  assert.equal(roleCardsFor(s).s6.character, 'Scarlet Woman', 'eleven ser fortsatt Scarlet Woman før natten');
+  const q = nightQueue(s);
+  const keys = q.map((x) => x.key);
+  assert.ok(keys.indexOf('n2:newrole:s6') >= 0 && keys.indexOf('n2:newrole:s6') + 1 === keys.indexOf('n2:imp:s6'), 'SW får vite det rett før Imp-steget: ' + keys.join(','));
+  assert.deepEqual(q.filter((x) => x.characterId === 'imp').map((x) => [x.seatId, x.autoSkip]), [['s5', true], ['s6', false]], 'den døde Imp hoppes over, SW våkner som Imp');
+  const r = runStep(g, ev, 'n2:newrole:s6', {});
+  assert.match(r.messages[0].text, /Imp/);
+  s = replay(g, ev);
+  assert.equal(roleCardsFor(s).s6.character, 'Imp', 'etter steget ser eleven Imp');
+  assert.ok(nightQueue(s).some((x) => x.key === 'n2:newrole:s6'), 'steget blir stående som ferdig i natt');
+  ev.push({ type: 'DAY_START' }, { type: 'NIGHT_START' });
+  assert.ok(!nightQueue(replay(g, ev)).some((x) => x.kind === 'newRole'), 'ikke igjen neste natt');
   const g2 = makeGame(chars);
   const ev2 = [{ type: 'NIGHT_START' }, { type: 'EFFECTS', effects: [{ t: 'addReminder', seatId: 's6', reminder: { kind: 'poisoned', label: 'Poisoned', expires: 'dusk' } }] }, { type: 'DAY_START' }, { type: 'EXECUTE', sk: 'exec:1', seatId: 's5' }];
   const bad = postDeathChecks(replay(g2, ev2), ['s5'], 8, 'execution', 'no', 'short');
   assert.equal(bad[0].type, 'info');
   assert.equal(bad[1].type, 'win');
+});
+
+test('Scarlet Woman: ingen valgforespørsel før hun har fått vite at hun er Demon', async () => {
+  const { choiceRequest } = await import('../public/js/engine/night.js');
+  const g = makeGame(['washerwoman', 'empath', 'monk', 'chef', 'soldier', 'imp', 'scarletwoman', 'poisoner']);
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'EXECUTE', sk: 'exec:1', seatId: 's5' },
+    { type: 'EFFECTS', effects: [{ t: 'setCharacter', seatId: 's6', characterId: 'imp', from: 'scarletwoman', tellAtNight: true }] }, { type: 'NIGHT_START' }];
+  let s = replay(g, ev);
+  assert.equal(choiceRequest(s, nightQueue(s).find((x) => x.key === 'n2:imp:s6')), null);
+  runStep(g, ev, 'n2:newrole:s6', {});
+  s = replay(g, ev);
+  assert.ok(choiceRequest(s, nightQueue(s).find((x) => x.key === 'n2:imp:s6')));
 });
