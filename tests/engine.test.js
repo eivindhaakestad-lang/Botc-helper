@@ -295,3 +295,18 @@ test('daggry: nattens dødsfall er skjult for elevene til Storytelleren kunngjø
   assert.equal(p.seats.find((x) => x.id === 's3').alive, false);
   assert.equal(p.announcement, 'Tarjei døde i natt');
 });
+
+test('stemmemål: med noen på blokka gir likt antall uavgjort og ett mer tar over', async () => {
+  const { voteTarget } = await import('../public/js/engine/day.js');
+  const chars = ['washerwoman', 'drunk', 'monk', 'empath', 'undertaker', 'mayor', 'poisoner', 'imp', 'scarletwoman', 'chef'];
+  const g = makeGame(chars, { drunkShown: 'librarian' });
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'DAWN_REVEAL' },
+    { type: 'NOMINATE', nominationId: 'n1', nominatorId: 's0', nomineeId: 's1' },
+    { type: 'NOMINATE', nominationId: 'n2', nominatorId: 's2', nomineeId: 's3' }];
+  let s = replay(g, ev);
+  assert.deepEqual(voteTarget(s, 'n2'), { threshold: 5, need: 5, tieAt: null, blockId: null });
+  ev.push({ type: 'VOTE', sk: 'vote:n1', nominationId: 'n1', voters: ['s0', 's1', 's2', 's4', 's5', 's6'] });
+  s = replay(g, ev);
+  assert.deepEqual(voteTarget(s, 'n2'), { threshold: 5, need: 7, tieAt: 6, blockId: 's1' });
+  assert.equal(voteTarget(s, 'n1').need, 5, 'egen nominasjon teller ikke mot seg selv');
+});

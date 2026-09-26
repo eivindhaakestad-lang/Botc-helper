@@ -12,7 +12,7 @@ import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveI
 import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
-  nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
+  nominationsToday, voteThreshold, voteTarget, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
   postDeathChecks, checkWin, mayorCheck, dawnMessage,
 } from '../engine/day.js';
 import { msg } from '../engine/text.js';
@@ -113,7 +113,7 @@ function createNomination(s, nominatorId, nomineeId) {
   if (liveOpen()) {
     const s2 = store.state();
     const nom = s2.nominations.find((n) => n.id === nominationId);
-    if (nom) openVote(nom, voteThreshold(s2));
+    if (nom) openVote(nom, voteTarget(s2, nom.id));
   }
   if (vc && (vc.trigger || vc.maybe)) app.pending.push({ type: 'virgin', text: vc.text, nominatorId });
   const w = nominationWarnings(s, nominatorId, nomineeId, ui());
@@ -657,6 +657,10 @@ function publicToday(s, list) {
     messageCard(s, list[list.length - 1]));
 }
 
+function tieText(tr, tg, nominee, blockName) {
+  return (blockName ? tr('tieHint', { tie: tg.tieAt, block: blockName }) : tr('tieHintTie', { tie: tg.tieAt })) + ' · ' + tr('needHint', { need: tg.need, name: nominee });
+}
+
 function dayPanel(s) {
   const lang = ui();
   const df = app.dayForm || (app.dayForm = { nominator: null, nominee: null, slayer: null, slayTarget: null, execTarget: undefined, changingExec: false });
@@ -739,22 +743,24 @@ function dayPanel(s) {
         const isBlock = block.nomination && block.nomination.id === nom.id;
         const lv = liveVote(nom);
         const voting = !!(lv && lv.open);
+        const tg = voteTarget(s, nom.id);
         const shown = voting ? lv.voters : nom.voters;
         const vw = voteWarnings(s, shown, lang);
         return h('li', { class: 'nom' + (isBlock ? ' on-block' : '') + (voting ? ' voting' : '') },
           h('div', { class: 'row between wrap' },
             h('span', { class: 'strong' }, `${seatName(getSeat(s, nom.nominatorId))} → ${seatName(getSeat(s, nom.nomineeId))}`),
             h('span', { class: 'row gap' },
-              h('span', { class: 'vote-count' + (shown.length >= need ? ' enough' : '') }, `${shown.length} / ${need}`),
+              h('span', { class: 'vote-count' + (shown.length >= tg.need ? ' enough' : shown.length === tg.tieAt ? ' tie' : '') }, `${shown.length} / ${tg.need}`),
               isBlock ? h('span', { class: 'pill warn' }, t('onTheBlock')) : null,
               confirmButton({ key: 'delnom' + nom.id, label: '✕', confirmLabel: t('delete'), cls: 'btn danger small', onConfirm: () => dispatch({ type: 'NOMINATION_REMOVE', nominationId: nom.id, log: t('nominationRemoved') }) }))),
+          tg.tieAt ? h('p', { class: 'small tie-hint' }, tieText(t, tg, seatName(getSeat(s, nom.nomineeId)), tg.blockId ? seatName(getSeat(s, tg.blockId)) : null)) : null,
           liveOpen() ? h('div', { class: 'row gap wrap vote-live' },
             voting
               ? [h('span', { class: 'pill live' }, lv.clock ? '🕐 ' + t('clockRunning') : '🗳 ' + t('votingOpen')),
                 lv.clock ? null : h('button', { class: 'btn primary', onclick: () => startClock(s, nom) }, '🕐 ' + t('startClock')),
                 h('button', { class: 'btn' + (lv.clock ? ' ghost' : ''), onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
               : [lv ? h('button', { class: 'btn primary', onclick: () => clearVote() }, '✓ ' + t('clearVote')) : null,
-                h('button', { class: 'btn' + (nom.votes || lv ? ' ghost' : ' primary'), onclick: () => openVote(nom, need) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
+                h('button', { class: 'btn' + (nom.votes || lv ? ' ghost' : ' primary'), onclick: () => openVote(nom, voteTarget(s, nom.id)) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
           h('div', { class: 'voters' }, s.seats.map((x) => {
             const on = shown.includes(x.id);
             const cant = !x.alive && !x.ghostVote && !on;

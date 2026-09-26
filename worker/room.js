@@ -385,6 +385,7 @@ export class Room {
         r.vote = {
           id: str(v.id, 80), nominatorId: str(v.nominatorId, 80), nomineeId: str(v.nomineeId, 80),
           need: Number(v.need) || 0, open: true, voters: this.validVoters(v.voters),
+          tieAt: Number(v.tieAt) > 0 ? Number(v.tieAt) : null, blockId: v.blockId ? str(v.blockId, 80) : null,
         };
         await this.saveRoom();
         this.broadcastVote();

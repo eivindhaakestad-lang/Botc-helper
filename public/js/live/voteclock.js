@@ -49,6 +49,7 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
   const x2 = bx - (dx / len) * cut; const y2 = by - (dy / len) * cut;
   const tok = Math.min(26, (257 / n) * 0.7).toFixed(2);
   const enough = vote.voters.length >= vote.need;
+  const tie = !enough && vote.tieAt && vote.voters.length === vote.tieAt;
   return h('div', { class: 'grim vote-grim', style: `--tok:min(${size}px, ${tok}cqw)`, 'data-vote': vote.id },
     h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
     h('div', { class: 'vc-arrow', 'aria-hidden': 'true', html: `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><marker id="vc-head" markerWidth="4" markerHeight="4" refX="2.6" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="currentColor"/></marker></defs><line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" marker-end="url(#vc-head)"/></svg>` }),
@@ -59,7 +60,8 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
           h('span', { class: 'vc-nominator' }, name(vote.nominatorId)),
           h('span', { class: 'vc-arrow-txt' }, ' → '),
           h('span', { class: 'vc-nominee' }, name(vote.nomineeId))),
-        h('span', { class: 'display vc-count' + (enough ? ' enough' : '') }, String(vote.voters.length), h('span', { class: 'vote-need' }, ` / ${vote.need}`)),
+        h('span', { class: 'display vc-count' + (enough ? ' enough' : tie ? ' tie' : '') }, String(vote.voters.length), h('span', { class: 'vote-need' }, ` / ${vote.need}`)),
+        vote.tieAt && text.tieLine ? h('span', { class: 'vc-tie' }, text.tieLine(vote, name).split(' · ').map((x) => h('span', { class: 'tie-row' }, x))) : null,
         h('span', { class: 'vc-status center-stat' }, vote.open ? (vote.clock ? '' : text.voteNow) : text.closed))),
     seats.map((seat, i) => {
       const [left, top] = seatPos(i, n);
@@ -70,7 +72,8 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
         h('div', { class: `token vc-token ${role}${voted ? ' voted' : ''}${seat.alive ? '' : ' dead'}${cant ? ' cant' : ''}${me === seat.id ? ' me' : ''}` },
           h('span', { class: 'token-disc' },
             h('span', { class: 'token-char' }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.names.map((x) => x[0]).join('')),
-            seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
+            seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
+            vote.blockId === seat.id ? h('span', { class: 'block-badge' }, '💀') : null),
           h('span', { class: 'token-label' }, seat.names.join(' + ')),
           role ? h('span', { class: 'vc-role ' + role }, role === 'nominator' ? text.nominator : text.nominee) : null));
     }));
@@ -103,4 +106,11 @@ export function tickVoteCircle(root, vote, offset, text) {
     st.textContent = !vote.open ? text.closed : info.countdown > 0 ? `${text.startsIn} ${info.countdown}` : info.done ? text.closed : `${text.handAt} ${cur ? cur.textContent : ''}`;
   }
   return info;
+}
+
+// «4 = uavgjort med Markus (ingen dør) · 5 = Frida på blokka»
+export function tieLine(vote, name, T) {
+  if (!vote || !vote.tieAt) return '';
+  const a = vote.blockId ? T('tieWith').replace('{tie}', vote.tieAt).replace('{block}', name(vote.blockId)) : T('tieStill').replace('{tie}', vote.tieAt);
+  return a + ' · ' + T('needFor').replace('{need}', vote.need).replace('{name}', name(vote.nomineeId));
 }

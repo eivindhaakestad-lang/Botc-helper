@@ -28,6 +28,20 @@ export function onTheBlock(s) {
   return { nomination: tie ? null : best, tie, need, votes: best ? best.votes : 0 };
 }
 
+// Hvor mange stemmer en nominasjon trenger, gitt de andre nominasjonene i dag.
+// Er noen allerede på blokka med 4, gir 4 uavgjort (ingen dør) og 5 tar over blokka.
+export function voteTarget(s, nominationId) {
+  const threshold = voteThreshold(s);
+  let top = 0;
+  let holders = [];
+  for (const n of nominationsToday(s)) {
+    if (n.id === nominationId || n.votes < threshold) continue;
+    if (n.votes > top) { top = n.votes; holders = [n.nomineeId]; } else if (n.votes === top) holders.push(n.nomineeId);
+  }
+  if (!top) return { threshold, need: threshold, tieAt: null, blockId: null };
+  return { threshold, need: top + 1, tieAt: top, blockId: holders.length === 1 ? holders[0] : null };
+}
+
 export function nominationWarnings(s, nominatorId, nomineeId, lang) {
   const out = [];
   const today = nominationsToday(s);

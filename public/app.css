@@ -843,3 +843,9 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .block-label { margin-top: 2px; }
 .block-line { color: var(--demon); }
 .town li.on-block { border-color: var(--demon); background: color-mix(in srgb, var(--demon) 14%, transparent); font-weight: 700; }
+.vc-tie { font-size: clamp(0.72rem, 2.4cqw, 1.2rem); font-weight: 700; color: var(--muted); max-width: 100%; }
+.vc-count.tie { color: var(--warn); }
+.vote-count.tie { color: var(--warn); }
+.vcs-tie { font-weight: 700; font-size: clamp(1rem, 1.5vw, 1.4rem); }
+.tie-hint { color: var(--warn); font-weight: 700; }
+.tie-row { display: block; }

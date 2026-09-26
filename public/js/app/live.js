@@ -224,9 +224,10 @@ export function clearHands() {
 }
 
 // ——— avstemning på elevenes PC-er ———
-export function openVote(nom, need) {
+export function openVote(nom, target) {
   if (!liveOpen()) return;
-  live.client.send({ t: 'voteOpen', vote: { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, need, voters: nom.voters || [] } });
+  const tg = typeof target === 'object' ? target : { need: target, tieAt: null, blockId: null };
+  live.client.send({ t: 'voteOpen', vote: { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, need: tg.need, tieAt: tg.tieAt, blockId: tg.blockId, voters: nom.voters || [] } });
 }
 
 export function setVoteVoters(voters) {
