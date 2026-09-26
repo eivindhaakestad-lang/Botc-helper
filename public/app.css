@@ -835,3 +835,11 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .dawn-reveal { border-top-color: var(--brass-2); }
 .announce-play { font-size: var(--f-lg); white-space: pre-wrap; }
 .public-more { align-self: flex-start; }
+
+/* ——— på blokka ——— */
+.token.on-block .token-disc { border-color: var(--demon); box-shadow: 0 0 0 5px color-mix(in srgb, var(--demon) 50%, transparent), 0 0 34px color-mix(in srgb, var(--demon) 60%, transparent); animation: vc-throb 1.6s ease-in-out infinite; }
+.block-badge { position: absolute; left: -10px; bottom: -8px; font-size: max(1rem, calc(var(--tok) * 0.34)); line-height: 1; filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.6)); animation: skull-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1.4) both; }
+@keyframes skull-in { from { transform: scale(0) rotate(-30deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.block-label { margin-top: 2px; }
+.block-line { color: var(--demon); }
+.town li.on-block { border-color: var(--demon); background: color-mix(in srgb, var(--demon) 14%, transparent); font-weight: 700; }

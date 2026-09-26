@@ -50,6 +50,8 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Avstemningsklokka:** Når avstemningen er åpen, trykker du **🕐 Start klokka**. Etter 3 sekunders nedtelling går en viser rundt sirkelen, én plass om gangen. Hver elev må stemme før viseren når dem, og da låses stemmen. Viseren starter hos spilleren etter den nominerte og ender hos den nominerte, som i de offisielle reglene. I Live-panelet kan du heller velge at den starter hos den som nominerer, og hvor lang tid den bruker per plass. Når viseren er ferdig, lagres stemmene av seg selv. Storskjermen og elevene ser en pil fra den som nominerer til den som er nominert.
 
+**Etter avstemningen:** Trykk **✓ Ferdig – fjern fra skjermen** for å få vekk avstemningsvisningen. Den ryddes også av seg selv når du registrerer en ny nominasjon eller en henrettelse. Den som er på blokka, får en 💀 og rød glød på storskjermen, i grimen din og i elevenes byliste, helt til noen er henrettet.
+
 **Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
 
 **Daggry:** Når du starter dagen, ser elevene og storskjermen at det er dag, men ikke hvem som døde i natt («Byen våkner …»). Du ser hvem som døde, og trykker **📣 Kunngjør natten** (eller Enter) når du er klar. Da dukker dødsfallene og morgenmeldingen opp, og storskjermen spiller en lyd.

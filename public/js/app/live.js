@@ -313,3 +313,11 @@ export function markChatRead(key) {
 export function totalChatUnread() {
   return Object.keys(live.chats).filter((k) => k.startsWith('st|')).reduce((a, k) => a + chatUnread(k), 0);
 }
+
+// Fjern avstemningen fra storskjermen og elevene – klar for en ny nominasjon.
+export function clearVote() {
+  if (!liveOpen()) return;
+  live.vote = null;
+  live.client.send({ t: 'voteClear' });
+  render();
+}

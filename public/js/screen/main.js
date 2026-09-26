@@ -30,15 +30,19 @@ function seatToken(seat, i, n) {
   const voted = v && v.voters.includes(seat.id);
   const nominee = v && v.nomineeId === seat.id;
   const nominator = v && v.nominatorId === seat.id;
+  const d = S.pub.day;
+  const block = !!(d && d.block && !d.executed && d.block.nomineeId === seat.id);
   return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') },
+    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
         h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : initials),
         seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
-        handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null),
+        handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null,
+        block ? h('span', { class: 'block-badge' }, '💀') : null),
       h('span', { class: 'token-label' }, seat.names.join(' + '),
-        seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○'))));
+        seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○')),
+      block ? h('span', { class: 'vc-role nominee block-label' }, '💀 ' + T('onBlock')) : null));
 }
 
 function render() {
@@ -177,6 +181,8 @@ function soundsFor(prev, m) {
   if (nv && nv.open && (!pv || pv.id !== nv.id || !pv.open)) sfx.gavel();
   else if (nv && pv && nv.id === pv.id && nv.voters.length > pv.voters.length && !nv.clock) sfx.pop();
   if ((m.hands || []).length > (prev.hands || []).length) sfx.pop();
+  const ba = a.day && a.day.block && a.day.block.nomineeId; const bb = b.day && b.day.block && b.day.block.nomineeId;
+  if (bb && bb !== ba) sfx.lock();
   const ea = a.day && a.day.executed; const eb = b.day && b.day.executed;
   if (eb && eb !== ea && eb !== 'none') sfx.boom();
   if (b.winner && b.winner !== a.winner) sfx.fanfare();
@@ -201,7 +207,7 @@ function dayPanel(p) {
     d.nominations.length ? h('ol', { class: 'noms-screen' }, d.nominations.map((n) => h('li', { class: d.block && d.block.nomineeId === n.nomineeId && n.votes === d.block.votes ? 'block' : '' },
       h('span', { class: 'grow' }, `${nameOf(n.nominatorId)} → ${nameOf(n.nomineeId)}`),
       h('span', { class: 'strong' }, `${n.votes} / ${d.need}`)))) : h('p', { class: 'muted' }, `${d.need} ${T('votes2')} ${T('need')}`),
-    d.block ? h('p', { class: 'strong' }, `${T('onBlock')}: ${nameOf(d.block.nomineeId)} (${d.block.votes})`) : d.tie ? h('p', { class: 'muted' }, T('tie')) : null,
+    d.block ? h('p', { class: 'strong block-line' }, `💀 ${T('onBlock')}: ${nameOf(d.block.nomineeId)} (${d.block.votes})`) : d.tie ? h('p', { class: 'muted' }, T('tie')) : null,
     d.executed ? h('p', { class: 'muted' }, d.executed === 'none' ? T('noExec') : `${T('executed')}: ${nameOf(d.executed)}`) : null);
 }
 

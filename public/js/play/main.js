@@ -374,11 +374,16 @@ function chatView() {
       h('button', { class: 'btn primary', type: 'submit' }, T('chatSend'))));
 }
 
+function blockId() {
+  const d = P.pub && P.pub.phase.type === 'day' && P.pub.day;
+  return d && d.block && !d.executed ? d.block.nomineeId : null;
+}
+
 function townView() {
   return h('div', { class: 'panel' },
     h('h3', { class: 'section-title' }, T('town')),
-    h('ol', { class: 'town' }, P.pub.seats.map((x) => h('li', { class: (x.alive ? '' : 'dead') + (P.me && x.id === P.me.seatId ? ' me' : '') },
-      h('span', { class: 'grow' }, x.names.join(' + ')),
+    h('ol', { class: 'town' }, P.pub.seats.map((x) => h('li', { class: (x.alive ? '' : 'dead') + (P.me && x.id === P.me.seatId ? ' me' : '') + (blockId() === x.id ? ' on-block' : '') },
+      h('span', { class: 'grow' }, (blockId() === x.id ? '💀 ' : '') + x.names.join(' + ')),
       h('span', { class: 'muted small' }, x.alive ? T('alive') : `† ${x.ghostVote ? '● ' + T('ghost') : ''}`)))));
 }
 
@@ -471,7 +476,7 @@ function dayView() {
     h('ol', { class: 'town' }, d.nominations.map((n) => h('li', { class: d.block && d.block.nomineeId === n.nomineeId ? 'me' : '' },
       h('span', { class: 'grow' }, `${seatName(n.nominatorId)} → ${seatName(n.nomineeId)}`),
       h('span', { class: 'strong' }, `${n.votes} / ${d.need}`)))),
-    d.block ? h('p', { class: 'strong' }, '⚖️ ' + T('onBlock', { name: seatName(d.block.nomineeId), n: d.block.votes })) : null,
+    d.block ? h('p', { class: 'strong block-line' }, '💀 ' + T('onBlock', { name: seatName(d.block.nomineeId), n: d.block.votes })) : null,
     d.executed && d.executed !== 'none' ? h('p', { class: 'muted' }, T('executedToday', { name: seatName(d.executed) })) : null);
 }
 

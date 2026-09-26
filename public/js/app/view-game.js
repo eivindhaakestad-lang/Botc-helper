@@ -9,7 +9,7 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer, sendRoles, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -105,6 +105,7 @@ function announce(s, winner) {
 // ——— nominasjon ———
 function createNomination(s, nominatorId, nomineeId) {
   if (!nominatorId || !nomineeId) return;
+  if (live.vote && !live.vote.open) clearVote(); // forrige avstemning er ferdig – rydd skjermen
   const vc = virginCheck(s, nominatorId, nomineeId, ui());
   dispatch({ type: 'NOMINATE', nominationId: uid('n_'), nominatorId, nomineeId, effects: vc ? vc.effects : [], log: `${seatName(getSeat(s, nominatorId))} → ${seatName(getSeat(s, nomineeId))}` });
   if (vc && (vc.trigger || vc.maybe)) app.pending.push({ type: 'virgin', text: vc.text, nominatorId });
@@ -211,6 +212,7 @@ function gameMenu() {
 // ——— grimoire ———
 function grimView(s, activeIds) {
   const alive = aliveSeats(s).length;
+  const blockId = s.phase.type === 'day' && !s.executions.some((e) => e.day === s.phase.number) ? (onTheBlock(s).nomination || {}).nomineeId : null;
   return grimCircle({
     seats: s.seats,
     cls: s.phase.type,
@@ -223,6 +225,7 @@ function grimView(s, activeIds) {
       ghost: seat.alive ? null : seat.ghostVote,
       active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)) || !!(app.nomMode && app.nomMode.from === seat.id),
       hand: store.game.live && live.hands.includes(seat.id) ? live.hands.indexOf(seat.id) + 1 : null,
+      block: blockId === seat.id,
       alignment: seat.alignment,
       reminders: [
         ...seat.reminders,
@@ -312,7 +315,8 @@ function pendingBanner(s) {
       p.type === 'virgin' ? [
         h('button', { class: 'btn primary', onclick: () => {
           const aliveBefore = aliveSeats(store.state()).length;
-          dispatch({ type: 'EXECUTE', sk: 'exec:' + s.phase.number, seatId: p.nominatorId, messages: [{ kind: 'public', text: msg(s.lang, s.style, 'virginTrigger', { a: seatName(getSeat(s, p.nominatorId)) }) }], log: p.text });
+          if (live.vote && !live.vote.open) clearVote();
+    dispatch({ type: 'EXECUTE', sk: 'exec:' + s.phase.number, seatId: p.nominatorId, messages: [{ kind: 'public', text: msg(s.lang, s.style, 'virginTrigger', { a: seatName(getSeat(s, p.nominatorId)) }) }], log: p.text });
           drop(p);
           runPostDeath([p.nominatorId], aliveBefore, 'execution');
           render();
@@ -742,7 +746,8 @@ function dayPanel(s) {
               ? [h('span', { class: 'pill live' }, lv.clock ? '🕐 ' + t('clockRunning') : '🗳 ' + t('votingOpen')),
                 lv.clock ? null : h('button', { class: 'btn primary', onclick: () => startClock(s, nom) }, '🕐 ' + t('startClock')),
                 h('button', { class: 'btn' + (lv.clock ? ' ghost' : ''), onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
-              : [h('button', { class: 'btn' + (nom.votes ? ' ghost' : ' primary'), onclick: () => openVote(nom, need) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
+              : [lv ? h('button', { class: 'btn primary', onclick: () => clearVote() }, '✓ ' + t('clearVote')) : null,
+                h('button', { class: 'btn' + (nom.votes || lv ? ' ghost' : ' primary'), onclick: () => openVote(nom, need) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
           h('div', { class: 'voters' }, s.seats.map((x) => {
             const on = shown.includes(x.id);
             const cant = !x.alive && !x.ghostVote && !on;
