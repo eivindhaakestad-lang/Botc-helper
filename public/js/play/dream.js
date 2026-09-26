@@ -13,6 +13,9 @@ const EAGLE_FROM = 30;
 const EAGLE_TOP = GROUND - 80; // laveste høyde: like over hodet når du løper (kolliderer aldri da)
 const EAGLE_HIGH = GROUND - 150; // høyeste høyde
 const EAGLE_H = 30;
+const FLY_Y = GROUND - 108; // superhopp-høyde (godt over alle gjerder, under poengteksten)
+const POWER_CHANCE = 1 / 30;
+const POWERS = ['rocket', 'shield', 'jet', 'slow', 'double'];
 
 export class DreamGame {
   constructor(canvas, { onGameOver, onScore, text, best = 0 }) {
@@ -45,7 +48,18 @@ export class DreamGame {
     this.sheep = { x: 92, y: GROUND, vy: 0, onGround: true, legT: 0 };
     this.fences = [];
     this.eagleWarned = false;
-    this.shield = 0;
+    this.shield = 0; // udødelig etter melding (sekunder)
+    // Powerups
+    this.items = [];      // 🎁 som kan plukkes opp
+    this.shots = [];      // raketter i lufta
+    this.parts = [];      // partikler (eksplosjoner)
+    this.rockets = 0;     // antall hinder som skal sprenges
+    this.lives = 0;       // ekstra liv (skjold)
+    this.fly = 0;         // hinder igjen å fly over
+    this.slow = 0;        // sekunder med sakte tid
+    this.double = 0;      // sekunder med dobbel poeng
+    this.invuln = 0;      // kort udødelighet etter skjold/landing
+    this.puMsg = null;    // { text, t }
     this.speed = 360;
     this.score = 0;
     this.nextGap = 420;
@@ -76,6 +90,7 @@ export class DreamGame {
     this.jump();
   }
   jump() {
+    if (this.fly > 0) return;
     if (this.sheep.onGround) { this.sheep.vy = JUMP_V; this.sheep.onGround = false; }
   }
   release() {
@@ -135,22 +150,67 @@ export class DreamGame {
     this.raf = requestAnimationFrame(this.loop);
   }
 
+  addScore() {
+    this.score += this.double > 0 ? 2 : 1;
+    this.onScore(this.score);
+  }
+
+  givePower(kind) {
+    const T = this.text || {};
+    if (kind === 'rocket') this.rockets += 3;
+    if (kind === 'shield') this.lives = 1;
+    if (kind === 'jet') { this.fly = 10; this.sheep.vy = 0; this.sheep.onGround = false; }
+    if (kind === 'slow') this.slow = 8;
+    if (kind === 'double') this.double = 20;
+    this.puMsg = { text: T['pu_' + kind] || kind, t: 2.2 };
+    this.burst(this.sheep.x, this.sheep.y - 30, ['#f1c877', '#fff', '#6f90e2'], 18);
+  }
+
+  burst(x, y, colors, n = 14) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const v = 120 + Math.random() * 260;
+      this.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 120, life: 0.6 + Math.random() * 0.5, c: colors[i % colors.length], s: 2 + Math.random() * 3 });
+    }
+  }
+
+  breakObstacle(f) {
+    f.broken = true;
+    f.brokenT = 0;
+    this.burst(f.x + f.w / 2, f.eagle ? f.y + f.h / 2 : GROUND - f.h / 2, f.eagle ? ['#6b4a2b', '#f2eee6', '#f1c877'] : ['#8a6a44', '#a8845a', '#f1c877', '#e27a4e'], 20);
+  }
+
   update(dt) {
     if (this.state !== 'running') return;
     if (this.countdown > 0) { this.countdown -= dt; return; }
     this.time += dt;
     if (this.shield > 0) this.shield = Math.max(0, this.shield - dt);
+    if (this.invuln > 0) this.invuln = Math.max(0, this.invuln - dt);
+    if (this.slow > 0) this.slow = Math.max(0, this.slow - dt);
+    if (this.double > 0) this.double = Math.max(0, this.double - dt);
+    if (this.puMsg) { this.puMsg.t -= dt; if (this.puMsg.t <= 0) this.puMsg = null; }
     // Farten øker jevnt hele tiden (også etter 50 poeng), opp til et tak langt fram.
     this.speed = Math.min(1650, 380 + this.time * 12);
+    // Sakte tid: hindrene går saktere, og farten glir tilbake det siste sekundet.
+    const slowF = this.slow > 0 ? 0.6 + 0.4 * Math.max(0, 1 - this.slow) : 1;
+    const spd = this.speed * slowF;
     const sh = this.sheep;
-    sh.vy += GRAVITY * dt;
-    sh.y += sh.vy * dt;
-    if (sh.y >= GROUND) { sh.y = GROUND; sh.vy = 0; sh.onGround = true; }
-    sh.legT += dt * (sh.onGround ? this.speed / 40 : 0);
-    for (const hl of this.hills) { hl.x -= this.speed * 0.15 * dt; if (hl.x + hl.w < 0) { hl.x = W + Math.random() * 80; hl.w = 260 + Math.random() * 120; hl.h = 30 + Math.random() * 30; } }
-    this.nextGap -= this.speed * dt;
+    if (this.fly > 0) {
+      // Superhopp: rakett på ryggen, svever høyt over alt
+      sh.y += (FLY_Y - sh.y) * Math.min(1, dt * 4);
+      sh.vy = 0;
+      sh.onGround = false;
+      if (Math.random() < 0.6) this.parts.push({ x: sh.x - 30, y: sh.y - 6, vx: -200 - Math.random() * 120, vy: 40 + Math.random() * 60, life: 0.35, c: Math.random() < 0.5 ? '#f1c877' : '#e27a4e', s: 3 });
+    } else {
+      sh.vy += GRAVITY * dt;
+      sh.y += sh.vy * dt;
+      if (sh.y >= GROUND) { sh.y = GROUND; sh.vy = 0; sh.onGround = true; }
+    }
+    sh.legT += dt * (sh.onGround ? spd / 40 : 0);
+    for (const hl of this.hills) { hl.x -= spd * 0.15 * dt; if (hl.x + hl.w < 0) { hl.x = W + Math.random() * 80; hl.w = 260 + Math.random() * 120; hl.h = 30 + Math.random() * 30; } }
+    this.nextGap -= spd * dt;
     if (this.nextGap <= 0) {
-      // Ørn: fra ca. 30 poeng, stadig oftere, men aldri to rett etter hverandre
+      // Ørn: fra ca. 30 poeng, men aldri to rett etter hverandre
       const lastEagle = this.fences.length && this.fences[this.fences.length - 1].eagle;
       const eagleChance = this.score + this.fences.length >= EAGLE_FROM ? Math.min(0.25, 0.14 + (this.score - EAGLE_FROM) / 400) : 0;
       if (!lastEagle && Math.random() < eagleChance) {
@@ -167,34 +227,69 @@ export class DreamGame {
       // Avstanden krymper litt etter hvert, men aldri så mye at et hopp ikke rekker å lande.
       const tight = Math.max(0.75, 1.15 - this.time / 250);
       this.nextGap = this.speed * (0.75 + Math.random() * (tight - 0.2)) + 120;
+      // Sjelden powerup (ca. 1 av 30 hinder), midt mellom to hinder
+      if (Math.random() < POWER_CHANCE && this.fly <= 0) {
+        this.items.push({ x: W + 10 + Math.min(this.nextGap / 2, 260), y: GROUND - 42, kind: POWERS[Math.floor(Math.random() * POWERS.length)], bob: Math.random() * 6 });
+      }
     }
     if (this.eagleMsg > 0) this.eagleMsg -= dt;
     for (const f of this.fences) {
-      f.x -= this.speed * (f.eagle ? 1.12 : 1) * dt;
-      if (f.eagle) {
+      f.x -= spd * (f.eagle ? 1.12 : 1) * dt;
+      if (f.broken) f.brokenT += dt;
+      if (f.eagle && !f.broken) {
         f.flap += dt * 12;
-        const near = !f.passed && f.x - sh.x < 240 && f.x + f.w > sh.x - 24;
+        const near = !f.passed && this.fly <= 0 && f.x - sh.x < 240 && f.x + f.w > sh.x - 24;
         const target = near && !sh.onGround ? sh.y - 40 : f.baseY;
         const step = (near && !sh.onGround ? 1100 : 260) * dt;
         f.y += Math.max(-step, Math.min(step, target - f.y));
       }
-      if (!f.passed && f.x + f.w < sh.x - 20) { f.passed = true; this.score++; this.onScore(this.score); }
+      if (!f.passed && f.x + f.w < sh.x - 20) {
+        f.passed = true;
+        this.addScore();
+        if (this.fly > 0 && --this.fly === 0) this.invuln = Math.max(this.invuln, 1.2); // lander trygt
+      }
     }
     this.fences = this.fences.filter((f) => f.x + f.w > -20);
+    // Rakett: skyt mot neste hinder
+    if (this.rockets > 0 && !this.shots.length) {
+      const f = this.fences.find((x) => !x.broken && !x.passed && !x.targeted && x.x - sh.x < 340 && x.x > sh.x + 10);
+      if (f) { f.targeted = true; this.rockets--; this.shots.push({ x: sh.x + 20, y: sh.y - 26, target: f }); }
+    }
+    for (const r of this.shots) {
+      const f = r.target;
+      const tx = f.x + f.w / 2;
+      const ty = f.eagle ? f.y + f.h / 2 : GROUND - f.h / 2;
+      const d = Math.hypot(tx - r.x, ty - r.y) || 1;
+      const v = 1500 * dt;
+      if (d <= v + 8) { r.done = true; this.breakObstacle(f); } else { r.x += ((tx - r.x) / d) * v; r.y += ((ty - r.y) / d) * v; r.ang = Math.atan2(ty - r.y, tx - r.x); }
+      if (Math.random() < 0.7) this.parts.push({ x: r.x - 8, y: r.y, vx: -120, vy: (Math.random() - 0.5) * 60, life: 0.25, c: '#f1c877', s: 2 });
+    }
+    this.shots = this.shots.filter((r) => !r.done);
+    // Powerups
+    for (const it of this.items) {
+      it.x -= spd * dt;
+      it.bob += dt * 4;
+      if (!it.taken && Math.abs(it.x - sh.x) < 34 && Math.abs((it.y + Math.sin(it.bob) * 4) - (sh.y - 20)) < 40) { it.taken = true; this.givePower(it.kind); }
+    }
+    this.items = this.items.filter((it) => !it.taken && it.x > -30);
+    for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; p.life -= dt; }
+    this.parts = this.parts.filter((p) => p.life > 0);
     // kollisjon (litt romslig)
     const box = { x: sh.x - 20, y: sh.y - 34, w: 40, h: 30 };
     for (const f of this.fences) {
+      if (f.broken) continue;
       const hit = f.eagle
         ? box.x < f.x + f.w - 8 && box.x + box.w > f.x + 8 && box.y < f.y + f.h - 4 && box.y + box.h > f.y + 4
         : box.x < f.x + f.w - 4 && box.x + box.w > f.x + 4 && box.y + box.h > GROUND - f.h + 4;
-      if (hit && this.shield > 0) continue; // udødelig: løper rett gjennom
-      if (hit) {
-        this.state = 'over';
-        this.overAt = performance.now();
-        this.best = Math.max(this.best, this.score);
-        this.onGameOver(this.score);
-        break;
-      }
+      if (!hit) continue;
+      if (this.fly > 0) { this.breakObstacle(f); continue; } // raketten brøyter seg gjennom
+      if (this.shield > 0 || this.invuln > 0) continue; // udødelig: løper rett gjennom
+      if (this.lives > 0) { this.lives--; this.invuln = 1; this.breakObstacle(f); continue; }
+      this.state = 'over';
+      this.overAt = performance.now();
+      this.best = Math.max(this.best, this.score);
+      this.onGameOver(this.score);
+      break;
     }
   }
 
@@ -225,11 +320,27 @@ export class DreamGame {
     c.fillRect(0, GROUND, W, H - GROUND);
     c.fillStyle = '#2f4a3a';
     c.fillRect(0, GROUND, W, 3);
-    // gjerder
-    for (const f of this.fences) { if (f.eagle) this.drawEagle(f); else this.drawFence(f); }
+    if (this.slow > 0) { c.fillStyle = 'rgba(111, 144, 226, 0.12)'; c.fillRect(0, 0, W, H); }
+    // gjerder og ørner (sprengte vises som vrak)
+    for (const f of this.fences) { if (f.broken) this.drawBroken(f); else if (f.eagle) this.drawEagle(f); else this.drawFence(f); }
+    for (const it of this.items) this.drawItem(it, t);
+    for (const r of this.shots) this.drawShot(r);
+    for (const p of this.parts) { c.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); c.fillStyle = p.c; c.fillRect(p.x, p.y, p.s, p.s); }
+    c.globalAlpha = 1;
     // Blinker mens den er udødelig (raskere de siste sekundene)
     const blinkRate = this.shield > 1.2 ? 8 : 16;
-    if (!(this.shield > 0 && Math.floor(t * blinkRate) % 2 === 0)) this.drawSheep();
+    const blinking = (this.shield > 0 && Math.floor(t * blinkRate) % 2 === 0) || (this.invuln > 0 && Math.floor(t * 14) % 2 === 0);
+    if (this.fly > 0) this.drawJet(t);
+    if (!blinking) this.drawSheep();
+    if (this.lives > 0) {
+      const { x, y } = this.sheep;
+      c.strokeStyle = `rgba(111, 170, 255, ${0.65 + 0.25 * Math.sin(t * 5)})`;
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(x + 4, y - 20, 36, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = 'rgba(111, 170, 255, 0.12)';
+      c.fill();
+    }
+    this.drawHud();
     if (this.shield > 0 && this.state === 'running' && this.countdown <= 0) {
       c.fillStyle = '#f1c877';
       c.font = '700 18px "Alegreya Sans", system-ui, sans-serif';
@@ -249,7 +360,11 @@ export class DreamGame {
     if (this.state === 'over') this.banner(`${this.text.woke} ${this.score} ${this.text.sheepCounted}`, this.text.again);
     if (this.state === 'paused') this.banner(this.text.paused);
     if (this.state === 'running' && this.countdown > 0) this.banner(String(Math.ceil(this.countdown)));
-    else if (this.state === 'running' && this.eagleMsg > 0 && this.text.eagle) {
+    else if (this.state === 'running' && this.puMsg) {
+      c.fillStyle = '#f1c877';
+      c.font = '700 22px "Alegreya Sans", system-ui, sans-serif';
+      c.fillText(this.puMsg.text, W / 2, 84);
+    } else if (this.state === 'running' && this.eagleMsg > 0 && this.text.eagle) {
       c.fillStyle = '#f1c877';
       c.font = '700 20px "Alegreya Sans", system-ui, sans-serif';
       c.fillText(this.text.eagle, W / 2, 84);
@@ -279,6 +394,91 @@ export class DreamGame {
     c.fillStyle = '#a8845a';
     c.fillRect(f.x - 2, top + 6, f.w + 4, 5);
     c.fillRect(f.x - 2, top + f.h * 0.55, f.w + 4, 5);
+  }
+
+  // ——— powerups: tegning ———
+  drawHud() {
+    const c = this.ctx;
+    const tags = [];
+    if (this.rockets > 0) tags.push(`🚀×${this.rockets}`);
+    if (this.lives > 0) tags.push('🛡');
+    if (this.fly > 0) tags.push(`🎆 ${this.fly}`);
+    if (this.slow > 0) tags.push(`⏱ ${Math.ceil(this.slow)}`);
+    if (this.double > 0) tags.push(`✨2× ${Math.ceil(this.double)}`);
+    if (!tags.length) return;
+    c.font = '700 18px "Alegreya Sans", system-ui, sans-serif';
+    c.textAlign = 'left';
+    c.fillStyle = '#f1c877';
+    c.fillText(tags.join('   '), 220, 32);
+  }
+
+  drawItem(it, t) {
+    const c = this.ctx;
+    const y = it.y + Math.sin(it.bob) * 4;
+    const g = c.createRadialGradient(it.x, y, 2, it.x, y, 24);
+    g.addColorStop(0, 'rgba(241, 200, 119, 0.9)');
+    g.addColorStop(1, 'rgba(241, 200, 119, 0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(it.x, y, 24 + Math.sin(t * 6) * 2, 0, Math.PI * 2); c.fill();
+    c.font = '24px system-ui, sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText('🎁', it.x, y + 1);
+    c.textBaseline = 'alphabetic';
+  }
+
+  drawShot(r) {
+    const c = this.ctx;
+    c.save();
+    c.translate(r.x, r.y);
+    c.rotate(r.ang || 0);
+    c.fillStyle = '#d9d4e2';
+    c.fillRect(-10, -3, 16, 6);
+    c.fillStyle = '#e0535b';
+    c.beginPath(); c.moveTo(6, -3); c.lineTo(12, 0); c.lineTo(6, 3); c.closePath(); c.fill();
+    c.fillStyle = '#f1c877';
+    c.beginPath(); c.moveTo(-10, -3); c.lineTo(-17 - Math.random() * 5, 0); c.lineTo(-10, 3); c.closePath(); c.fill();
+    c.restore();
+  }
+
+  drawBroken(f) {
+    const c = this.ctx;
+    const k = Math.min(1, f.brokenT * 3);
+    if (f.eagle) {
+      // Fjær som daler ned
+      c.fillStyle = '#6b4a2b';
+      for (let i = 0; i < 5; i++) {
+        const fx = f.x + i * 11 + Math.sin(f.brokenT * 4 + i) * 6;
+        const fy = f.y + f.brokenT * 60 + i * 5;
+        c.save(); c.translate(fx, fy); c.rotate(Math.sin(f.brokenT * 3 + i)); c.fillRect(-5, -1.5, 10, 3); c.restore();
+      }
+      return;
+    }
+    // Sprengt gjerde: stubber og planker på bakken
+    c.fillStyle = '#5e4a33';
+    c.fillRect(f.x, GROUND - 10, 6, 10);
+    c.fillRect(f.x + f.w - 6, GROUND - 7, 6, 7);
+    c.fillStyle = '#8a6a44';
+    c.save(); c.translate(f.x + f.w / 2, GROUND - 3); c.rotate(-0.25 * k); c.fillRect(-f.w / 2 - 4, -2, f.w + 8, 4); c.restore();
+    c.save(); c.translate(f.x + f.w / 2 + 6, GROUND - 7); c.rotate(0.4 * k); c.fillRect(-f.w / 2, -2, f.w * 0.8, 4); c.restore();
+    c.fillStyle = 'rgba(40, 30, 30, 0.5)';
+    c.beginPath(); c.ellipse(f.x + f.w / 2, GROUND + 1, f.w * 0.9, 3, 0, 0, Math.PI * 2); c.fill();
+  }
+
+  drawJet(t) {
+    const c = this.ctx;
+    const { x, y } = this.sheep;
+    // Stor rakett på ryggen
+    c.fillStyle = '#c9c3d6';
+    c.beginPath(); c.ellipse(x - 12, y - 30, 22, 9, -0.08, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#e0535b';
+    c.beginPath(); c.moveTo(x + 8, y - 36); c.lineTo(x + 20, y - 31); c.lineTo(x + 8, y - 25); c.closePath(); c.fill();
+    c.fillRect(x - 34, y - 40, 8, 6); c.fillRect(x - 34, y - 26, 8, 6);
+    const fl = 16 + Math.sin(t * 40) * 5;
+    c.fillStyle = '#f1c877';
+    c.beginPath(); c.moveTo(x - 34, y - 36); c.lineTo(x - 34 - fl, y - 30); c.lineTo(x - 34, y - 24); c.closePath(); c.fill();
+    c.fillStyle = '#e27a4e';
+    c.beginPath(); c.moveTo(x - 34, y - 33); c.lineTo(x - 34 - fl * 0.6, y - 30); c.lineTo(x - 34, y - 27); c.closePath(); c.fill();
   }
 
   drawEagle(f) {
