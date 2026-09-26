@@ -913,7 +913,7 @@ function chatPanel(s) {
     liveOpen() ? null : h('p', { class: 'callout warn small' }, t('chatOffline')),
     h('div', { class: 'row between wrap' },
       h('span', { class: 'label' }, t('chatNeighbours')),
-      segmented({ label: t('chatNeighbours'), value: settings.chat || 'day', options: [{ value: 'always', label: t('chatAlways') }, { value: 'day', label: t('chatDay') }, { value: 'off', label: t('chatOff') }], onChange: (v) => { setLiveSetting('chat', v); render(); } })),
+      segmented({ label: t('chatNeighbours'), value: settings.chat === 'off' ? 'off' : 'always', options: [{ value: 'always', label: t('chatAlways') }, { value: 'off', label: t('chatOff') }], onChange: (v) => { setLiveSetting('chat', v); render(); } })),
     h('div', { class: 'chat-grid' },
       h('nav', { class: 'chat-threads' },
         h('span', { class: 'label' }, t('chatToYou')),

@@ -54,7 +54,7 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Siste melding:** Alle elever har en «Hold inne for å se siste melding»-boks ved siden av rollekortet, også de som aldri får info. Da står det bare «Du har ikke fått melding ennå», så sidemannen ikke kan se hvem som får noe.
 
-**Chat:** Elevene kan skrive til deg og til de to naboene sine i sirkelen. Under **💬 Chat** i spillet ser du trådene til deg (med uleste meldinger) og svarer der. Du kan også lese all naboprat, uten at elevene ser at du leser. Naboprat kan være på alltid, bare før spillet og om dagen (standard, som i vanlige regler), eller av. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
+**Chat:** Elevene kan skrive til deg og til de to naboene sine i sirkelen. Under **💬 Chat** i spillet ser du trådene til deg (med uleste meldinger) og svarer der. Du kan også lese all naboprat, uten at elevene ser at du leser. Nabopraten er hvisking og er åpen hele tiden, også om natten. Du kan slå den av i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
 
 **Dag og natt:** Bakgrunnen toner over til gul om dagen og mørk blå natthimmel om natten, hos deg, på storskjermen og hos elevene.
 

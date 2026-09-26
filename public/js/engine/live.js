@@ -6,7 +6,7 @@ import { seatName, actingId } from './state.js';
 import { msg, summary, TEAM_LABEL } from './text.js';
 import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
 
-export function publicProjection(s, { dream = true, decoys = true, chat = 'day' } = {}) {
+export function publicProjection(s, { dream = true, decoys = true, chat = 'always' } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
   const ended = s.phase.type === 'ended';
   const out = {

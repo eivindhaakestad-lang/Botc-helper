@@ -37,7 +37,7 @@ export async function startLive() {
   live.error = null;
   try {
     const { code, stToken } = await createRoom();
-    store.game.live = { code, stToken, acks: {}, responses: {}, sent: {}, settings: { dream: true, decoys: true, chat: 'day' } };
+    store.game.live = { code, stToken, acks: {}, responses: {}, sent: {}, settings: { dream: true, decoys: true, chat: 'always' } };
     store.saveGame();
     connectLive();
   } catch {

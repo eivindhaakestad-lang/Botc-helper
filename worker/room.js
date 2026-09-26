@@ -44,7 +44,7 @@ function cleanPublic(p) {
     dream: p.dream !== false,
     decoys: p.decoys !== false,
     winner: p.winner === 'good' || p.winner === 'evil' ? p.winner : null,
-    chat: ['always', 'day', 'off'].includes(p.chat) ? p.chat : 'day',
+    chat: p.chat === 'off' ? 'off' : 'always',
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
@@ -122,11 +122,9 @@ export class Room {
     if (i < 0 || n < 2) return [];
     return [...new Set([seats[(i - 1 + n) % n].id, seats[(i + 1) % n].id])].filter((x) => x !== seatId);
   }
+  // Hvisking til naboene er lov hele tiden, også om natten. Storytelleren kan slå det av.
   neighbourChatOpen() {
-    const p = this.room.public;
-    if (p.chat === 'always') return true;
-    if (p.chat === 'off') return false;
-    return p.phase.type === 'setup' || p.phase.type === 'day';
+    return this.room.public.chat !== 'off';
   }
   async chatsFor(seatId) {
     const out = {};

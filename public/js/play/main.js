@@ -320,10 +320,7 @@ function chatKeyFor(tab) {
   return tab === 'st' ? 'st|' + P.me.seatId : [P.me.seatId, tab].sort().join('|');
 }
 function neighbourChatOpen() {
-  const c = P.pub.chat || 'day';
-  if (c === 'always') return true;
-  if (c === 'off') return false;
-  return P.pub.phase.type === 'setup' || P.pub.phase.type === 'day';
+  return P.pub.chat !== 'off';
 }
 const readKey = () => 'botc-chatread-' + P.code + '-' + (P.me ? P.me.seatId : '');
 function chatRead() { try { return JSON.parse(localStorage.getItem(readKey()) || '{}'); } catch { return {}; } }
@@ -335,7 +332,7 @@ function unread(key) {
 }
 
 function chatView() {
-  const nbs = (P.pub.chat || 'day') === 'off' ? [] : neighbours();
+  const nbs = P.pub.chat === 'off' ? [] : neighbours();
   if (P.chatTab !== 'st' && !nbs.includes(P.chatTab)) P.chatTab = 'st';
   const tab = P.chatTab;
   const key = chatKeyFor(tab);
