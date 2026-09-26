@@ -143,6 +143,9 @@ const NO = {
   handsQueue: 'Håndsopprekning', handDone: 'Har snakket – ta ned hånden', clearHands: 'Tøm', handsKey: 'H fjerner den første',
   openVote: 'Åpne avstemning', reopenVote: 'Åpne avstemningen igjen', closeVote: 'Lukk avstemningen ({n} stemmer)', votingOpen: 'Elevene stemmer nå',
 
+  nomButton: 'Nominasjon', nomCancel: 'Avbryt nominasjon', nomHelp: 'Dra fra spilleren som nominerer til den som blir nominert (eller trykk på begge).',
+  nomPickNominee: '{name} nominerer – trykk eller dra til den som blir nominert.', showQr: 'Vis QR-kode',
+
   team_townsfolk: 'Townsfolk', team_outsider: 'Outsider', team_minion: 'Minion', team_demon: 'Demon', team_traveller: 'Traveller', team_none: '—',
 };
 
@@ -286,6 +289,9 @@ const EN = {
 
   handsQueue: 'Raised hands', handDone: 'Has spoken – lower the hand', clearHands: 'Clear', handsKey: 'H removes the first one',
   openVote: 'Open the vote', reopenVote: 'Reopen the vote', closeVote: 'Close the vote ({n} votes)', votingOpen: 'Students are voting',
+
+  nomButton: 'Nomination', nomCancel: 'Cancel nomination', nomHelp: 'Drag from the nominating player to the nominee (or tap both).',
+  nomPickNominee: '{name} nominates – tap or drag to the nominee.', showQr: 'Show QR code',
 
   team_townsfolk: 'Townsfolk', team_outsider: 'Outsider', team_minion: 'Minion', team_demon: 'Demon', team_traveller: 'Traveller', team_none: '—',
 };

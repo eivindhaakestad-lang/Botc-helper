@@ -649,6 +649,20 @@ button.token:hover .token-disc { transform: scale(1.05); }
 .noms-screen li { display: flex; gap: 10px; padding: 4px 8px; border-radius: var(--r-sm); }
 .noms-screen li.block { background: rgb(233 168 62 / 0.14); border: 1px solid var(--warn); }
 
+
+/* ——— nominasjon ved å dra ——— */
+.grim-pane { position: relative; }
+.grim-pane.nom-mode .grim-slot { cursor: crosshair; touch-action: none; }
+.grim-pane.nom-mode .token-disc { border-style: dashed; }
+.nom-line-wrap { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.nom-line { width: 100%; height: 100%; display: none; overflow: visible; }
+.nom-line.on { display: block; }
+.nom-line line { stroke: var(--brass-2); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 10 8; }
+.nom-banner { order: 2; align-self: center; text-align: center; padding: 8px 14px; border-radius: 999px; background: var(--brass); color: var(--brass-ink); font-weight: 700; max-width: 100%; }
+.nom-mode-btn { width: 100%; }
+.nom-mode-btn.active { border-color: var(--brass); }
+.live-join.compact { grid-template-columns: 1fr; }
+
 /* ——— responsivt ——— */
 @media (max-width: 1100px) {
   .game-body { grid-template-columns: 1fr; }

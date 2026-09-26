@@ -52,7 +52,7 @@ function render() {
   const alive = p.seats.filter((x) => x.alive).length;
   const n = Math.max(1, p.seats.length);
   const joinedAll = p.seats.length > 0 && p.seats.every((x) => (S.claimed[x.id] || 0) > 0);
-  const showJoin = !(S.room && S.room.locked) && (ph.type === 'setup' || !joinedAll);
+  const showJoin = ph.type === 'setup' && !(S.room && S.room.locked) && !joinedAll;
   const phaseText = ph.type === 'night' ? `🌙 ${T('night')} ${ph.number}` : ph.type === 'day' ? `☀️ ${T('day')} ${ph.number}` : ph.type === 'ended' ? `🏁 ${T('ended')}` : `✦ ${p.title || 'Botc Helper'}`;
   const joinedN = p.seats.filter((x) => (S.claimed[x.id] || 0) > 0).length;
   const url = joinUrl(code);

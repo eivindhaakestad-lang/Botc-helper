@@ -15,7 +15,7 @@ export function grimCircle({ seats, token, center, cls = '' }) {
       const r = 40;
       const left = 50 + r * Math.cos(a);
       const top = 50 + r * Math.sin(a);
-      return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` }, token(seat, i));
+      return h('div', { class: 'grim-slot', 'data-seat': seat.id, style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` }, token(seat, i));
     }));
 }
 

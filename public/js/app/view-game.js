@@ -97,6 +97,70 @@ function announce(s, winner) {
   dispatch({ type: 'ANNOUNCE', winner, messages: winner ? [{ kind: 'public', text: msg(s.lang, s.style, 'gameEnd', { winner }) }] : [], log: winner ? msg(s.lang, s.style, 'gameEnd', { winner }) : t('logUnannounced') });
 }
 
+// ——— nominasjon ———
+function createNomination(s, nominatorId, nomineeId) {
+  if (!nominatorId || !nomineeId) return;
+  const vc = virginCheck(s, nominatorId, nomineeId, ui());
+  dispatch({ type: 'NOMINATE', nominationId: uid('n_'), nominatorId, nomineeId, effects: vc ? vc.effects : [], log: `${seatName(getSeat(s, nominatorId))} → ${seatName(getSeat(s, nomineeId))}` });
+  if (vc && (vc.trigger || vc.maybe)) app.pending.push({ type: 'virgin', text: vc.text, nominatorId });
+  const w = nominationWarnings(s, nominatorId, nomineeId, ui());
+  if (w.length) toast(w.join(' · '), 'warn');
+  app.nomMode = null;
+  render();
+}
+
+function startNomMode() {
+  app.nomMode = { from: null };
+  app.focusMode = false;
+  render();
+}
+
+// Dra fra nominatoren til den nominerte i grimen (eller trykk én og så den andre).
+function nomDragHandlers() {
+  let from = null;
+  let line = null;
+  const slotAt = (x, y) => { const el = document.elementFromPoint(x, y); const slot = el && el.closest('.grim-slot'); return slot ? slot.dataset.seat : null; };
+  const center = (pane, id) => {
+    const el = pane.querySelector(`.grim-slot[data-seat="${id}"] .token-disc`);
+    const r = el.getBoundingClientRect(); const p = pane.getBoundingClientRect();
+    return [r.left + r.width / 2 - p.left, r.top + r.height / 2 - p.top];
+  };
+  return {
+    onpointerdown: (e) => {
+      if (!app.nomMode) return;
+      const id = slotAt(e.clientX, e.clientY);
+      if (!id) return;
+      e.preventDefault();
+      from = id;
+      const pane = e.currentTarget;
+      const [x, y] = center(pane, id);
+      line = pane.querySelector('.nom-line');
+      line.querySelector('line').setAttribute('x1', x); line.querySelector('line').setAttribute('y1', y);
+      line.querySelector('line').setAttribute('x2', x); line.querySelector('line').setAttribute('y2', y);
+      line.classList.add('on');
+    },
+    onpointermove: (e) => {
+      if (!from || !line) return;
+      const p = e.currentTarget.getBoundingClientRect();
+      line.querySelector('line').setAttribute('x2', e.clientX - p.left); line.querySelector('line').setAttribute('y2', e.clientY - p.top);
+    },
+    onpointerup: (e) => {
+      if (!from) return;
+      const to = slotAt(e.clientX, e.clientY);
+      if (line) line.classList.remove('on');
+      const start = from;
+      from = null; line = null;
+      const s = store.state();
+      if (to && to !== start) { createNomination(s, start, to); return; }
+      if (to === start) {
+        // Trykk-trykk: første trykk velger nominator, andre trykk den nominerte.
+        if (app.nomMode.from && app.nomMode.from !== start) createNomination(s, app.nomMode.from, start);
+        else { app.nomMode.from = start; render(); }
+      }
+    },
+  };
+}
+
 // ——— toppfelt ———
 function gameBar(s) {
   const canUndo = store.game.events.length > 0;
@@ -152,7 +216,7 @@ function grimView(s, activeIds) {
       index: i,
       dead: !seat.alive,
       ghost: seat.alive ? null : seat.ghostVote,
-      active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)),
+      active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)) || !!(app.nomMode && app.nomMode.from === seat.id),
       hand: store.game.live && live.hands.includes(seat.id) ? live.hands.indexOf(seat.id) + 1 : null,
       alignment: seat.alignment,
       reminders: [
@@ -162,7 +226,7 @@ function grimView(s, activeIds) {
       sub: s.phase.type === 'ended' ? ((s.revealed || []).includes(seat.id) ? '👁 ' + t('revealedShort') : t('hiddenShort')) : null,
       onClick: s.phase.type === 'ended'
         ? () => ((s.revealed || []).includes(seat.id) ? hideSeats(s, [seat.id]) : revealSeats(s, [seat.id]))
-        : () => openModal(() => seatModal(seat.id)),
+        : () => { if (!app.nomMode) openModal(() => seatModal(seat.id)); },
     }),
     center: s.phase.type === 'ended' ? h('div', { class: 'center-text' },
       h('span', { class: 'display center-phase' }, t('revealTitle')),
@@ -559,12 +623,9 @@ function dayPanel(s) {
 
   const nominate = () => {
     if (!df.nominator || !df.nominee) return;
-    const vc = virginCheck(s, df.nominator, df.nominee, lang);
-    const id = uid('n_');
-    dispatch({ type: 'NOMINATE', nominationId: id, nominatorId: df.nominator, nomineeId: df.nominee, effects: vc ? vc.effects : [], log: `${seatName(getSeat(s, df.nominator))} → ${seatName(getSeat(s, df.nominee))}` });
-    if (vc && (vc.trigger || vc.maybe)) app.pending.push({ type: 'virgin', text: vc.text, nominatorId: df.nominator });
+    const a = df.nominator; const b = df.nominee;
     df.nominator = null; df.nominee = null;
-    render();
+    createNomination(s, a, b);
   };
   const liveVote = (nom) => (live.vote && live.vote.id === nom.id ? live.vote : null);
   const saveVote = (nom, voters) => dispatch({ type: 'VOTE', sk: 'vote:' + nom.id, nominationId: nom.id, voters, log: `${t('votes')}: ${seatName(getSeat(s, nom.nomineeId))} ${voters.length}` });
@@ -608,6 +669,9 @@ function dayPanel(s) {
       h('div', { class: 'row between wrap' },
         h('h3', { class: 'section-title' }, t('nominations')),
         h('span', { class: 'muted small' }, t('votesNeeded', { n: need }))),
+      h('button', { class: 'btn big nom-mode-btn' + (app.nomMode ? ' active' : ' primary'), onclick: () => { if (app.nomMode) { app.nomMode = null; render(); } else startNomMode(); } },
+        app.nomMode ? '✕ ' + t('nomCancel') : '⚖️ ' + t('nomButton')),
+      app.nomMode ? h('p', { class: 'callout small' }, app.nomMode.from ? t('nomPickNominee', { name: seatName(getSeat(s, app.nomMode.from)) }) : t('nomHelp')) : null,
       h('div', { class: 'row gap wrap nominate-form' },
         playerSelect({ id: 'nom-by', s, value: df.nominator, filter: 'alive', onChange: (v) => { df.nominator = v; render(); } }),
         h('span', { class: 'muted' }, '→'),
@@ -840,8 +904,8 @@ function livePanel(s) {
         h('span', { class: 'row gap' }, h('span', { class: 'dot' + (live.status === 'open' ? ' on' : live.status === 'dead' ? ' dead' : '') }), statusText),
         h('span', { class: 'room-code display' }, l.code)),
       live.status === 'dead' ? h('p', { class: 'warn-text small' }, t('liveDeadHelp')) : null,
-      h('div', { class: 'live-join' },
-        h('div', { class: 'qr', html: qrSvg(join, { size: 180 }) }),
+      h('div', { class: 'live-join' + (s.phase.type === 'setup' || app.showQr ? '' : ' compact') },
+        s.phase.type === 'setup' || app.showQr ? h('div', { class: 'qr', html: qrSvg(join, { size: 180 }) }) : h('button', { class: 'btn small ghost', onclick: () => { app.showQr = true; render(); } }, t('showQr')),
         h('div', { class: 'stack tight' },
           h('span', { class: 'label' }, t('studentLink')),
           h('code', { class: 'link-text' }, join),
@@ -898,7 +962,10 @@ export function viewGame() {
   return h('div', { class: 'game' + (app.focusMode ? ' focus' : '') + ' phase-' + s.phase.type },
     gameBar(s),
     h('div', { class: 'game-body' },
-      app.focusMode ? null : h('section', { class: 'grim-pane', 'aria-label': 'Grimoire' }, grimView(s, activeIds),
+      app.focusMode ? null : h('section', { class: 'grim-pane' + (app.nomMode ? ' nom-mode' : ''), 'aria-label': 'Grimoire', ...(s.phase.type === 'day' ? nomDragHandlers() : {}) },
+        s.phase.type === 'day' && app.nomMode ? h('div', { class: 'nom-banner' }, app.nomMode.from ? t('nomPickNominee', { name: seatName(getSeat(s, app.nomMode.from)) }) : t('nomHelp')) : null,
+        h('div', { class: 'nom-line-wrap', 'aria-hidden': 'true', html: '<svg class="nom-line"><line x1="0" y1="0" x2="0" y2="0"/></svg>' }),
+        grimView(s, activeIds),
         h('p', { class: 'muted small center' }, s.phase.type === 'ended' ? t('grimHintReveal') : t('grimHint'))),
       h('section', { class: 'side-pane' },
         handsBar(s),
@@ -920,6 +987,7 @@ export function gameKeydown(e) {
   if (mod && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
   if (typing || mod || e.altKey) return;
   if (e.key === 'f' || e.key === 'F') { app.focusMode = !app.focusMode; render(); return; }
+  if (e.key === 'Escape' && app.nomMode) { app.nomMode = null; render(); return; }
   if ((e.key === 'h' || e.key === 'H') && live.hands.length) { lowerHand(live.hands[0]); render(); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); app.gameTab = 'notes'; render(); setTimeout(() => { const el = document.getElementById('note-input'); if (el) el.focus(); }, 30); return; }
   if (!current) return;

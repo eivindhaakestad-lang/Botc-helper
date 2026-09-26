@@ -44,7 +44,9 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Håndsopprekning:** Før spillet og om dagen kan elevene rekke opp hånden på PC-en. Rekkefølgen vises hos deg, hos eleven og på storskjermen. Trykk på navnet (eller H for den første) når eleven har snakket. Rekker de opp igjen, havner de nederst. Køen tømmes ved hvert faseskifte.
 
-**Avstemning:** Registrer nominasjonen i Dag-fanen og trykk **🗳 Åpne avstemning**. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
+**Nominasjon:** Trykk **⚖️ Nominasjon** i Dag-fanen og dra i grimen fra spilleren som nominerer til den som blir nominert (eller trykk på begge). Esc avbryter.
+
+**Avstemning:** Registrer nominasjonen og trykk **🗳 Åpne avstemning**. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
 
 **Drømmespillet** er åpent både før spillet starter og om natten. Topplisten gjelder hele spillrunden.
 
