@@ -21,10 +21,14 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     rolesOut: !!rolesOut || s.phase.type !== 'setup',
     winner: s.winner || null,
   };
+  // Nattens dødsfall er hemmelige til Storytelleren kunngjør dem om morgenen:
+  // om natten og på dagen før «Kunngjør natten» vises de som levende.
+  const hideNight = s.phase.type === 'night' || (s.phase.type === 'day' && s.dawnHidden);
+  if (hideNight) {
+    const tonight = new Set(s.deaths.filter((d) => !d.revived && d.phase && d.phase.type === 'night' && d.phase.number === s.phase.number).map((d) => d.seatId));
+    out.seats = out.seats.map((x) => (tonight.has(x.id) ? { ...x, alive: true, ghostVote: true } : x));
+  }
   if (s.phase.type === 'day' && s.dawnHidden) {
-    // Byen har ikke fått vite hvem som døde i natt ennå: vis dem som levende og ingen kunngjøring.
-    const lastNight = new Set(s.deaths.filter((d) => !d.revived && d.phase && d.phase.type === 'night' && d.phase.number === s.phase.number).map((d) => d.seatId));
-    out.seats = out.seats.map((x) => (lastNight.has(x.id) ? { ...x, alive: true, ghostVote: true } : x));
     out.announcement = '';
     out.dawnPending = true;
   }
