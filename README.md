@@ -46,7 +46,7 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Nominasjon:** Trykk **⚖️ Nominasjon** i Dag-fanen og dra i grimen fra spilleren som nominerer til den som blir nominert (eller trykk på begge). Esc avbryter.
 
-**Avstemning:** Registrer nominasjonen og trykk **🗳 Åpne avstemning**. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
+**Avstemning:** Når du registrerer en nominasjon (for eksempel ved å dra), åpnes avstemningen av seg selv på elevenes PC-er. Du starter klokka når du er klar. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
 
 **Avstemningsklokka:** Når avstemningen er åpen, trykker du **🕐 Start klokka**. Etter 3 sekunders nedtelling går en viser rundt sirkelen, én plass om gangen. Hver elev må stemme før viseren når dem, og da låses stemmen. Viseren starter hos spilleren etter den nominerte og ender hos den nominerte, som i de offisielle reglene. I Live-panelet kan du heller velge at den starter hos den som nominerer, og hvor lang tid den bruker per plass. Når viseren er ferdig, lagres stemmene av seg selv. Storskjermen og elevene ser en pil fra den som nominerer til den som er nominert.
 

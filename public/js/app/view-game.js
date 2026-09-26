@@ -107,7 +107,14 @@ function createNomination(s, nominatorId, nomineeId) {
   if (!nominatorId || !nomineeId) return;
   if (live.vote && !live.vote.open) clearVote(); // forrige avstemning er ferdig – rydd skjermen
   const vc = virginCheck(s, nominatorId, nomineeId, ui());
-  dispatch({ type: 'NOMINATE', nominationId: uid('n_'), nominatorId, nomineeId, effects: vc ? vc.effects : [], log: `${seatName(getSeat(s, nominatorId))} → ${seatName(getSeat(s, nomineeId))}` });
+  const nominationId = uid('n_');
+  dispatch({ type: 'NOMINATE', nominationId, nominatorId, nomineeId, effects: vc ? vc.effects : [], log: `${seatName(getSeat(s, nominatorId))} → ${seatName(getSeat(s, nomineeId))}` });
+  // Avstemningen åpnes med en gang på elevenes PC-er; du starter klokka når du er klar.
+  if (liveOpen()) {
+    const s2 = store.state();
+    const nom = s2.nominations.find((n) => n.id === nominationId);
+    if (nom) openVote(nom, voteThreshold(s2));
+  }
   if (vc && (vc.trigger || vc.maybe)) app.pending.push({ type: 'virgin', text: vc.text, nominatorId });
   const w = nominationWarnings(s, nominatorId, nomineeId, ui());
   if (w.length) toast(w.join(' · '), 'warn');
