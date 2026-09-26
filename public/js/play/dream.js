@@ -10,7 +10,8 @@ const GRAVITY = 2500;
 const JUMP_V = -860;
 const CUT_V = -330;
 const EAGLE_FROM = 30;
-const EAGLE_TOP = GROUND - 80; // ørnen flyr like over hodet når du løper
+const EAGLE_TOP = GROUND - 80; // laveste høyde: like over hodet når du løper (kolliderer aldri da)
+const EAGLE_HIGH = GROUND - 150; // høyeste høyde
 const EAGLE_H = 30;
 
 export class DreamGame {
@@ -132,7 +133,8 @@ export class DreamGame {
     if (this.state !== 'running') return;
     if (this.countdown > 0) { this.countdown -= dt; return; }
     this.time += dt;
-    this.speed = Math.min(920, 360 + this.time * 9);
+    // Farten øker jevnt hele tiden (også etter 50 poeng), opp til et tak langt fram.
+    this.speed = Math.min(1650, 380 + this.time * 12);
     const sh = this.sheep;
     sh.vy += GRAVITY * dt;
     sh.y += sh.vy * dt;
@@ -143,18 +145,21 @@ export class DreamGame {
     if (this.nextGap <= 0) {
       // Ørn: fra ca. 30 poeng, stadig oftere, men aldri to rett etter hverandre
       const lastEagle = this.fences.length && this.fences[this.fences.length - 1].eagle;
-      const eagleChance = this.score + this.fences.length >= EAGLE_FROM ? Math.min(0.5, 0.3 + (this.score - EAGLE_FROM) / 100) : 0;
+      const eagleChance = this.score + this.fences.length >= EAGLE_FROM ? Math.min(0.25, 0.14 + (this.score - EAGLE_FROM) / 400) : 0;
       if (!lastEagle && Math.random() < eagleChance) {
-        this.fences.push({ x: W + 10, w: 54, h: EAGLE_H, y: EAGLE_TOP, eagle: true, flap: Math.random() * 6, passed: false });
+        const baseY = EAGLE_HIGH + Math.random() * (EAGLE_TOP - EAGLE_HIGH);
+        this.fences.push({ x: W + 10, w: 54, h: EAGLE_H, y: baseY, baseY, eagle: true, flap: Math.random() * 6, passed: false });
         if (!this.eagleWarned) { this.eagleWarned = true; this.eagleMsg = 1.8; }
       } else {
         const tall = Math.random() < Math.min(0.55, 0.15 + this.time / 90);
-        const double = this.time > 25 && Math.random() < 0.22;
+        const double = this.time > 25 && Math.random() < Math.min(0.4, 0.22 + (this.time - 25) / 300);
         const w = double ? 44 : 18 + Math.random() * 14;
         const h = tall ? 54 + Math.random() * 12 : 32 + Math.random() * 14;
         this.fences.push({ x: W + 10, w, h, passed: false });
       }
-      this.nextGap = this.speed * (0.75 + Math.random() * 0.95) + 120;
+      // Avstanden krymper litt etter hvert, men aldri så mye at et hopp ikke rekker å lande.
+      const tight = Math.max(0.75, 1.15 - this.time / 250);
+      this.nextGap = this.speed * (0.75 + Math.random() * (tight - 0.2)) + 120;
     }
     if (this.eagleMsg > 0) this.eagleMsg -= dt;
     for (const f of this.fences) {
@@ -162,7 +167,7 @@ export class DreamGame {
       if (f.eagle) {
         f.flap += dt * 12;
         const near = !f.passed && f.x - sh.x < 240 && f.x + f.w > sh.x - 24;
-        const target = near && !sh.onGround ? sh.y - 40 : EAGLE_TOP;
+        const target = near && !sh.onGround ? sh.y - 40 : f.baseY;
         const step = (near && !sh.onGround ? 1100 : 260) * dt;
         f.y += Math.max(-step, Math.min(step, target - f.y));
       }
