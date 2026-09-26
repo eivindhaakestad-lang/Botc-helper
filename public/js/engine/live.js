@@ -6,7 +6,7 @@ import { seatName, actingId } from './state.js';
 import { msg, summary, TEAM_LABEL } from './text.js';
 import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
 
-export function publicProjection(s, { dream = true, decoys = true, chat = 'always' } = {}) {
+export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
   const ended = s.phase.type === 'ended';
   const out = {
@@ -16,6 +16,8 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     seats: s.seats.map((x) => ({ id: x.id, names: x.names.slice(), alive: x.alive, ghostVote: x.ghostVote })),
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
     dream, decoys, chat,
+    // Rollene deles ut når Storytelleren trykker «Send ut roller», og alltid når spillet er i gang.
+    rolesOut: !!rolesOut || s.phase.type !== 'setup',
     winner: s.winner || null,
   };
   if (s.phase.type === 'day') {

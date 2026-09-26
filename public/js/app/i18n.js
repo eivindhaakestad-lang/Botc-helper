@@ -131,7 +131,10 @@ const NO = {
   askAll: 'Be om alle nattvalg', askAllHelp: '{n} spillere kan velge i appen nå', askChoice: 'Be om valg', askAgain: 'Send på nytt',
   askHint: 'Be {name} velge i appen', notInApp: '{name} er ikke i appen – før inn valget selv', waitingFor: 'Venter på {name} …', playerChose: '{name} valgte {list}',
   choiceArrived: '{name} valgte {list}', stSent: 'Sendt', stRead: 'Lest', stAnswered: 'Svart', inApp: 'I appen',
-  roleCardsLive: 'Elevene ser rollekortet sitt i appen så snart de har valgt plass (hold inne for å vise). Kopier til Teams bare for elever uten PC.',
+  roleCardsLive: 'Når du har sendt ut rollene, ser elevene rollekortet sitt i appen (hold inne for å vise). Kopier til Teams bare for elever uten PC.',
+  sendRoles: 'Send ut roller', rolesNotOut: 'Rollene er ikke sendt ut', rolesAreOut: 'Rollene er sendt ut', joinedOf: '{a} av {n} har satt seg',
+  notSeated: 'Ikke satt seg ennå: {list}', rolesOutHelp: 'Sjekk at alle sitter på riktig plass. Elevene ser rollen og meldingsboksen først når du trykker «Send ut roller». Starter du natt 1, sendes rollene ut automatisk.',
+  rolesHide: 'Skjul rollene igjen', rolesSent: 'Rollene er sendt ut',
 
   endGameReveal: 'Avslutt spillet – grim reveal', endGameMenuHelp: 'Storskjermen og elevene ser da bare grimen med navn. Du avslører rollene og annonserer vinneren når du vil.',
   revealTitle: 'Grim reveal', revealHelp: 'Avslør rollene én og én ved å trykke på spillerne i grimen, og annonser vinneren når du vil.',
@@ -285,7 +288,10 @@ const EN = {
   askAll: 'Ask for all night choices', askAllHelp: '{n} players can choose in the app now', askChoice: 'Ask for choice', askAgain: 'Send again',
   askHint: 'Ask {name} to choose in the app', notInApp: '{name} is not in the app – enter the choice yourself', waitingFor: 'Waiting for {name} …', playerChose: '{name} chose {list}',
   choiceArrived: '{name} chose {list}', stSent: 'Sent', stRead: 'Read', stAnswered: 'Answered', inApp: 'In the app',
-  roleCardsLive: 'Students see their character card in the app as soon as they pick a seat (press and hold to show). Copy to Teams only for students without a computer.',
+  roleCardsLive: 'Once you have sent out the characters, students see their character card in the app (press and hold to show). Copy to Teams only for students without a computer.',
+  sendRoles: 'Send out characters', rolesNotOut: 'Characters have not been sent out', rolesAreOut: 'Characters are sent out', joinedOf: '{a} of {n} are seated',
+  notSeated: 'Not seated yet: {list}', rolesOutHelp: 'Check that everyone is in the right seat. Students see their character and message box only when you press “Send out characters”. Starting night 1 sends them out automatically.',
+  rolesHide: 'Hide the characters again', rolesSent: 'Characters sent out',
 
   endGameReveal: 'End the game – grim reveal', endGameMenuHelp: 'The big screen and students then see only the grim with names. You reveal the characters and announce the winner whenever you like.',
   revealTitle: 'Grim reveal', revealHelp: 'Reveal the characters one by one by tapping the players in the grim, and announce the winner whenever you like.',

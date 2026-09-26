@@ -9,7 +9,7 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer, sendRoles, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -574,10 +574,29 @@ function nightPanel(s) {
     cur ? stepCard(s, cur, q) : dawnCard(s, q));
 }
 
+// «Send ut roller»: elevene ser ikke rolle eller meldingsboks før du har sjekket at alle sitter riktig.
+function rolesOutCard(s) {
+  const l = store.game.live;
+  const out = !!(l.settings && l.settings.rolesOut);
+  const joined = s.seats.filter((x) => claimed(x.id)).length;
+  const missing = s.seats.filter((x) => !claimed(x.id)).map(seatName);
+  return h('div', { class: 'panel roles-out' + (out ? ' done' : '') },
+    h('div', { class: 'row between wrap' },
+      h('span', { class: 'strong' }, out ? '✓ ' + t('rolesAreOut') : '📨 ' + t('rolesNotOut')),
+      h('span', { class: 'muted small' }, t('joinedOf', { a: joined, n: s.seats.length }))),
+    !out && missing.length ? h('p', { class: 'small warn-text' }, t('notSeated', { list: missing.join(', ') })) : null,
+    !out ? h('p', { class: 'muted small' }, t('rolesOutHelp')) : null,
+    h('div', { class: 'row gap wrap' },
+      out
+        ? h('button', { class: 'btn ghost small', onclick: () => sendRoles(false) }, t('rolesHide'))
+        : h('button', { class: 'btn primary big', disabled: !liveOpen(), onclick: () => { sendRoles(true); toast(t('rolesSent')); } }, '📨 ' + t('sendRoles'))));
+}
+
 function setupPanel(s) {
   const cards = s.messages.filter((m) => m.tag === 'roleCard');
   const copiedN = cards.filter((m) => store.game.copied[m.id]).length;
   return h('div', { class: 'stack' },
+    store.game.live ? rolesOutCard(s) : null,
     h('div', { class: 'step-card' },
       h('span', { class: 'eyebrow' }, t('phaseSetup')),
       h('h2', { class: 'step-role display' }, t('roleCards')),

@@ -33,7 +33,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}',
+    newChat: 'Ny melding fra {name}', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -58,7 +58,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}',
+    newChat: 'New message from {name}', rolesOut: 'Characters are out! Press and hold to see yours.',
   },
 };
 
@@ -100,11 +100,13 @@ function onMessage(m) {
   switch (m.t) {
     case 'public': {
       const before = P.pub && P.pub.phase;
+      const wasHidden = !!(P.pub && P.pub.rolesOut === false);
       P.pub = m.public;
       P.room = m.room;
       P.claimed = m.claimed || {};
       P.hands = m.hands || [];
       const pv = P.vote;
+      if (wasHidden && P.pub.rolesOut !== false && P.me) { toast('🎭 ' + T('rolesOut')); sfx.reveal(); }
       P.vote = m.vote || null;
       P.timer = m.timer || null;
       if (m.now) P.offset = m.now - Date.now();
@@ -485,7 +487,7 @@ function homeView() {
     phaseBanner(),
     timerView(),
     voteView(),
-    h('div', { class: 'hold-row' },
+    P.pub.rolesOut === false ? null : h('div', { class: 'hold-row' },
       P.roleCard
         ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
         : h('p', { class: 'muted' }, T('noRole')),

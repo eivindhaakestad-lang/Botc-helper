@@ -35,7 +35,7 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 1. Trykk **📡 Live → Start live-rom** i spillet.
 2. Åpne **storskjermen** på PC-en som er koblet til projektoren. Den viser QR-kode og romkode, og elevene skanner eller går til `…/play` og trykker på navnet sitt.
-3. Når alle er inne, låser du rommet. Rollekortet ser hver elev selv ved å holde inne.
+3. Når alle har satt seg og alt ser riktig ut, trykker du **📨 Send ut roller** (i Rollekort-fanen). Før det ser elevene alt annet, men ikke rollen eller meldingsboksen. Så ser hver elev rollen sin ved å holde inne. Starter du natt 1 uten å ha trykket, sendes rollene ut automatisk. Lås gjerne rommet.
 4. Om natten trykker du **Be om alle nattvalg**. Elevene velger i appen, og svarene fyller inn feltene i nattkortet ditt (✉ i nattkøen). **Send og fullfør** (Enter) sender meldingen rett til eleven.
 5. **Drømmespillet:** om natten kan elevene spille «Tell sauer» med rekord og toppliste for natten. Når du sender et kort, pauses spillet til eleven har lest eller valgt. Om dagen stenges spillet.
 6. **Falske vekkinger:** alle får 1–2 like kort i løpet av natten («Ingenting skjer – sov videre»), så sidemannen ikke ser hvem som faktisk blir vekket. Slås av i Live-panelet.

@@ -156,7 +156,8 @@ export function syncLive() {
   const s = store.state();
   if (!s) return;
   const pub = publicProjection(s, l.settings || {});
-  const cards = roleCardsFor(s);
+  // Før rollene er sendt ut, får elevene ingen rollekort.
+  const cards = pub.rolesOut ? roleCardsFor(s) : Object.fromEntries(s.seats.map((x) => [x.id, null]));
   const payload = JSON.stringify([pub, cards]);
   if (payload === live.lastSync) return;
   live.lastSync = payload;
@@ -193,6 +194,11 @@ export function setLiveSetting(key, value) {
   if (!l) return;
   l.settings = { ...(l.settings || {}), [key]: value };
   store.saveGame();
+}
+
+export function sendRoles(on = true) {
+  setLiveSetting('rolesOut', on);
+  syncLive();
 }
 
 export function setLocked(locked) {
