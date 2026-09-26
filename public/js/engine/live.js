@@ -15,11 +15,19 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     phase: { type: s.phase.type, number: s.phase.number },
     seats: s.seats.map((x) => ({ id: x.id, names: x.names.slice(), alive: x.alive, ghostVote: x.ghostVote })),
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
+    dawnPending: false,
     dream, decoys, chat,
     // Rollene deles ut når Storytelleren trykker «Send ut roller», og alltid når spillet er i gang.
     rolesOut: !!rolesOut || s.phase.type !== 'setup',
     winner: s.winner || null,
   };
+  if (s.phase.type === 'day' && s.dawnHidden) {
+    // Byen har ikke fått vite hvem som døde i natt ennå: vis dem som levende og ingen kunngjøring.
+    const lastNight = new Set(s.deaths.filter((d) => !d.revived && d.phase && d.phase.type === 'night' && d.phase.number === s.phase.number).map((d) => d.seatId));
+    out.seats = out.seats.map((x) => (lastNight.has(x.id) ? { ...x, alive: true, ghostVote: true } : x));
+    out.announcement = '';
+    out.dawnPending = true;
+  }
   if (s.phase.type === 'day') {
     // Nominasjoner og stemmetall er offentlige – alle ser dem ved bordet uansett.
     const block = onTheBlock(s);

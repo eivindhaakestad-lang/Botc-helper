@@ -40,6 +40,7 @@ export function createGame({ seats, script, lang = 'no', style = 'short', bluffs
     phase: { type: 'setup', number: 0 },
     progress: {},
     deaths: [],
+    dawnHidden: false,
     executions: [],
     nominations: [],
     messages: messages.map((m, i) => ({ id: m.id || 'setup#' + i, phase: { type: 'setup', number: 0 }, ...m })),
@@ -145,8 +146,13 @@ export function applyEvent(s, ev) {
       for (const seat of s.seats) seat.reminders = seat.reminders.filter((r) => r.expires !== 'dawn');
       s.phase = { type: 'day', number: s.phase.number };
       pushMessages(s, ev, ev.messages, s.phase);
+      // Nattens dødsfall holdes skjult for elevene til Storytelleren kunngjør dem.
+      s.dawnHidden = ev.hold !== false;
       break;
     }
+    case 'DAWN_REVEAL':
+      s.dawnHidden = false;
+      break;
     case 'STEP': {
       s.progress[ev.key] = { status: ev.status, input: ev.input || null };
       if (ev.status === 'done') {

@@ -831,3 +831,6 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .roles-out { border-color: var(--brass); background: linear-gradient(180deg, rgb(216 166 79 / 0.14), var(--bg-2)); }
 .roles-out.done { border-color: var(--ok); background: var(--bg-2); }
 .roles-out.done .strong { color: var(--ok); }
+.dawn-wait { animation: pulse 1.8s ease-in-out infinite; }
+.dawn-reveal { border-top-color: var(--brass-2); }
+.announce-play { font-size: var(--f-lg); white-space: pre-wrap; }

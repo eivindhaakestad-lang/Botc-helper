@@ -46,6 +46,7 @@ function cleanPublic(p) {
     winner: p.winner === 'good' || p.winner === 'evil' ? p.winner : null,
     chat: p.chat === 'off' ? 'off' : 'always',
     rolesOut: p.rolesOut !== false,
+    dawnPending: !!p.dawnPending,
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);

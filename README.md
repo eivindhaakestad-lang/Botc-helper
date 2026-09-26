@@ -52,6 +52,8 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
 
+**Daggry:** Når du starter dagen, ser elevene og storskjermen at det er dag, men ikke hvem som døde i natt («Byen våkner …»). Du ser hvem som døde, og trykker **📣 Kunngjør natten** (eller Enter) når du er klar. Da dukker dødsfallene og morgenmeldingen opp, og storskjermen spiller en lyd.
+
 **Siste melding:** Alle elever har en «Hold inne for å se siste melding»-boks ved siden av rollekortet, også de som aldri får info. Da står det bare «Du har ikke fått melding ennå», så sidemannen ikke kan se hvem som får noe.
 
 **Chat:** Elevene kan skrive til deg og til de to naboene sine i sirkelen. Under **💬 Chat** i spillet ser du trådene til deg (med uleste meldinger) og svarer der. Du kan også lese all naboprat, uten at elevene ser at du leser. Nabopraten er hvisking og er åpen hele tiden, også om natten. Du kan slå den av i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.

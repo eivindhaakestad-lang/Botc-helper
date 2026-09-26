@@ -76,6 +76,11 @@ function startDay(text) {
   app.dayForm = null;
 }
 
+function revealDawn() {
+  dispatch({ type: 'DAWN_REVEAL', log: t('logDawnReveal') });
+  render();
+}
+
 function endGame(winner) {
   dispatch({ type: 'GAME_END', winner: winner || null, log: t('logGameEnd') });
   app.pending = [];
@@ -682,6 +687,16 @@ function dayPanel(s) {
     render();
   };
 
+  if (s.dawnHidden) {
+    const died = s.deaths.filter((d) => !d.revived && d.phase && d.phase.type === 'night' && d.phase.number === s.phase.number).map((d) => seatName(getSeat(s, d.seatId)));
+    return h('div', { class: 'stack day-panel' },
+      h('article', { class: 'step-card dawn-reveal' },
+        h('span', { class: 'eyebrow' }, '🌅 ' + t('dawnWaiting')),
+        h('h2', { class: 'step-role display' }, died.length ? '† ' + died.join(', ') : t('dawnNoDeaths')),
+        h('p', { class: 'step-instruction' }, t('dawnRevealHelp')),
+        dawn.length ? h('p', { class: 'callout small' }, dawn[dawn.length - 1].text) : null,
+        h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: revealDawn }, '📣 ' + t('dawnReveal') + '  ⏎'))));
+  }
   return h('div', { class: 'stack day-panel' },
     dawn.length ? h('div', { class: 'stack tight' }, dawn.map((m) => messageCard(s, m))) : null,
     timer(),
@@ -1086,6 +1101,10 @@ export function gameKeydown(e) {
   if (e.key === 'Escape' && app.nomMode) { app.nomMode = null; render(); return; }
   if ((e.key === 'h' || e.key === 'H') && live.hands.length) { lowerHand(live.hands[0]); render(); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); app.gameTab = 'notes'; render(); setTimeout(() => { const el = document.getElementById('note-input'); if (el) el.focus(); }, 30); return; }
+  if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && app.gameTab === 'phase') {
+    const st = store.state();
+    if (st && st.phase.type === 'day' && st.dawnHidden) { e.preventDefault(); revealDawn(); return; }
+  }
   if (!current) return;
   const { s, step, d, q } = current;
   if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') { e.preventDefault(); completeStep(s, step, d, q); return; }

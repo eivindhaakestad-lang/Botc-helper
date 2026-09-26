@@ -277,3 +277,21 @@ test('grim reveal: publiserer bare avslørte roller og annonsert vinner', async 
   ev.pop();
   assert.equal(publicProjection(replay(g, ev)).winner, null, 'angre fjerner annonseringen');
 });
+
+test('daggry: nattens dødsfall er skjult for elevene til Storytelleren kunngjør dem', async () => {
+  const { publicProjection } = await import('../public/js/engine/live.js');
+  const chars = ['washerwoman', 'drunk', 'monk', 'empath', 'undertaker', 'mayor', 'poisoner', 'imp', 'scarletwoman', 'chef'];
+  const g = makeGame(chars, { drunkShown: 'librarian' });
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'DAWN_REVEAL' }, { type: 'NIGHT_START' },
+    { type: 'EFFECTS', effects: [{ t: 'kill', seatId: 's3', cause: 'demon' }] },
+    { type: 'DAY_START', messages: [{ kind: 'public', text: 'Tarjei døde i natt' }] }];
+  let p = publicProjection(replay(g, ev));
+  assert.equal(p.dawnPending, true);
+  assert.equal(p.seats.find((x) => x.id === 's3').alive, true, 'Tarjei ser levende ut før kunngjøringen');
+  assert.equal(p.announcement, '');
+  ev.push({ type: 'DAWN_REVEAL' });
+  p = publicProjection(replay(g, ev));
+  assert.equal(p.dawnPending, false);
+  assert.equal(p.seats.find((x) => x.id === 's3').alive, false);
+  assert.equal(p.announcement, 'Tarjei døde i natt');
+});
