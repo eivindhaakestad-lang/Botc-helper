@@ -5,6 +5,9 @@ import { h, toast } from '../app/dom.js';
 import { LiveClient } from '../live/client.js';
 import { DreamGame } from './dream.js';
 import { revealCircle } from '../live/reveal.js';
+import { voteCircle, tickVoteCircle, lockAt } from '../live/voteclock.js';
+import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
+import { applyTheme } from '../live/theme.js';
 
 const TXT = {
   no: {
@@ -24,6 +27,9 @@ const TXT = {
     voteTitle: '{a} nominerte {b}', voteYes: '✋ Jeg stemmer for å henrette', voteUndo: '✓ Du stemmer – trykk for å angre', voteOpen: 'Stem nå!',
     voteClosed: 'Avstemningen er lukket', voteCount: '{n} av {need} stemmer trengs', ghostWarn: 'Du er død: dette bruker din ene ghost vote.',
     noGhost: 'Du har brukt ghost vote-en din og kan ikke stemme.', onBlock: 'På blokka: {name} ({n} stemmer)', nomsToday: 'Nominasjoner i dag', executedToday: 'Henrettet i dag: {name}',
+    nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', voteBefore: 'Stem før viseren når deg!',
+    lockedYes: '🔒 Stemmen din er låst: du stemte for', lockedNo: '🔒 Viseren har passert deg: du stemte ikke', votelocked: 'For sent – viseren har passert deg.',
+    timer: 'Tid', timeUp: 'Tiden er ute!', sound: 'Lyd',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -42,6 +48,9 @@ const TXT = {
     voteTitle: '{a} nominated {b}', voteYes: '✋ I vote to execute', voteUndo: '✓ You are voting – tap to undo', voteOpen: 'Vote now!',
     voteClosed: 'The vote is closed', voteCount: '{n} of {need} votes needed', ghostWarn: 'You are dead: this uses your one ghost vote.',
     noGhost: 'You have used your ghost vote and cannot vote.', onBlock: 'On the block: {name} ({n} votes)', nomsToday: 'Nominations today', executedToday: 'Executed today: {name}',
+    nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', voteBefore: 'Vote before the hand reaches you!',
+    lockedYes: '🔒 Your vote is locked: you voted yes', lockedNo: '🔒 The hand has passed you: you did not vote', votelocked: 'Too late – the hand has passed you.',
+    timer: 'Time', timeUp: 'Time is up!', sound: 'Sound',
   },
 };
 
@@ -50,7 +59,7 @@ const P = {
   pub: null, room: null, claimed: {},
   me: null, roleCard: null, inbox: [], board: null,
   view: 'home', overlay: [], shown: {}, choiceSel: {}, revealMsg: null,
-  dream: null, decoyTimers: [], hands: [], vote: null,
+  dream: null, decoyTimers: [], hands: [], vote: null, timer: null, offset: 0,
 };
 
 const lang = () => (P.pub && P.pub.lang === 'en' ? 'en' : 'no');
@@ -86,7 +95,11 @@ function onMessage(m) {
       P.room = m.room;
       P.claimed = m.claimed || {};
       P.hands = m.hands || [];
+      const pv = P.vote;
       P.vote = m.vote || null;
+      P.timer = m.timer || null;
+      if (m.now) P.offset = m.now - Date.now();
+      if (P.vote && P.vote.open && (!pv || pv.id !== P.vote.id || !pv.open)) sfx.gavel();
       const ph = P.pub.phase;
       if (before && P.view === 'dream' && !dreamPhase()) { closeDream(); toast(T('morning')); }
       if (ph.type === 'night' && (!before || before.type !== 'night' || before.number !== ph.number)) planDecoys(ph.number);
@@ -126,6 +139,7 @@ function onMessage(m) {
     case 'error':
       if (m.code === 'badtoken') { saveCred(null); P.me = null; }
       else if (m.code === 'noghost') toast(T('noGhost'), 'warn');
+      else if (m.code === 'votelocked') toast(T('votelocked'), 'warn');
       else P.error = { locked: 'locked', taken: 'seatTaken', noseat: 'noseat', noroom: 'noroom', auth: 'noroom' }[m.code] || null;
       break;
     case 'closed':
@@ -287,23 +301,73 @@ function handView() {
       h('ol', { class: 'hand-queue' }, P.hands.map((id) => h('li', { class: id === P.me.seatId ? 'me' : '' }, seatName(id))))) : null);
 }
 
+function myLocked(v) {
+  if (!v || !v.clock || !P.me) return false;
+  const at = lockAt(v, P.me.seatId);
+  return at !== null && Date.now() + P.offset >= at;
+}
+
 function voteView() {
   const v = P.vote;
   if (!v || !P.me || P.pub.phase.type !== 'day') return null;
   const me = P.pub.seats.find((x) => x.id === P.me.seatId);
   const mine = v.voters.includes(P.me.seatId);
   const cant = me && !me.alive && !me.ghostVote && !mine;
-  return h('div', { class: 'vote-card' + (v.open ? ' open' : '') },
-    h('p', { class: 'eyebrow' }, v.open ? '🗳 ' + T('voteOpen') : T('voteClosed')),
-    h('p', { class: 'display vote-title' }, T('voteTitle', { a: seatName(v.nominatorId), b: seatName(v.nomineeId) })),
+  const locked = myLocked(v);
+  const vtext = { nominator: T('nominator'), nominee: T('nominee'), startsIn: T('startsIn'), handAt: T('handAt'), closed: T('voteClosed'), voteNow: T('voteOpen') };
+  return h('div', { class: 'vote-card' + (v.open ? ' open' : '') + (v.clock ? ' clock' : '') },
+    h('p', { class: 'eyebrow' }, v.open ? (v.clock ? '🕐 ' + T('voteBefore') : '🗳 ' + T('voteOpen')) : T('voteClosed')),
+    h('p', { class: 'display vote-title vote-who' }, h('span', { class: 'vc-nominator' }, seatName(v.nominatorId)), h('span', { class: 'vcs-arrow' }, ' ➜ '), h('span', { class: 'vc-nominee' }, seatName(v.nomineeId))),
     h('p', { class: 'vote-num' }, h('span', { class: 'big-num' }, String(v.voters.length)), ' ', T('voteCount', { n: '', need: v.need }).replace(/^\s*/, '')),
     v.open
       ? (cant ? h('p', { class: 'warn-text' }, T('noGhost'))
-        : h('button', { class: 'btn big vote-btn' + (mine ? ' on' : ' primary'), onclick: () => P.client.send({ t: 'voteCast', voteId: v.id, up: !mine }) }, mine ? T('voteUndo') : T('voteYes')))
+        : locked ? h('p', { class: 'strong locked-msg' + (mine ? ' yes' : '') }, mine ? T('lockedYes') : T('lockedNo'))
+          : h('button', { class: 'btn big vote-btn' + (mine ? ' on' : ' primary'), onclick: () => P.client.send({ t: 'voteCast', voteId: v.id, up: !mine }) }, mine ? T('voteUndo') : T('voteYes')))
       : null,
-    v.open && me && !me.alive && me.ghostVote && !mine ? h('p', { class: 'muted small' }, T('ghostWarn')) : null,
+    v.open && !locked && me && !me.alive && me.ghostVote && !mine ? h('p', { class: 'muted small' }, T('ghostWarn')) : null,
+    v.clock ? voteCircle({ seats: P.pub.seats, vote: v, text: vtext, me: P.me.seatId, size: 64 }) : null,
     v.voters.length ? h('p', { class: 'muted small' }, '✋ ' + v.voters.map(seatName).join(', ')) : null);
 }
+
+// Timer fra Storytelleren
+const fmtTime = (x) => `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`;
+function timerLeft() {
+  return P.timer ? Math.max(0, Math.ceil((P.timer.endsAt - (Date.now() + P.offset)) / 1000)) : null;
+}
+function timerView() {
+  const left = timerLeft();
+  if (left === null) return null;
+  return h('div', { class: 'timer-card small-timer' + (left <= 10 ? ' urgent' : '') + (left === 0 ? ' up' : '') },
+    h('span', { class: 'label' }, '⏳ ' + (P.timer.label || T('timer'))),
+    h('span', { class: 'display timer-big', id: 'play-timer' }, left === 0 ? T('timeUp') : fmtTime(left)));
+}
+
+// Viser, låsing og timer oppdateres jevnlig uten full ny tegning.
+const tk = { locked: null, done: null, timerSec: null, voteId: null };
+setInterval(() => {
+  const root = document.getElementById('play');
+  if (!root || !P.pub) return;
+  const v = P.vote;
+  if (v && v.clock && P.pub.phase.type === 'day') {
+    const vtext = { startsIn: T('startsIn'), handAt: T('handAt'), closed: T('voteClosed'), voteNow: T('voteOpen') };
+    const info = tickVoteCircle(root, v, P.offset, vtext);
+    if (tk.voteId !== v.id) Object.assign(tk, { voteId: v.id, locked: myLocked(v), done: info && info.done });
+    const l = myLocked(v);
+    if (l !== tk.locked) { tk.locked = l; if (l) sfx.lock(); render(); }
+    if (info && info.done && !tk.done) { tk.done = true; sfx.bell(); }
+  }
+  const left = timerLeft();
+  const el = document.getElementById('play-timer');
+  if (left !== null) {
+    if (el) {
+      el.textContent = left === 0 ? T('timeUp') : fmtTime(left);
+      const card = el.closest('.timer-card');
+      if (card) { card.classList.toggle('urgent', left <= 10); card.classList.toggle('up', left === 0); }
+    }
+    if (left === 0 && tk.timerSec > 0) sfx.bell();
+    tk.timerSec = left;
+  } else tk.timerSec = null;
+}, 100);
 
 function dayView() {
   const d = P.pub.day;
@@ -329,10 +393,11 @@ function homeView() {
   const me = P.pub.seats.find((x) => x.id === P.me.seatId);
   return h('div', { class: 'play-home' },
     phaseBanner(),
+    timerView(),
+    voteView(),
     P.roleCard
       ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
       : h('p', { class: 'muted' }, T('noRole')),
-    voteView(),
     handView(),
     dreamPhase() ? h('button', { class: 'btn primary big dream-btn', onclick: openDream }, '🐑 ' + T('playDream')) : null,
     dreamPhase() ? boardView() : null,
@@ -384,8 +449,14 @@ function codeEntry() {
   h('button', { class: 'btn primary big', type: 'submit' }, T('join')));
 }
 
+function soundToggle() {
+  const on = soundEnabled();
+  return h('button', { class: 'btn small ghost sound-btn', title: T('sound'), 'aria-pressed': on ? 'true' : 'false', onclick: () => { if (on) disableSound(); else { enableSound(); sfx.pop(); } render(); } }, on ? '🔊' : '🔇');
+}
+
 function render() {
   const root = document.getElementById('play');
+  applyTheme(P.pub && P.me ? P.pub.phase.type : 'none');
   let main;
   if (!P.code) main = codeEntry();
   else if (P.error === 'closed' || P.error === 'noroom') main = h('p', { class: 'callout' }, T(P.error));
@@ -409,7 +480,8 @@ function render() {
     h('header', { class: 'play-top' },
       h('span', { class: 'brand-name' }, '✦ Botc Helper'),
       P.code ? h('span', { class: 'room-code display' }, P.code) : null,
-      h('span', { class: 'conn' }, connView())),
+      h('span', { class: 'conn' }, connView()),
+      soundToggle()),
     h('main', { class: 'play-main' + (P.view === 'dream' && dreamPhase() ? ' wide' : '') }, main),
     h('div', { class: 'overlay-slot' }, P.me ? overlayView() || '' : ''));
   if (P.view === 'dream' && dreamPhase() && P.me) {

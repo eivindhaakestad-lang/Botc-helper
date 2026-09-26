@@ -179,7 +179,7 @@ export class Room {
     return out;
   }
   publicMsg() {
-    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null };
+    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null, timer: this.room.timer || null, now: Date.now() };
   }
   boardMsg() {
     const names = Object.fromEntries(this.room.public.seats.map((x) => [x.id, x.names.join(' + ')]));
@@ -198,7 +198,15 @@ export class Room {
   }
   broadcastVote() {
     this.broadcastPublic();
-    this.toSt({ t: 'vote', vote: this.room.vote || null });
+    this.toSt({ t: 'vote', vote: this.room.vote || null, now: Date.now() });
+  }
+  // Når viseren når en plass, er stemmen låst (litt slingringsmonn for nettverket).
+  voteLocked(v, seatId) {
+    const c = v && v.clock;
+    if (!c) return false;
+    const i = c.order.indexOf(seatId);
+    if (i < 0) return false;
+    return Date.now() > c.startAt + i * c.stepMs + 250;
   }
   validVoters(list) {
     const ok = new Set(this.room.public.seats.map((x) => x.id));
@@ -285,7 +293,8 @@ export class Room {
         r.public = pub;
         const phaseChanged = before.type !== pub.phase.type || before.number !== pub.phase.number;
         if (phaseChanged && (r.hands || []).length) { r.hands = []; this.toSt({ t: 'hands', hands: [] }); }
-        if (phaseChanged && r.vote) { r.vote = null; this.toSt({ t: 'vote', vote: null }); }
+        if (phaseChanged && r.vote) { r.vote = null; this.toSt({ t: 'vote', vote: null, now: Date.now() }); }
+        if (phaseChanged) r.timer = null;
         await this.saveRoom();
         for (const [seatId, card] of Object.entries(msg.roleCards || {})) {
           if (!r.public.seats.some((x) => x.id === seatId)) continue;
@@ -338,6 +347,24 @@ export class Room {
         };
         await this.saveRoom();
         this.broadcastVote();
+        break;
+      }
+      case 'voteClock': {
+        // Viseren starter om 3 sekunder og går én plass per stepMs, i rekkefølgen Storytelleren sender.
+        if (!r.vote || !r.vote.open) return;
+        const order = this.validVoters(msg.order);
+        if (!order.length) return;
+        const stepMs = Math.max(500, Math.min(6000, Number(msg.stepMs) || 2000));
+        r.vote.clock = { order, stepMs, startAt: Date.now() + 3000 };
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      }
+      case 'timer': {
+        const ms = Number(msg.durationMs) || 0;
+        r.timer = ms > 0 ? { endsAt: Date.now() + Math.min(ms, 3 * 3600000), durationMs: Math.min(ms, 3 * 3600000), label: str(msg.label, 60) } : null;
+        await this.saveRoom();
+        this.broadcastPublic();
         break;
       }
       case 'voteSet':
@@ -447,6 +474,7 @@ export class Room {
         const seat = r.public.seats.find((x) => x.id === seatId);
         if (!seat) return;
         if (msg.up && !seat.alive && !seat.ghostVote) { send(ws, { t: 'error', code: 'noghost' }); return; }
+        if (this.voteLocked(v, seatId)) { send(ws, { t: 'error', code: 'votelocked' }); return; }
         v.voters = v.voters.filter((x) => x !== seatId);
         if (msg.up) v.voters.push(seatId);
         await this.saveRoom();

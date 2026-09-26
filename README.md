@@ -48,6 +48,12 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Avstemning:** Registrer nominasjonen og trykk **🗳 Åpne avstemning**. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
 
+**Avstemningsklokka:** Når avstemningen er åpen, trykker du **🕐 Start klokka**. Etter 3 sekunders nedtelling går en viser rundt sirkelen, én plass om gangen. Hver elev må stemme før viseren når dem, og da låses stemmen. Viseren starter hos spilleren etter den nominerte og ender hos den nominerte, som i de offisielle reglene. I Live-panelet kan du heller velge at den starter hos den som nominerer, og hvor lang tid den bruker per plass. Når viseren er ferdig, lagres stemmene av seg selv. Storskjermen og elevene ser en pil fra den som nominerer til den som er nominert.
+
+**Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
+
+**Dag og natt:** Bakgrunnen toner over til gul om dagen og mørk blå natthimmel om natten, hos deg, på storskjermen og hos elevene.
+
 **Drømmespillet** er åpent både før spillet starter og om natten. Topplisten gjelder hele spillrunden.
 
 Kopier-knappene virker fortsatt for elever uten PC.

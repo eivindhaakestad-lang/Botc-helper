@@ -9,7 +9,7 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, startClock, sendTimer } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -595,11 +595,12 @@ function timer() {
   const start = (sec) => {
     clearInterval(app.timerInt);
     app.timer = { end: Date.now() + sec * 1000 };
+    sendTimer(sec * 1000, t('timer'));
     app.timerInt = setInterval(() => {
       const el = document.getElementById('timer-left');
       const l = Math.max(0, Math.round((app.timer.end - Date.now()) / 1000));
       if (el) el.textContent = fmt(l);
-      if (l <= 0) { clearInterval(app.timerInt); app.timer = null; toast(t('timeUp'), 'warn'); render(); }
+      if (l <= 0) { clearInterval(app.timerInt); app.timer = null; toast(t('timeUp'), 'warn'); setTimeout(() => { if (!app.timer) sendTimer(0); }, 6000); render(); }
     }, 500);
     render();
   };
@@ -607,7 +608,7 @@ function timer() {
     h('span', { class: 'label' }, t('timer')),
     h('span', { id: 'timer-left', class: 'timer-left' + (tm ? ' running' : '') }, tm ? fmt(left) : '–:––'),
     [1, 2, 3, 5].map((m) => h('button', { class: 'btn small', onclick: () => start(m * 60) }, m + ' min')),
-    tm ? h('button', { class: 'btn small ghost', onclick: () => { clearInterval(app.timerInt); app.timer = null; render(); } }, t('stop')) : null);
+    tm ? h('button', { class: 'btn small ghost', onclick: () => { clearInterval(app.timerInt); app.timer = null; sendTimer(0); render(); } }, t('stop')) : null);
 }
 
 function dayPanel(s) {
@@ -693,7 +694,9 @@ function dayPanel(s) {
               confirmButton({ key: 'delnom' + nom.id, label: '✕', confirmLabel: t('delete'), cls: 'btn danger small', onConfirm: () => dispatch({ type: 'NOMINATION_REMOVE', nominationId: nom.id, log: t('nominationRemoved') }) }))),
           liveOpen() ? h('div', { class: 'row gap wrap vote-live' },
             voting
-              ? [h('span', { class: 'pill live' }, '🗳 ' + t('votingOpen')), h('button', { class: 'btn primary', onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
+              ? [h('span', { class: 'pill live' }, lv.clock ? '🕐 ' + t('clockRunning') : '🗳 ' + t('votingOpen')),
+                lv.clock ? null : h('button', { class: 'btn primary', onclick: () => startClock(s, nom) }, '🕐 ' + t('startClock')),
+                h('button', { class: 'btn' + (lv.clock ? ' ghost' : ''), onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
               : [h('button', { class: 'btn' + (nom.votes ? ' ghost' : ' primary'), onclick: () => openVote(nom, need) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
           h('div', { class: 'voters' }, s.seats.map((x) => {
             const on = shown.includes(x.id);
@@ -917,7 +920,13 @@ function livePanel(s) {
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !!locked, onchange: (e) => setLocked(e.target.checked) }), t('lockRoom')),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.dream !== false, onchange: (e) => setLiveSetting('dream', e.target.checked) }), t('dreamOn')),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.decoys !== false, onchange: (e) => setLiveSetting('decoys', e.target.checked) }), t('decoysOn'))),
-      h('p', { class: 'muted small' }, t('decoysHelp'))),
+      h('p', { class: 'muted small' }, t('decoysHelp')),
+      h('div', { class: 'stack tight' },
+        h('span', { class: 'label' }, '🕐 ' + t('clockSettings')),
+        h('div', { class: 'row gap wrap' },
+          segmented({ label: t('clockStartLabel'), value: settings.clockStart === 'nominator' ? 'nominator' : 'official', options: [{ value: 'official', label: t('clockStartOfficial') }, { value: 'nominator', label: t('clockStartNominator') }], onChange: (v) => { setLiveSetting('clockStart', v); render(); } }),
+          segmented({ label: t('clockStepLabel'), value: Number(settings.clockStep) || 2000, options: [1000, 1500, 2000, 3000].map((v) => ({ value: v, label: String(v / 1000).replace('.', ',') + ' s' })), onChange: (v) => { setLiveSetting('clockStep', v); render(); } })),
+        h('p', { class: 'muted small' }, t('clockHelp')))),
     h('div', { class: 'panel' },
       h('h3', { class: 'section-title' }, t('seatsInApp')),
       h('ul', { class: 'seat-status' }, s.seats.map((x) => h('li', null,
@@ -937,6 +946,7 @@ export function viewGame() {
   const s = store.state();
   if (!s) return emptyState(t('noGame'), t('noGameHint'), h('button', { class: 'btn primary', onclick: () => navigate('new') }, t('newGame')));
   configureCharacters({ custom: s.script.custom || {} });
+  app.theme = s.phase.type;
   const q = s.phase.type === 'night' ? nightQueue(s) : [];
   const cur = s.phase.type === 'night' ? currentStep(q) : null;
   const activeIds = cur ? (cur.seatId ? [cur.seatId] : cur.seatIds || []) : [];

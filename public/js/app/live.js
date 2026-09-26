@@ -8,6 +8,7 @@ import { toast } from './dom.js';
 import { t } from './i18n.js';
 import { publicProjection, roleCardsFor } from '../engine/live.js';
 import { seatName, getSeat } from '../engine/state.js';
+import { clockInfo } from '../live/voteclock.js';
 
 export const live = {
   client: null,
@@ -18,6 +19,7 @@ export const live = {
   board: null,
   hands: [],
   vote: null,
+  offset: 0, // servertid − lokal tid
   lastSync: '',
   error: null,
 };
@@ -77,6 +79,7 @@ function onMessage(m) {
       live.online = m.online || {};
       live.hands = m.hands || [];
       live.vote = m.vote || null;
+      scheduleAutoFinish();
       for (const [seatId, cards] of Object.entries(m.cards || {})) {
         for (const c of cards) {
           l.sent[c.id] = true;
@@ -121,7 +124,9 @@ function onMessage(m) {
       render();
       break;
     case 'vote':
+      if (m.now) live.offset = m.now - Date.now();
       live.vote = m.vote || null;
+      scheduleAutoFinish();
       render();
       break;
     case 'error':
@@ -215,4 +220,51 @@ export function closeVote() {
   if (!liveOpen() || !live.vote) return;
   live.vote = { ...live.vote, open: false };
   live.client.send({ t: 'voteClose' });
+}
+
+// ——— avstemningsklokka ———
+// Offisiell rekkefølge: viseren starter hos spilleren etter den nominerte (med klokka)
+// og ender hos den nominerte. Innstillingen «nominator» starter hos den som nominerer.
+export function clockOrder(s, nom) {
+  const ids = s.seats.map((x) => x.id);
+  const n = ids.length;
+  const settings = (L() && L().settings) || {};
+  const start = settings.clockStart === 'nominator'
+    ? Math.max(0, ids.indexOf(nom.nominatorId))
+    : (ids.indexOf(nom.nomineeId) + 1) % n;
+  return ids.map((_, i) => ids[(start + i) % n]);
+}
+
+export function startClock(s, nom) {
+  if (!liveOpen() || !live.vote || live.vote.id !== nom.id || !live.vote.open) return;
+  const settings = L().settings || {};
+  live.client.send({ t: 'voteClock', order: clockOrder(s, nom), stepMs: Number(settings.clockStep) || 2000 });
+}
+
+// Når viseren har gått rundt, lagres stemmene og avstemningen lukkes av seg selv.
+let finishTimer = null;
+function scheduleAutoFinish() {
+  clearTimeout(finishTimer);
+  const v = live.vote;
+  const info = v && v.open ? clockInfo(v, live.offset) : null;
+  if (!info) return;
+  const ms = info.endsAt - (Date.now() + live.offset) + 700;
+  finishTimer = setTimeout(() => {
+    const cur = live.vote;
+    if (!cur || cur.id !== v.id || !cur.open || !store.game) return;
+    const s = store.state();
+    const nom = s && s.nominations && s.nominations.find((x) => x.id === cur.id);
+    if (nom) {
+      store.dispatch({ type: 'VOTE', sk: 'vote:' + nom.id, nominationId: nom.id, voters: cur.voters, log: `${t('votes')}: ${seatName(getSeat(s, nom.nomineeId))} ${cur.voters.length}` });
+      toast(t('clockDone', { name: seatName(getSeat(s, nom.nomineeId)), n: cur.voters.length }));
+    }
+    closeVote();
+    render();
+  }, Math.max(0, ms));
+}
+
+// ——— timer på storskjermen ———
+export function sendTimer(ms, label = '') {
+  if (!liveOpen()) return;
+  live.client.send({ t: 'timer', durationMs: ms || 0, label });
 }

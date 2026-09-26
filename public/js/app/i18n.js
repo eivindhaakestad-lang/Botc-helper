@@ -142,6 +142,9 @@ const NO = {
 
   handsQueue: 'Håndsopprekning', handDone: 'Har snakket – ta ned hånden', clearHands: 'Tøm', handsKey: 'H fjerner den første',
   openVote: 'Åpne avstemning', reopenVote: 'Åpne avstemningen igjen', closeVote: 'Lukk avstemningen ({n} stemmer)', votingOpen: 'Elevene stemmer nå',
+  startClock: 'Start klokka', clockRunning: 'Viseren går', clockDone: 'Viseren har gått rundt: {name} fikk {n} stemmer',
+  clockSettings: 'Avstemningsklokka', clockStartLabel: 'Hvor viseren starter', clockStartOfficial: 'Etter den nominerte (offisielt)', clockStartNominator: 'Hos den som nominerer', clockStepLabel: 'Tid per plass',
+  clockHelp: 'Åpne avstemningen og trykk «Start klokka». Etter 3 sekunder går viseren rundt, og hver elev må stemme før viseren når dem. Stemmene lagres av seg selv når viseren er ferdig.',
 
   nomButton: 'Nominasjon', nomCancel: 'Avbryt nominasjon', nomHelp: 'Dra fra spilleren som nominerer til den som blir nominert (eller trykk på begge).',
   nomPickNominee: '{name} nominerer – trykk eller dra til den som blir nominert.', showQr: 'Vis QR-kode',
@@ -289,6 +292,9 @@ const EN = {
 
   handsQueue: 'Raised hands', handDone: 'Has spoken – lower the hand', clearHands: 'Clear', handsKey: 'H removes the first one',
   openVote: 'Open the vote', reopenVote: 'Reopen the vote', closeVote: 'Close the vote ({n} votes)', votingOpen: 'Students are voting',
+  startClock: 'Start the clock', clockRunning: 'Clock hand moving', clockDone: 'The clock hand went round: {name} got {n} votes',
+  clockSettings: 'Voting clock', clockStartLabel: 'Where the hand starts', clockStartOfficial: 'After the nominee (official)', clockStartNominator: 'At the nominator', clockStepLabel: 'Time per seat',
+  clockHelp: 'Open the vote and press “Start the clock”. After 3 seconds the hand goes round, and each student must vote before the hand reaches them. Votes are saved automatically when the hand is done.',
 
   nomButton: 'Nomination', nomCancel: 'Cancel nomination', nomHelp: 'Drag from the nominating player to the nominee (or tap both).',
   nomPickNominee: '{name} nominates – tap or drag to the nominee.', showQr: 'Show QR code',

@@ -1,5 +1,7 @@
 // Felles app-tilstand (kun i minnet) og render.
 
+import { applyTheme } from '../live/theme.js';
+
 export const app = {
   view: 'home',
   params: {},
@@ -30,7 +32,9 @@ export function render() {
     const selStart = active && typeof active.selectionStart === 'number' ? active.selectionStart : null;
     const scrolls = {};
     root.querySelectorAll('[data-keep-scroll]').forEach((el) => { scrolls[el.dataset.keepScroll] = el.scrollTop; });
+    app.theme = 'none';
     root.replaceChildren(...renderer().filter(Boolean));
+    applyTheme(app.theme);
     root.querySelectorAll('[data-keep-scroll]').forEach((el) => { if (scrolls[el.dataset.keepScroll] !== undefined) el.scrollTop = scrolls[el.dataset.keepScroll]; });
     if (activeId) {
       const el = document.getElementById(activeId);
