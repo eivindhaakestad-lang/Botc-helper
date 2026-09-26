@@ -158,7 +158,7 @@ function onMessage(m) {
       break;
     }
     case 'decoy':
-      if (isNight() && P.me) P.overlay.push({ id: m.id, decoy: true });
+      if (isNight() && P.me && !deepInDream()) P.overlay.push({ id: m.id, decoy: true });
       break;
     case 'board':
       P.board = m;
@@ -189,6 +189,11 @@ function clearDecoys() {
   P.decoyTimers.forEach(clearTimeout);
   P.decoyTimers = [];
 }
+// Eleven er midt i en god runde i drømmespillet (mer enn 10 poeng): ingen falske vekkinger.
+function deepInDream() {
+  return !!(P.view === 'dream' && P.dream && P.dream.state === 'running' && P.dream.score > 10);
+}
+
 function planDecoys(night) {
   clearDecoys();
   if (!P.pub || P.pub.decoys === false || !P.me) return;
@@ -201,7 +206,7 @@ function planDecoys(night) {
     P.decoyTimers.push(setTimeout(function fire() {
       if (!isNight() || !P.me) return;
       if (P.overlay.length) { P.decoyTimers.push(setTimeout(fire, 6000)); return; }
-      P.overlay.push({ id: 'decoy-local-' + Date.now(), decoy: true });
+      if (!deepInDream()) P.overlay.push({ id: 'decoy-local-' + Date.now(), decoy: true });
       try { localStorage.setItem(key, String(++done)); } catch { /* */ }
       syncPause();
       render();
