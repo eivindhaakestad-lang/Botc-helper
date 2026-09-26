@@ -1,0 +1,11 @@
+{
+  "name": "botc-helper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Storyteller-assistent for Blood on the Clocktower i klasserommet",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "gen:official": "node tools/gen-official.mjs"
+  }
+}
