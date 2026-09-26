@@ -46,6 +46,8 @@ export function createGame({ seats, script, lang = 'no', style = 'short', bluffs
     notes: [],
     log: [],
     winner: null,
+    revealed: [],
+    announced: null,
   };
 }
 
@@ -204,8 +206,21 @@ export function applyEvent(s, ev) {
       if (ev.style) s.style = ev.style;
       break;
     case 'GAME_END':
-      s.winner = ev.winner;
+      s.winner = ev.winner || null;
       s.phase = { type: 'ended', number: s.phase.number, from: s.phase.type };
+      s.revealed = [];
+      s.announced = null;
+      pushMessages(s, ev, ev.messages, s.phase);
+      break;
+    case 'REVEAL':
+      s.revealed = [...new Set([...(s.revealed || []), ...(ev.seatIds || [])])];
+      break;
+    case 'HIDE':
+      s.revealed = (s.revealed || []).filter((id) => !(ev.seatIds || []).includes(id));
+      break;
+    case 'ANNOUNCE':
+      s.announced = ev.winner || null;
+      if (ev.winner) s.winner = ev.winner;
       pushMessages(s, ev, ev.messages, s.phase);
       break;
     default:

@@ -1,11 +1,16 @@
-// Cloudflare Workers-oppsett. Milepæl 1 er bare statiske filer fra ./public.
-// Milepæl 2 (live) legger til "main" og en Durable Object per spillrom her.
+// Cloudflare Workers-oppsett: statiske filer fra ./public + ett Durable Object per live-rom.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "botc-helper",
-  "compatibility_date": "2026-09-01",
+  "main": "worker/index.js",
+  "compatibility_date": "2025-09-01",
   "assets": {
     "directory": "./public",
-    "not_found_handling": "single-page-application"
-  }
+    "binding": "ASSETS"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
+  "observability": { "enabled": true }
 }

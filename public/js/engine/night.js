@@ -562,3 +562,31 @@ export function grimoireText(s, lang) {
   return KINDS.grimoire.listing(s, lang);
 }
 
+
+// ——— live: be spilleren om et valg ———
+const CHOICE = {
+  poison: { count: 1, fields: ['target'], key: 'choosePoison', allowSelf: true },
+  protect: { count: 1, fields: ['target'], key: 'chooseProtect', allowSelf: false },
+  master: { count: 1, fields: ['target'], key: 'chooseMaster', allowSelf: false },
+  demonKill: { count: 1, fields: ['target'], key: 'chooseKill', allowSelf: true },
+  fortune: { count: 2, fields: ['p1', 'p2'], key: 'chooseFortune', allowSelf: true },
+  ravenkeeper: { count: 1, fields: ['target'], key: 'chooseRaven', allowSelf: true },
+};
+
+export function choiceRequest(s, step, lang = s.lang, style = s.style) {
+  const c = CHOICE[step.kind];
+  if (!c || !step.seatId) return null;
+  return {
+    cardId: 'choice:' + step.key, seatId: step.seatId, fields: c.fields,
+    card: { id: 'choice:' + step.key, kind: 'choice', text: msg(lang, style, c.key), choice: { count: c.count, allowSelf: c.allowSelf } },
+  };
+}
+
+// Gjør om et svar fra spilleren til feltverdier i nattsteget.
+export function choiceToInput(step, choice) {
+  const c = CHOICE[step.kind];
+  if (!c || !Array.isArray(choice)) return {};
+  const out = {};
+  c.fields.forEach((f, i) => { if (choice[i]) out[f] = choice[i]; });
+  return out;
+}

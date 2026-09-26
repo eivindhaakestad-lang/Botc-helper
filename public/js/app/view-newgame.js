@@ -13,6 +13,7 @@ import { createGame } from '../engine/state.js';
 import { parseScript } from '../engine/script.js';
 import { shuffle } from '../engine/rng.js';
 import { msg } from '../engine/text.js';
+import { closeRoom } from './live.js';
 
 const STEPS = ['wzPlayers', 'wzScript', 'wzRoles', 'wzSeating', 'wzSetup'];
 
@@ -206,7 +207,7 @@ function stepScript(d) {
     h('div', { class: 'script-list' }, allScripts().map((x) => h('div', { class: 'script-card' + (x.id === d.scriptId ? ' active' : '') },
       h('button', { class: 'script-pick', onclick: () => { d.scriptId = x.id; d.rolled = false; d.include = []; d.exclude = []; render(); }, 'aria-pressed': x.id === d.scriptId ? 'true' : 'false' },
         h('span', { class: 'script-name display' }, x.name),
-        h('span', { class: 'muted small' }, (x.builtIn ? t('builtIn') : t('imported')) + ' · ' + x.characters.length + ' ' + t('characters'))),
+        h('span', { class: 'muted small' }, (x.builtIn ? t('builtIn') : t('importedScript')) + ' · ' + x.characters.length + ' ' + t('characters'))),
       x.builtIn ? null : confirmButton({ key: 'delscript' + x.id, label: '✕', confirmLabel: t('delete'), cls: 'btn danger small', onConfirm: () => { store.deleteScript(x.id); if (d.scriptId === x.id) d.scriptId = 'tb'; } })))),
     h('div', { class: 'script-roles' }, teams.map((tm) => {
       const ids = sc.characters.filter((id) => charInfo(id).team === tm);
@@ -373,6 +374,7 @@ function startGame(d) {
     meta: { className: d.source === 'quick' ? '' : cls ? cls.name : '', groupName: d.source === 'quick' ? '' : grp ? grp.name : '' },
     messages,
   });
+  if (store.game && store.game.live) closeRoom();
   store.startGame(initial);
   app.stepDrafts = {};
   app.pending = [];

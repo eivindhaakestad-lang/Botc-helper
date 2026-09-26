@@ -10,6 +10,7 @@ import { viewGame, gameKeydown } from './view-game.js';
 import { viewSettings, viewHistory } from './view-settings.js';
 import { t } from './i18n.js';
 import { h } from './dom.js';
+import { connectLive, syncLive } from './live.js';
 
 const VIEWS = {
   home: viewHome,
@@ -59,8 +60,9 @@ setRenderer(frame);
 function boot() {
   store.load();
   configureCharacters({ texts: store.lib.charTexts });
-  store.subscribe(() => render());
+  store.subscribe(() => { render(); queueMicrotask(syncLive); });
   if (store.game) app.view = 'game';
+  if (store.game && store.game.live) connectLive();
   render();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && app.modal) { app.modal = null; render(); return; }

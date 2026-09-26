@@ -255,3 +255,25 @@ test('script-import: offisielt format, gamle ID-er, homebrew og navneliste', () 
   assert.deepEqual(r2.script.characters, ['washerwoman', 'fortuneteller', 'imp']);
   assert.deepEqual(r2.unknown, ['Ukjent']);
 });
+
+test('grim reveal: publiserer bare avslørte roller og annonsert vinner', async () => {
+  const { publicProjection } = await import('../public/js/engine/live.js');
+  const chars = ['washerwoman', 'drunk', 'monk', 'empath', 'undertaker', 'mayor', 'poisoner', 'imp', 'scarletwoman', 'chef'];
+  const g = makeGame(chars, { drunkShown: 'librarian' });
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'GAME_END', winner: 'good' }];
+  let p = publicProjection(replay(g, ev));
+  assert.equal(p.phase.type, 'ended');
+  assert.deepEqual(p.reveal, []);
+  assert.equal(p.winner, null, 'vinner vises ikke før den er annonsert');
+  ev.push({ type: 'REVEAL', seatIds: ['s1', 's7'] });
+  p = publicProjection(replay(g, ev));
+  assert.deepEqual(p.reveal.map((r) => [r.seatId, r.character, r.shown]), [['s1', 'Drunk', 'Librarian'], ['s7', 'Imp', null]]);
+  ev.push({ type: 'HIDE', seatIds: ['s7'] });
+  ev.push({ type: 'ANNOUNCE', winner: 'evil' });
+  p = publicProjection(replay(g, ev));
+  assert.deepEqual(p.reveal.map((r) => r.seatId), ['s1']);
+  assert.equal(p.winner, 'evil');
+  assert.equal(p.announcement, '');
+  ev.pop();
+  assert.equal(publicProjection(replay(g, ev)).winner, null, 'angre fjerner annonseringen');
+});

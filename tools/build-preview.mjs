@@ -27,6 +27,7 @@ function load(file) {
   });
   const exported = [];
   src = src.replace(/^export\s+(async\s+function|function|const|let|class)\s+([A-Za-z0-9_$]+)/gm, (_, kw, name) => { exported.push([name, name]); return `${kw} ${name}`; });
+  src = src.replace(/^export\s+default\s+([A-Za-z0-9_$]+);?/gm, (_, name) => { exported.push([name, 'default']); return ''; });
   src = src.replace(/^export\s*\{([^}]*)\};?/gm, (_, list) => {
     list.split(',').map((x) => x.trim()).filter(Boolean).forEach((x) => {
       const [local, as] = x.split(/\s+as\s+/);

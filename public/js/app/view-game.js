@@ -8,7 +8,9 @@ import { charSelect, playerSelect, copyButton, modal, openModal, closeModal, con
 import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
-import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput } from '../engine/night.js';
+import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat } from './live.js';
+import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
   postDeathChecks, checkWin, mayorCheck, dawnMessage,
@@ -75,10 +77,24 @@ function startDay(text) {
 }
 
 function endGame(winner) {
-  const s = store.state();
-  dispatch({ type: 'GAME_END', winner, messages: winner ? [{ kind: 'public', text: msg(s.lang, s.style, 'gameEnd', { winner }) }] : [], log: t('logGameEnd') });
+  dispatch({ type: 'GAME_END', winner: winner || null, log: t('logGameEnd') });
   app.pending = [];
   app.modal = null;
+  app.gameTab = 'phase';
+}
+
+function revealSeats(s, ids) {
+  if (!ids.length) return;
+  dispatch({ type: 'REVEAL', seatIds: ids, log: t('logRevealed', { list: ids.map((id) => seatName(getSeat(s, id))).join(', ') }) });
+}
+
+function hideSeats(s, ids) {
+  if (!ids.length) return;
+  dispatch({ type: 'HIDE', seatIds: ids, log: t('logHidden') });
+}
+
+function announce(s, winner) {
+  dispatch({ type: 'ANNOUNCE', winner, messages: winner ? [{ kind: 'public', text: msg(s.lang, s.style, 'gameEnd', { winner }) }] : [], log: winner ? msg(s.lang, s.style, 'gameEnd', { winner }) : t('logUnannounced') });
 }
 
 // ——— toppfelt ———
@@ -98,6 +114,7 @@ function gameBar(s) {
       h('button', { class: 'btn', disabled: !canUndo, onclick: undo, title: 'Ctrl+Z' }, '↶ ' + t('undo')),
       h('button', { class: 'btn', disabled: !canRedo, onclick: redo, title: 'Ctrl+Y' }, '↷ ' + t('redo')),
       h('button', { class: 'btn ghost', 'aria-pressed': app.focusMode ? 'true' : 'false', onclick: () => { app.focusMode = !app.focusMode; render(); }, title: 'F' }, app.focusMode ? t('showGrim') : t('focusMode')),
+      liveBadge(s),
       h('button', { class: 'btn ghost', onclick: () => openModal(gameMenu) }, '⋯ ' + t('game')),
       next));
 }
@@ -114,12 +131,11 @@ function gameMenu() {
       h('p', { class: 'muted small' }, t('langAppliesNew')),
       h('hr'),
       h('span', { class: 'label' }, t('endGame')),
+      h('p', { class: 'muted small' }, t('endGameMenuHelp')),
       h('div', { class: 'row gap wrap' },
-        h('button', { class: 'btn good', onclick: () => endGame('good') }, t('goodWins')),
-        h('button', { class: 'btn evil', onclick: () => endGame('evil') }, t('evilWins')),
-        h('button', { class: 'btn', onclick: () => endGame(null) }, t('endNoWinner'))),
+        h('button', { class: 'btn primary', onclick: () => endGame(null) }, '🏁 ' + t('endGameReveal'))),
       h('hr'),
-      confirmButton({ key: 'abandon', label: t('abandonGame'), confirmLabel: t('abandonConfirm'), onConfirm: () => { store.endGame(false); app.modal = null; navigate('home'); } })),
+      confirmButton({ key: 'abandon', label: t('abandonGame'), confirmLabel: t('abandonConfirm'), onConfirm: () => { if (store.game.live) closeRoom(); store.endGame(false); app.modal = null; navigate('home'); } })),
   });
 }
 
@@ -136,15 +152,21 @@ function grimView(s, activeIds) {
       index: i,
       dead: !seat.alive,
       ghost: seat.alive ? null : seat.ghostVote,
-      active: activeIds.includes(seat.id),
+      active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)),
       alignment: seat.alignment,
       reminders: [
         ...seat.reminders,
         ...(compromised(s, seat).poisoned && !seat.reminders.some((r) => r.kind === 'poisoned') ? [{ kind: 'poisoned', label: 'Poisoned' }] : []),
       ],
-      onClick: () => openModal(() => seatModal(seat.id)),
+      sub: s.phase.type === 'ended' ? ((s.revealed || []).includes(seat.id) ? '👁 ' + t('revealedShort') : t('hiddenShort')) : null,
+      onClick: s.phase.type === 'ended'
+        ? () => ((s.revealed || []).includes(seat.id) ? hideSeats(s, [seat.id]) : revealSeats(s, [seat.id]))
+        : () => openModal(() => seatModal(seat.id)),
     }),
-    center: h('div', { class: 'center-text' },
+    center: s.phase.type === 'ended' ? h('div', { class: 'center-text' },
+      h('span', { class: 'display center-phase' }, t('revealTitle')),
+      h('span', { class: 'center-stat' }, t('revealedOf', { a: (s.revealed || []).length, n: s.seats.length })),
+      s.announced ? h('span', { class: 'center-stat strong' }, s.announced === 'good' ? t('goodWins') : t('evilWins')) : h('span', { class: 'center-stat muted' }, t('notAnnounced'))) : h('div', { class: 'center-text' },
       h('span', { class: 'display center-phase' }, phaseLabel(s)),
       h('span', { class: 'center-stat' }, t('aliveOf', { a: alive, n: s.seats.length })),
       h('span', { class: 'center-stat muted' }, t('votesNeeded', { n: voteThreshold(s) })),
@@ -228,7 +250,7 @@ function pendingBanner(s) {
         h('button', { class: 'btn ghost', onclick: () => drop(p) }, t('no')),
       ] : null,
       p.type === 'win' || p.type === 'mayor' ? [
-        h('button', { class: 'btn ' + (p.winner === 'good' ? 'good' : 'evil'), onclick: () => endGame(p.winner) }, t('endGameWinner', { team: t(p.winner === 'good' ? 'teamGood' : 'teamEvil') })),
+        h('button', { class: 'btn ' + (p.winner === 'good' ? 'good' : 'evil'), onclick: () => endGame(p.winner) }, '🏁 ' + t('endGameReveal')),
         p.type === 'mayor'
           ? h('button', { class: 'btn ghost', onclick: () => { app.pending = []; dispatch({ type: 'NIGHT_START', log: t('logNightStart') }); store.setUi({ stepKey: null }); } }, t('continueNight'))
           : h('button', { class: 'btn ghost', onclick: () => drop(p) }, t('notNow')),
@@ -245,10 +267,50 @@ function stepDraft(s, step) {
   if (!d || (untouched && !saved && d.compKey !== compKey)) {
     let input = saved ? { ...saved } : defaultInput(s, step);
     input = deriveInput(s, step, input, {});
-    d = { input, touched: saved ? Object.fromEntries(Object.keys(saved).map((k) => [k, true])) : {}, edits: {}, editing: {}, compKey };
+    d = { input, touched: saved ? Object.fromEntries(Object.keys(saved).map((k) => [k, true])) : {}, edits: {}, editing: {}, compKey, respAt: saved ? Date.now() : 0 };
     app.stepDrafts[step.key] = d;
   }
+  const l = store.game.live;
+  const resp = l && l.responses['choice:' + step.key];
+  if (resp && resp.at > (d.respAt || 0)) {
+    const patch = choiceToInput(step, resp.choice);
+    d.input = { ...d.input, ...patch };
+    d.touched = { ...d.touched, ...Object.fromEntries(Object.keys(patch).map((k) => [k, true])) };
+    d.input = deriveInput(s, step, d.input, d.touched);
+    d.edits = {};
+    d.respAt = resp.at;
+  }
   return d;
+}
+
+function claimed(seatId) {
+  return (live.claimed[seatId] || 0) > 0;
+}
+
+function sendStepMessages(step, messages) {
+  let n = 0;
+  messages.forEach((m, i) => {
+    const id = `step:${step.key}#${i}`;
+    if (m.seatId && claimed(m.seatId) && !cardState(id) && sendCard(m.seatId, { id, kind: 'info', text: m.text })) n++;
+  });
+  return n;
+}
+
+function requestChoice(s, step) {
+  const req = choiceRequest(s, step);
+  if (!req || !claimed(req.seatId)) return false;
+  return sendCard(req.seatId, req.card);
+}
+
+function requestAllChoices(s, q) {
+  let n = 0;
+  for (const step of q) {
+    if (step.status !== 'pending') continue;
+    const req = choiceRequest(s, step);
+    if (!req || cardState(req.cardId)) continue;
+    if (requestChoice(s, step)) n++;
+  }
+  toast(n ? t('choicesRequested', { n }) : t('choicesNone'));
 }
 
 function currentStep(q) {
@@ -274,6 +336,7 @@ function completeStep(s, step, d, q) {
   if (r.incomplete) { toast(t('incomplete'), 'warn'); return; }
   const messages = r.messages.map((m, i) => ({ ...m, text: d.edits[i] !== undefined ? d.edits[i] : m.text }));
   const aliveBefore = aliveSeats(s).length;
+  if (liveOpen()) { const sent = sendStepMessages(step, messages); if (sent) toast(t('sentN', { n: sent })); }
   const nm = step.seatId ? seatName(getSeat(s, step.seatId)) : '';
   const summary = messages[0] ? messages[0].text.replace(/\n/g, ' ') : r.effects.length ? stepModel(s, step, d.input, ui(), q).effects.join(', ') : '';
   dispatch({
@@ -344,16 +407,20 @@ function messagePreview(s, step, d, model, r) {
     const msgId = `step:${step.key}#${i}`;
     const copied = store.game.copied[msgId];
     const editing = d.editing[i];
-    return h('div', { class: 'msg-card kind-' + (m.kind || 'private') + (copied ? ' copied' : '') },
+    const cs = cardState(msgId);
+    const canSend = liveOpen() && m.seatId && claimed(m.seatId);
+    return h('div', { class: 'msg-card kind-' + (m.kind || 'private') + (copied || cs ? ' copied' : '') },
       h('div', { class: 'msg-head' },
         h('span', { class: 'msg-to' }, t('messageTo') + ' ' + to),
         r.messages.length === 1 && model.truth !== null && model.isInfo ? h('span', { class: 'pill ' + (model.truth ? 'ok' : 'warn') }, model.truth ? '✓ ' + t('trueInfo') : '⚠ ' + t('falseInfo')) : null,
+        cs ? statusPill(cs) : null,
         copied ? h('span', { class: 'pill ok' }, '✓ ' + t('copiedShort')) : null),
       editing
         ? h('textarea', { id: 'edit-' + msgId.replace(/[^a-zA-Z0-9]/g, '_'), class: 'textarea', rows: 3, value: text, oninput: (e) => { d.edits[i] = e.target.value; } })
         : h('p', { class: 'msg-text' }, text),
-      h('div', { class: 'row gap' },
-        copyButton(() => (d.edits[i] !== undefined ? d.edits[i] : m.text), { id: i === 0 ? 'copy-current' : undefined, label: t('copy') + (i === 0 ? ' (C)' : ''), cls: 'primary', onCopied: () => store.markCopied(msgId) }),
+      h('div', { class: 'row gap wrap' },
+        canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: msgId, kind: 'info', text: d.edits[i] !== undefined ? d.edits[i] : m.text })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
+        copyButton(() => (d.edits[i] !== undefined ? d.edits[i] : m.text), { id: i === 0 ? 'copy-current' : undefined, label: t('copy') + (i === 0 ? ' (C)' : ''), cls: canSend ? '' : 'primary', onCopied: () => store.markCopied(msgId) }),
         h('button', { class: 'btn ghost', onclick: () => { d.editing[i] = !editing; if (editing && d.edits[i] === m.text) delete d.edits[i]; render(); } }, editing ? t('done') : '✎ ' + t('edit')),
         d.edits[i] !== undefined && !editing ? h('button', { class: 'btn ghost', onclick: () => { delete d.edits[i]; render(); } }, t('resetText')) : null));
   }));
@@ -384,6 +451,7 @@ function stepCard(s, step, q) {
     canSuggest ? h('div', { class: 'row gap wrap' },
       h('button', { class: 'btn small', onclick: () => { d.input = deriveInput(s, step, suggestInput(s, step, false), {}); d.touched = {}; d.edits = {}; render(); } }, t('useTrue')),
       h('button', { class: 'btn small', onclick: () => { d.input = deriveInput(s, step, suggestInput(s, step, true), {}); d.touched = {}; d.edits = {}; render(); } }, t('useFalse'))) : null,
+    choiceBox(s, step),
     model.fields.length ? h('div', { class: 'fields' }, model.fields.map((f) => field(s, step, d, f))) : null,
     model.effects.length ? h('ul', { class: 'effects' }, model.effects.map((x) => h('li', null, '→ ' + x))) : null,
     messagePreview(s, step, d, model, r),
@@ -392,7 +460,8 @@ function stepCard(s, step, q) {
       done || step.status === 'skipped'
         ? h('button', { class: 'btn ghost', onclick: () => reopenStep(s, step) }, t('reopen'))
         : h('button', { class: 'btn ghost', onclick: () => skipStep(s, step) }, t('skip')),
-      h('button', { id: 'complete-step', class: 'btn primary big', onclick: () => completeStep(s, step, d, q), title: 'Enter' }, done ? t('updateStep') : '✓ ' + t('complete') + ' (Enter)'),
+      h('button', { id: 'complete-step', class: 'btn primary big', onclick: () => completeStep(s, step, d, q), title: 'Enter' },
+        done ? t('updateStep') : (liveOpen() && r.messages.some((m, i) => m.seatId && claimed(m.seatId) && !cardState(`step:${step.key}#${i}`)) ? '📨 ' + t('sendAndComplete') : '✓ ' + t('complete')) + ' (Enter)'),
       pos < q.length ? h('button', { class: 'btn ghost', onclick: () => selectStep(q[pos].key), title: '→' }, t('nextStep') + ' →') : null));
 }
 
@@ -402,7 +471,7 @@ function rail(s, q, cur) {
       class: `rail-item st-${x.status}${cur && cur.key === x.key ? ' current' : ''} team-${x.characterId === 'minioninfo' ? 'minion' : x.characterId === 'demoninfo' ? 'demon' : charInfo(x.characterId).team}`,
       onclick: () => selectStep(x.key),
     },
-    h('span', { class: 'rail-icon', 'aria-hidden': 'true' }, x.status === 'done' ? '✓' : x.status === 'pending' ? '○' : '–'),
+    h('span', { class: 'rail-icon', 'aria-hidden': 'true' }, x.status === 'done' ? '✓' : x.status === 'pending' ? (cardState('choice:' + x.key) === 'answered' ? '✉' : cardState('choice:' + x.key) ? '⏳' : '○') : '–'),
     h('span', { class: 'rail-name' }, x.characterId === 'minioninfo' ? t('minionInfo') : x.characterId === 'demoninfo' ? t('demonInfo') : charInfo(x.characterId).name),
     x.seatId ? h('span', { class: 'rail-player' }, seatName(getSeat(s, x.seatId))) : null))),
     h('li', null, h('button', { class: 'rail-item end' + (!cur ? ' current' : ''), onclick: () => selectStep('__end') }, h('span', { class: 'rail-icon' }, '☀'), h('span', { class: 'rail-name' }, t('dawn')))));
@@ -431,7 +500,11 @@ function nightPanel(s) {
   const q = nightQueue(s);
   const cur = currentStep(q);
   current = null;
+  const askable = liveOpen() ? q.filter((x) => x.status === 'pending' && choiceRequest(s, x) && !cardState('choice:' + x.key) && claimed(x.seatId)).length : 0;
   return h('div', { class: 'night-panel' },
+    askable ? h('div', { class: 'row between wrap live-ask' },
+      h('span', { class: 'small muted' }, t('askAllHelp', { n: askable })),
+      h('button', { class: 'btn primary', onclick: () => requestAllChoices(s, q) }, '📨 ' + t('askAll'))) : null,
     rail(s, q, cur),
     cur ? stepCard(s, cur, q) : dawnCard(s, q));
 }
@@ -443,7 +516,7 @@ function setupPanel(s) {
     h('div', { class: 'step-card' },
       h('span', { class: 'eyebrow' }, t('phaseSetup')),
       h('h2', { class: 'step-role display' }, t('roleCards')),
-      h('p', { class: 'step-instruction' }, t('roleCardsHelp')),
+      h('p', { class: 'step-instruction' }, liveOpen() ? t('roleCardsLive') : t('roleCardsHelp')),
       h('p', { class: 'small muted' }, t('copiedOf', { a: copiedN, n: cards.length })),
       h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: startNight }, '🌙 ' + t('startNight1')))),
     h('div', { class: 'msg-list' }, cards.map((m) => messageCard(s, m))));
@@ -579,22 +652,44 @@ function dayPanel(s) {
 
 // ——— slutt ———
 function endPanel(s) {
-  const endMsg = s.messages.filter((m) => m.phase.type === 'ended');
+  const rev = new Set(s.revealed || []);
+  const hidden = s.seats.filter((x) => !rev.has(x.id));
+  const next = hidden[0];
+  const suggested = s.winner && !s.announced ? s.winner : null;
   return h('div', { class: 'stack' },
-    h('div', { class: 'step-card end ' + (s.winner || '') },
+    h('div', { class: 'step-card end ' + (s.announced || '') },
       h('span', { class: 'eyebrow' }, t('phaseEnded')),
-      h('h2', { class: 'step-role display' }, s.winner === 'good' ? t('goodWins') : s.winner === 'evil' ? t('evilWins') : t('gameOver')),
-      endMsg.map((m) => messageCard(s, m)),
+      h('h2', { class: 'step-role display' }, t('revealTitle')),
+      h('p', { class: 'step-instruction' }, liveOpen() ? t('revealLiveHelp') : t('revealHelp')),
+      h('div', { class: 'reveal-controls' },
+        next ? h('button', { id: 'reveal-next', class: 'btn primary big', onclick: () => revealSeats(s, [next.id]) }, '👁 ' + t('revealNext', { name: seatName(next) })) : null,
+        hidden.length ? h('button', { class: 'btn', onclick: () => revealSeats(s, hidden.map((x) => x.id)) }, t('revealAll')) : null,
+        rev.size ? h('button', { class: 'btn ghost', onclick: () => hideSeats(s, [...rev]) }, t('hideAll')) : null,
+        h('span', { class: 'muted small' }, t('revealedOf', { a: rev.size, n: s.seats.length }))),
+      h('div', { class: 'stack tight' },
+        h('span', { class: 'label' }, t('announceWinner')),
+        h('div', { class: 'row gap wrap announce-row' },
+          h('button', { class: 'btn good' + (s.announced === 'good' ? ' active' : ''), onclick: () => announce(s, 'good') }, '🏆 ' + t('goodWins')),
+          h('button', { class: 'btn evil' + (s.announced === 'evil' ? ' active' : ''), onclick: () => announce(s, 'evil') }, '🏆 ' + t('evilWins')),
+          s.announced ? h('button', { class: 'btn ghost', onclick: () => announce(s, null) }, t('unannounce')) : null),
+        suggested ? h('p', { class: 'muted small' }, t('suggestedWinner', { team: t(suggested === 'good' ? 'teamGood' : 'teamEvil') })) : null),
       h('div', { class: 'table-wrap' }, h('table', { class: 'table' },
-        h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, t('player')), h('th', null, t('character')), h('th', null, t('team')), h('th', null, ''))),
+        h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, t('player')), h('th', null, t('character')), h('th', null, t('team')), h('th', null, ''), h('th', { class: 'right' }, ''))),
         h('tbody', null, s.seats.map((x, i) => h('tr', { class: x.alive ? '' : 'is-dead' },
-          h('td', { class: 'num' }, String(i + 1)), h('td', { class: 'strong' }, seatName(x)), h('td', null, charInfo(x.characterId).name), h('td', null, teamPill(charInfo(x.characterId).team)), h('td', null, x.alive ? '' : '†')))))),
+          h('td', { class: 'num' }, String(i + 1)),
+          h('td', { class: 'strong' }, seatName(x)),
+          h('td', null, charInfo(x.characterId).name, x.shownCharacterId && x.shownCharacterId !== x.characterId ? h('span', { class: 'muted small' }, ` (${charInfo(x.shownCharacterId).name})`) : null),
+          h('td', null, teamPill(charInfo(x.characterId).team)),
+          h('td', null, x.alive ? '' : '†'),
+          h('td', { class: 'right' }, rev.has(x.id)
+            ? h('button', { class: 'btn small ghost', onclick: () => hideSeats(s, [x.id]) }, t('hide'))
+            : h('button', { class: 'btn small', onclick: () => revealSeats(s, [x.id]) }, '👁 ' + t('reveal')))))))),
       h('div', { class: 'row gap wrap' },
         copyButton(() => s.seats.map((x, i) => `${i + 1}. ${seatName(x)} – ${charInfo(x.characterId).name}${x.alive ? '' : ' †'}`).join('\n'), { label: t('copyReveal') })),
       h('div', { class: 'step-actions' },
         h('button', { class: 'btn ghost', onclick: undo }, '↶ ' + t('undo')),
-        confirmButton({ key: 'closenosave', label: t('closeNoSave'), onConfirm: () => { store.endGame(false); navigate('home'); }, cls: 'btn ghost' }),
-        h('button', { class: 'btn primary big', onclick: () => { store.endGame(true); navigate(store.lib.settings.historyEnabled ? 'history' : 'home'); toast(t('gameSaved')); } }, store.lib.settings.historyEnabled ? t('saveAndClose') : t('closeGame')))));
+        confirmButton({ key: 'closenosave', label: t('closeNoSave'), onConfirm: () => { if (store.game.live) closeRoom(); store.endGame(false); navigate('home'); }, cls: 'btn ghost' }),
+        h('button', { class: 'btn primary', onclick: () => { if (store.game.live) closeRoom(); store.endGame(true); navigate(store.lib.settings.historyEnabled ? 'history' : 'home'); toast(t('gameSaved')); } }, store.lib.settings.historyEnabled ? t('saveAndClose') : t('closeGame')))));
 }
 
 // ——— meldinger, notater, logg ———
@@ -603,10 +698,14 @@ function messageCard(s, m) {
   const to = m.seatId ? seatName(getSeat(s, m.seatId)) : m.kind === 'public' ? t('publicSayAloud') : t('everyone');
   const editKey = 'medit-' + m.id;
   const editing = app.editingMsg === m.id;
-  return h('div', { class: 'msg-card kind-' + (m.kind || 'private') + (copied ? ' copied' : '') },
+  const cs = cardState(m.id);
+  const canSend = liveOpen() && m.seatId && m.kind === 'private' && m.tag !== 'roleCard' && claimed(m.seatId);
+  return h('div', { class: 'msg-card kind-' + (m.kind || 'private') + (copied || cs ? ' copied' : '') },
     h('div', { class: 'msg-head' },
       h('span', { class: 'msg-to' }, (m.kind === 'public' ? '📣 ' : '') + to),
       h('span', { class: 'muted small' }, phaseRefLabel(m.phase)),
+      cs ? statusPill(cs) : null,
+      m.tag === 'roleCard' && liveOpen() && claimed(m.seatId) ? h('span', { class: 'pill ok' }, '📱 ' + t('inApp')) : null,
       copied ? h('span', { class: 'pill ok' }, '✓ ' + t('copiedShort')) : null),
     editing
       ? h('textarea', { id: editKey.replace(/[^a-zA-Z0-9_-]/g, '_'), class: 'textarea', rows: 3, value: app.editingText, oninput: (e) => { app.editingText = e.target.value; } })
@@ -615,7 +714,8 @@ function messageCard(s, m) {
       editing
         ? [h('button', { class: 'btn primary', onclick: () => { dispatch({ type: 'MESSAGE_EDIT', messageId: m.id, text: app.editingText, log: t('messageEdited') }); app.editingMsg = null; } }, t('save')),
           h('button', { class: 'btn ghost', onclick: () => { app.editingMsg = null; render(); } }, t('cancel'))]
-        : [copyButton(m.text, { cls: copied ? '' : 'primary', onCopied: () => store.markCopied(m.id) }),
+        : [canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: m.id, kind: 'info', text: m.text })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
+          copyButton(m.text, { cls: copied || canSend ? '' : 'primary', onCopied: () => store.markCopied(m.id) }),
           h('button', { class: 'btn ghost', onclick: () => { app.editingMsg = m.id; app.editingText = m.text; render(); } }, '✎ ' + t('edit'))]));
 }
 
@@ -657,6 +757,88 @@ function logPanel(s) {
     : emptyState(t('noLog'));
 }
 
+// ——— live ———
+function statusPill(cs) {
+  if (cs === 'answered') return h('span', { class: 'pill ok' }, '✉ ' + t('stAnswered'));
+  if (cs === 'read') return h('span', { class: 'pill ok' }, '✓ ' + t('stRead'));
+  return h('span', { class: 'pill live' }, '📨 ' + t('stSent'));
+}
+
+function choiceBox(s, step) {
+  const req = store.game.live ? choiceRequest(s, step) : null;
+  if (!req) return null;
+  const cs = cardState(req.cardId);
+  const resp = store.game.live.responses[req.cardId];
+  const name = seatName(getSeat(s, req.seatId));
+  if (!liveOpen() && !cs) return null;
+  return h('div', { class: 'choice-box' + (cs === 'answered' ? ' answered' : '') },
+    cs === 'answered'
+      ? h('span', null, '✉ ' + t('playerChose', { name, list: resp.choice.map((id) => seatName(getSeat(s, id))).join(' + ') }))
+      : cs ? h('span', null, '⏳ ' + t('waitingFor', { name })) : h('span', { class: 'muted' }, claimed(req.seatId) ? t('askHint', { name }) : t('notInApp', { name })),
+    liveOpen() && claimed(req.seatId)
+      ? h('button', { class: 'btn small' + (cs ? ' ghost' : ' primary'), onclick: () => { if (requestChoice(s, step)) toast(t('sentN', { n: 1 })); } }, cs ? t('askAgain') : '📨 ' + t('askChoice'))
+      : null);
+}
+
+function liveBadge(s) {
+  if (!store.game.live) return null;
+  const n = s.seats.filter((x) => claimed(x.id)).length;
+  const on = liveOpen();
+  return h('button', { class: 'btn ghost live-badge' + (on ? ' on' : ''), onclick: () => { app.gameTab = 'live'; render(); }, title: t('live') },
+    h('span', { class: 'dot' + (on ? ' on' : live.status === 'dead' ? ' dead' : '') }), `${n}/${s.seats.length}`);
+}
+
+function livePanel(s) {
+  const l = store.game.live;
+  if (!l) {
+    return h('div', { class: 'stack' },
+      h('div', { class: 'step-card' },
+        h('span', { class: 'eyebrow' }, t('live')),
+        h('h2', { class: 'step-role display' }, t('liveTitle')),
+        h('p', { class: 'step-instruction' }, t('liveIntro')),
+        h('ul', { class: 'hints' }, [t('liveP1'), t('liveP2'), t('liveP3'), t('liveP4')].map((x) => h('li', null, x))),
+        live.error === 'create' ? h('p', { class: 'warn-text small' }, t('liveCreateFailed')) : null,
+        h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: () => startLive() }, '📡 ' + t('startLive')))));
+  }
+  const settings = l.settings || {};
+  const statusText = { open: t('liveOpen'), connecting: t('liveConnecting'), reconnecting: t('liveReconnecting'), dead: t('liveDead'), off: t('liveConnecting'), closed: t('liveDead') }[live.status] || live.status;
+  const join = joinUrl(l.code);
+  const locked = live.room && live.room.locked;
+  const board = live.board && live.board.board && live.board.board.length ? live.board : null;
+  return h('div', { class: 'stack' },
+    h('div', { class: 'panel live-panel' },
+      h('div', { class: 'row between wrap' },
+        h('span', { class: 'row gap' }, h('span', { class: 'dot' + (live.status === 'open' ? ' on' : live.status === 'dead' ? ' dead' : '') }), statusText),
+        h('span', { class: 'room-code display' }, l.code)),
+      live.status === 'dead' ? h('p', { class: 'warn-text small' }, t('liveDeadHelp')) : null,
+      h('div', { class: 'live-join' },
+        h('div', { class: 'qr', html: qrSvg(join, { size: 180 }) }),
+        h('div', { class: 'stack tight' },
+          h('span', { class: 'label' }, t('studentLink')),
+          h('code', { class: 'link-text' }, join),
+          h('div', { class: 'row gap wrap' },
+            copyButton(join, { label: t('copyLink') }),
+            h('a', { class: 'btn', href: screenUrl(l.code), target: '_blank', rel: 'noopener' }, '🖥 ' + t('openScreen'))),
+          h('p', { class: 'muted small' }, t('screenHelp')))),
+      h('div', { class: 'row gap wrap' },
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !!locked, onchange: (e) => setLocked(e.target.checked) }), t('lockRoom')),
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.dream !== false, onchange: (e) => setLiveSetting('dream', e.target.checked) }), t('dreamOn')),
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.decoys !== false, onchange: (e) => setLiveSetting('decoys', e.target.checked) }), t('decoysOn'))),
+      h('p', { class: 'muted small' }, t('decoysHelp'))),
+    h('div', { class: 'panel' },
+      h('h3', { class: 'section-title' }, t('seatsInApp')),
+      h('ul', { class: 'seat-status' }, s.seats.map((x) => h('li', null,
+        h('span', { class: 'dot' + (seatOnline(x.id) ? ' on' : claimed(x.id) ? ' away' : '') }),
+        h('span', { class: 'grow strong' }, seatName(x)),
+        h('span', { class: 'muted small' }, seatOnline(x.id) ? t('online') : claimed(x.id) ? t('away') : t('notJoined')),
+        claimed(x.id) ? confirmButton({ key: 'rel' + x.id, label: t('release'), confirmLabel: t('releaseConfirm'), cls: 'btn small ghost', onConfirm: () => releaseSeat(x.id) }) : null)))),
+    board ? h('div', { class: 'panel' },
+      h('h3', { class: 'section-title' }, t('dreamBoard') + ' · ' + t('night') + ' ' + live.board.night),
+      h('ol', { class: 'board' }, board.board.map((b) => h('li', null, h('span', { class: 'grow' }, b.name), h('span', { class: 'strong' }, String(b.score)))))) : null,
+    h('div', { class: 'row gap' },
+      confirmButton({ key: 'closeroom', label: t('closeRoom'), confirmLabel: t('closeRoomConfirm'), onConfirm: () => closeRoom() })));
+}
+
 // ——— hovedvisning ———
 export function viewGame() {
   const s = store.state();
@@ -671,11 +853,13 @@ export function viewGame() {
     ['messages', t('messages') + (uncopied ? ` (${uncopied})` : '')],
     ['notes', t('notes') + (s.notes.length ? ` (${s.notes.length})` : '')],
     ['log', t('log')],
+    ['live', '📡 ' + t('live')],
   ];
   let content;
   if (app.gameTab === 'messages') content = messagesPanel(s);
   else if (app.gameTab === 'notes') content = notesPanel(s);
   else if (app.gameTab === 'log') content = logPanel(s);
+  else if (app.gameTab === 'live') content = livePanel(s);
   else if (s.phase.type === 'setup') content = setupPanel(s);
   else if (s.phase.type === 'night') content = nightPanel(s);
   else if (s.phase.type === 'day') content = dayPanel(s);
@@ -686,7 +870,7 @@ export function viewGame() {
     gameBar(s),
     h('div', { class: 'game-body' },
       app.focusMode ? null : h('section', { class: 'grim-pane', 'aria-label': 'Grimoire' }, grimView(s, activeIds),
-        h('p', { class: 'muted small center' }, t('grimHint'))),
+        h('p', { class: 'muted small center' }, s.phase.type === 'ended' ? t('grimHintReveal') : t('grimHint'))),
       h('section', { class: 'side-pane' },
         pendingBanner(s),
         h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([k, label]) => h('button', {

@@ -2,13 +2,13 @@
 
 Storyteller-assistent for *Blood on the Clocktower* i klasserommet. Appen fordeler roller, leder deg gjennom natten steg for steg og lager ferdige meldinger du kopierer til Teams. Du bestemmer alltid – appen foreslår.
 
-**Status:** Milepæl 1 (Storyteller-kjernen) er ferdig. Trouble Brewing er fullt modellert. Andre roller fungerer i manuell modus.
+**Status:** Milepæl 1 (Storyteller-kjernen) og milepæl 2 (live) er ferdige: elevene blir med på egne PC-er, får rollekort og nattkort rett i appen, svarer på nattvalg, spiller drømmespillet om natten, og spillet avsluttes med grim reveal på storskjermen. Trouble Brewing er fullt modellert. Andre roller fungerer i manuell modus.
 
 ## Publisering på Cloudflare
 
-Appen er bare statiske filer i `public/`. Den trenger ingen byggesteg og ingen database.
+Appen er en Cloudflare Worker: statiske filer fra `public/`, og ett Durable Object per live-rom (`worker/`). Den har ingen byggesteg og ingen avhengigheter. Gratisplanen holder godt for klasserom.
 
-### Alternativ A – koblet til GitHub (anbefalt)
+### Koble til GitHub (nødvendig for live)
 
 Hver endring i repoet publiseres automatisk.
 
@@ -17,12 +17,11 @@ Hver endring i repoet publiseres automatisk.
 3. La build command stå tom. Deploy command skal være `npx wrangler deploy`, som er standard.
 4. Trykk **Deploy**. Du får en adresse som `botc-helper.<ditt-navn>.workers.dev`.
 
-`wrangler.jsonc` forteller Cloudflare at filene ligger i `public/`. I milepæl 2 (live) legges selve spillrommet (Durable Objects) til i samme fil.
+`wrangler.jsonc` beskriver alt Cloudflare trenger: filene i `public/`, Worker-koden og Durable Object-klassen `Room` (SQLite-lagring, som er med på gratisplanen).
 
-### Alternativ B – dra og slipp
+### Uten live: dra og slipp
 
-1. **Workers & Pages** → **Create** → **Pages** → **Upload assets**.
-2. Dra inn mappen `public`.
+Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen `public` under **Workers & Pages → Create → Pages → Upload assets**. Live-rom virker ikke da, fordi de trenger Worker-koden.
 
 ## Slik brukes appen
 
@@ -32,11 +31,27 @@ Hver endring i repoet publiseres automatisk.
 4. **Natt:** Ett kort per steg i offisiell night order. Kortet viser hint og sann verdi, og foreslår falsk info når spilleren er forgiftet eller Drunk. Du ser alltid om meldingen er sann eller usann før du kopierer.
 5. **Dag:** Nominasjoner, stemmer (med ghost votes og terskel), henrettelse, Virgin, Slayer, Saint, Scarlet Woman og vinnersjekk.
 
+### Live i klasserommet
+
+1. Trykk **📡 Live → Start live-rom** i spillet.
+2. Åpne **storskjermen** på PC-en som er koblet til projektoren. Den viser QR-kode og romkode, og elevene skanner eller går til `…/play` og trykker på navnet sitt.
+3. Når alle er inne, låser du rommet. Rollekortet ser hver elev selv ved å holde inne.
+4. Om natten trykker du **Be om alle nattvalg**. Elevene velger i appen, og svarene fyller inn feltene i nattkortet ditt (✉ i nattkøen). **Send og fullfør** (Enter) sender meldingen rett til eleven.
+5. **Drømmespillet:** om natten kan elevene spille «Tell sauer» med rekord og toppliste for natten. Når du sender et kort, pauses spillet til eleven har lest eller valgt. Om dagen stenges spillet.
+6. **Falske vekkinger:** alle får 1–2 like kort i løpet av natten («Ingenting skjer – sov videre»), så sidemannen ikke ser hvem som faktisk blir vekket. Slås av i Live-panelet.
+7. **Grim reveal:** **Avslutt spillet – grim reveal** (fra forslaget når Demonen er død eller to lever, eller fra ⋯ Spill). Storskjermen og elevene ser da bare grimen med navn. Du trykker på spillerne for å avsløre rollene én og én, og annonserer vinneren når du vil.
+8. **Lagre og lukk** sletter rommet. Rommet slettes også automatisk etter 12 timer uten aktivitet.
+
+Kopier-knappene virker fortsatt for elever uten PC.
+
 **Snarveier i spillet:** Enter = fullfør steg · C = kopier melding · ← → = forrige/neste steg · Ctrl+Z / Ctrl+Y = angre/gjør om · N = notat · F = fokusmodus
 
 ## Personvern
 
-- Alle data (klasser, elever, spill og historikk) lagres bare i nettleseren på maskinen du bruker (localStorage). Ingenting sendes til noen server.
+- Klassebibliotek, elevmerker, spill og historikk lagres bare i nettleseren på maskinen du bruker (localStorage).
+- Grimoiren forlater aldri PC-en din. Et live-rom får bare fornavn, plassering, levende/døde, hver elevs eget rollekort, kortene du sender og topplisten. Storskjermen får aldri roller før du avslører dem.
+- Live-rommet slettes når du lukker det, eller etter 12 timer uten aktivitet. Elevene har ingen kontoer.
+- Tjenester som behandler elevdata kan kreve databehandleravtale – sjekk med skolen før dere bruker live-rom.
 - Fontene ligger i appen, så nettleseren gjør ingen forespørsler til Google eller andre.
 - Historikk lagres med fornavn og slettes automatisk etter et valgfritt antall uker. Den kan også slås av.
 - Under Innstillinger kan du laste ned backup (filen inneholder elevnavn) eller slette alt.
@@ -62,8 +77,13 @@ public/                 alt som publiseres
     script.js           import av scripts og rolletekster
     text.js, sttext.js  meldinger til elever og Storyteller-tekster (NO/EN)
   js/app/               grensesnitt (vanilla JS)
-tests/                  motortester: node --test tests/*.test.js
-tools/                  generering av offisielle data og én-fils forhåndsvisning
+  js/live/              felles WebSocket-klient, QR og grim reveal
+  js/play/              elevvisning og drømmespillet
+  js/screen/            storskjerm (Town Square)
+  play.html, screen.html
+worker/                 Cloudflare Worker (index.js) og spillrommet (room.js, Durable Object)
+tests/                  motortester og romtester: node --test tests/*.test.js
+tools/                  lokal utviklingsserver, generering av offisielle data og én-fils forhåndsvisning
 ```
 
 ### Arkitektur i korte trekk
@@ -75,14 +95,13 @@ tools/                  generering av offisielle data og én-fils forhåndsvisni
 
 ## Veien videre
 
-- **M2 – live:** QR-kode på storskjerm, elevene claimer plass, rollekort og meldinger rett på elevens skjerm, og nattvalg sendes direkte (Cloudflare Durable Objects).
-- **M3 – dag live:** Avstemning med viser på storskjerm.
+- **M3 – dag live:** Avstemning med viser på storskjerm, der elevene rekker opp hånden på egen PC.
 - **M4:** Flere utgaver fullt modellert, og egne roller.
 
 ## Utvikling
 
 ```
-node --test tests/*.test.js     # motortester
-node tools/build-preview.mjs    # én selvstendig HTML-fil i dist/
-python3 -m http.server -d public 8080
+node --test tests/*.test.js     # motor- og romtester
+node tools/dev-server.mjs       # hele appen lokalt, inkludert live-rom: http://localhost:8787
+node tools/build-preview.mjs    # én selvstendig HTML-fil i dist/ (uten live)
 ```
