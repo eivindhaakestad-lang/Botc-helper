@@ -126,7 +126,7 @@ const NO = {
   lockRoom: 'Lås rommet (ingen nye kan bli med)', dreamOn: 'Drømmespill om natten', decoysOn: 'Falske vekkinger',
   decoysHelp: 'Falske vekkinger gjør at alle får 1–2 like kort i løpet av natten. Da ser ikke sidemannen hvem som faktisk blir vekket.',
   seatsInApp: 'Plasser i appen', online: 'på nett', away: 'borte', notJoined: 'ikke med', release: 'Frigi', releaseConfirm: 'Frigi plassen?',
-  dreamBoard: 'Drømmetoppliste', closeRoom: 'Lukk rommet', closeRoomConfirm: 'Lukk rommet for alle?',
+  dreamBoard: 'Drømmetoppliste – hele spillet', closeRoom: 'Lukk rommet', closeRoomConfirm: 'Lukk rommet for alle?',
   send: 'Send', resend: 'Send igjen', sendAndComplete: 'Send og fullfør', sentN: '{n} sendt', choicesRequested: 'Ba {n} spillere om nattvalg', choicesNone: 'Ingen nattvalg å be om nå',
   askAll: 'Be om alle nattvalg', askAllHelp: '{n} spillere kan velge i appen nå', askChoice: 'Be om valg', askAgain: 'Send på nytt',
   askHint: 'Be {name} velge i appen', notInApp: '{name} er ikke i appen – før inn valget selv', waitingFor: 'Venter på {name} …', playerChose: '{name} valgte {list}',
@@ -139,6 +139,9 @@ const NO = {
   revealNext: 'Avslør {name}', revealAll: 'Avslør alle', hideAll: 'Skjul alle', revealedOf: '{a} av {n} avslørt', announceWinner: 'Annonser vinner',
   unannounce: 'Trekk tilbake', suggestedWinner: 'Forslag ut fra spillet: {team} vant', notAnnounced: 'Vinner ikke annonsert', revealedShort: 'avslørt', hiddenShort: 'skjult',
   reveal: 'Avslør', hide: 'Skjul', logRevealed: 'Avslørt: {list}', logHidden: 'Roller skjult igjen', logUnannounced: 'Vinner trukket tilbake',
+
+  handsQueue: 'Håndsopprekning', handDone: 'Har snakket – ta ned hånden', clearHands: 'Tøm', handsKey: 'H fjerner den første',
+  openVote: 'Åpne avstemning', reopenVote: 'Åpne avstemningen igjen', closeVote: 'Lukk avstemningen ({n} stemmer)', votingOpen: 'Elevene stemmer nå',
 
   team_townsfolk: 'Townsfolk', team_outsider: 'Outsider', team_minion: 'Minion', team_demon: 'Demon', team_traveller: 'Traveller', team_none: '—',
 };
@@ -267,7 +270,7 @@ const EN = {
   lockRoom: 'Lock the room (nobody new can join)', dreamOn: 'Dream game at night', decoysOn: 'Fake wake-ups',
   decoysHelp: 'Fake wake-ups give everyone 1–2 identical cards during the night, so neighbours cannot tell who is really woken.',
   seatsInApp: 'Seats in the app', online: 'online', away: 'away', notJoined: 'not joined', release: 'Release', releaseConfirm: 'Release the seat?',
-  dreamBoard: 'Dream leaderboard', closeRoom: 'Close the room', closeRoomConfirm: 'Close the room for everyone?',
+  dreamBoard: 'Dream leaderboard – whole game', closeRoom: 'Close the room', closeRoomConfirm: 'Close the room for everyone?',
   send: 'Send', resend: 'Send again', sendAndComplete: 'Send and complete', sentN: '{n} sent', choicesRequested: 'Asked {n} players for night choices', choicesNone: 'No night choices to ask for now',
   askAll: 'Ask for all night choices', askAllHelp: '{n} players can choose in the app now', askChoice: 'Ask for choice', askAgain: 'Send again',
   askHint: 'Ask {name} to choose in the app', notInApp: '{name} is not in the app – enter the choice yourself', waitingFor: 'Waiting for {name} …', playerChose: '{name} chose {list}',
@@ -280,6 +283,9 @@ const EN = {
   revealNext: 'Reveal {name}', revealAll: 'Reveal all', hideAll: 'Hide all', revealedOf: '{a} of {n} revealed', announceWinner: 'Announce winner',
   unannounce: 'Take back', suggestedWinner: 'Suggested from the game: {team} won', notAnnounced: 'Winner not announced', revealedShort: 'revealed', hiddenShort: 'hidden',
   reveal: 'Reveal', hide: 'Hide', logRevealed: 'Revealed: {list}', logHidden: 'Characters hidden again', logUnannounced: 'Winner taken back',
+
+  handsQueue: 'Raised hands', handDone: 'Has spoken – lower the hand', clearHands: 'Clear', handsKey: 'H removes the first one',
+  openVote: 'Open the vote', reopenVote: 'Reopen the vote', closeVote: 'Close the vote ({n} votes)', votingOpen: 'Students are voting',
 
   team_townsfolk: 'Townsfolk', team_outsider: 'Outsider', team_minion: 'Minion', team_demon: 'Demon', team_traveller: 'Traveller', team_none: '—',
 };

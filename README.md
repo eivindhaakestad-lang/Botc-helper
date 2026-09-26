@@ -42,6 +42,12 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 7. **Grim reveal:** **Avslutt spillet – grim reveal** (fra forslaget når Demonen er død eller to lever, eller fra ⋯ Spill). Storskjermen og elevene ser da bare grimen med navn. Du trykker på spillerne for å avsløre rollene én og én, og annonserer vinneren når du vil.
 8. **Lagre og lukk** sletter rommet. Rommet slettes også automatisk etter 12 timer uten aktivitet.
 
+**Håndsopprekning:** Før spillet og om dagen kan elevene rekke opp hånden på PC-en. Rekkefølgen vises hos deg, hos eleven og på storskjermen. Trykk på navnet (eller H for den første) når eleven har snakket. Rekker de opp igjen, havner de nederst. Køen tømmes ved hvert faseskifte.
+
+**Avstemning:** Registrer nominasjonen i Dag-fanen og trykk **🗳 Åpne avstemning**. Elevene stemmer på egen PC (døde bare med ghost vote igjen), og storskjermen viser hvem som stemmer og antallet mot terskelen. **Lukk avstemningen** lagrer stemmene i spillet, og storskjermen viser nominasjonene i dag og hvem som er på blokka.
+
+**Drømmespillet** er åpent både før spillet starter og om natten. Topplisten gjelder hele spillrunden.
+
 Kopier-knappene virker fortsatt for elever uten PC.
 
 **Snarveier i spillet:** Enter = fullfør steg · C = kopier melding · ← → = forrige/neste steg · Ctrl+Z / Ctrl+Y = angre/gjør om · N = notat · F = fokusmodus
@@ -95,7 +101,6 @@ tools/                  lokal utviklingsserver, generering av offisielle data og
 
 ## Veien videre
 
-- **M3 – dag live:** Avstemning med viser på storskjerm, der elevene rekker opp hånden på egen PC.
 - **M4:** Flere utgaver fullt modellert, og egne roller.
 
 ## Utvikling

@@ -4,6 +4,7 @@
 import { charInfo } from './characters.js';
 import { seatName, actingId } from './state.js';
 import { msg, summary, TEAM_LABEL } from './text.js';
+import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
 
 export function publicProjection(s, { dream = true, decoys = true } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
@@ -17,6 +18,18 @@ export function publicProjection(s, { dream = true, decoys = true } = {}) {
     dream, decoys,
     winner: s.winner || null,
   };
+  if (s.phase.type === 'day') {
+    // Nominasjoner og stemmetall er offentlige – alle ser dem ved bordet uansett.
+    const block = onTheBlock(s);
+    const ex = s.executions.filter((e) => e.day === s.phase.number).slice(-1)[0];
+    out.day = {
+      need: voteThreshold(s),
+      nominations: nominationsToday(s).map((n) => ({ id: n.id, nominatorId: n.nominatorId, nomineeId: n.nomineeId, votes: n.votes, voters: n.voters.slice() })),
+      block: block.nomination ? { nomineeId: block.nomination.nomineeId, votes: block.votes } : null,
+      tie: !!block.tie,
+      executed: ex ? ex.seatId || 'none' : null,
+    };
+  }
   if (ended) {
     // Grim reveal: bare navn til Storytelleren avslører rollene, og vinneren først når den er annonsert.
     const rev = new Set(s.revealed || []);

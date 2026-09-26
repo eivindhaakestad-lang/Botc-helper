@@ -20,7 +20,7 @@ export function grimCircle({ seats, token, center, cls = '' }) {
 }
 
 // Et rolle-token (sirkel) med navn under.
-export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null }) {
+export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null, hand = null }) {
   const info = characterId ? charInfo(characterId) : null;
   const team = info ? info.team : 'none';
   const flipped = info && alignment && ((alignment === 'evil') !== (team === 'minion' || team === 'demon'));
@@ -34,7 +34,8 @@ export function roleToken({ characterId, shownId, label, sub, dead, active, onCl
     index !== null ? h('span', { class: 'token-num' }, String(index + 1)) : null,
     h('span', { class: 'token-char' + (info && info.name.length > 12 ? ' xlong' : info && Math.max(...info.name.split(' ').map((w) => w.length)) > 8 ? ' long' : '') }, info ? info.name : '?'),
     shownId ? h('span', { class: 'token-shown' }, charInfo(shownId).name) : null,
-    dead ? h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†') : null),
+    dead ? h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†') : null,
+    hand ? h('span', { class: 'hand-badge', title: '✋' }, '✋' + hand) : null),
   h('span', { class: 'token-label' }, label,
     ghost !== null ? h('span', { class: 'ghost-vote' + (ghost ? ' has' : ''), title: ghost ? 'Ghost vote' : '' }, ghost ? '●' : '○') : null),
   sub ? h('span', { class: 'token-sub' }, sub) : null,

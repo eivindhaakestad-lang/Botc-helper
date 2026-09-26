@@ -9,7 +9,7 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -153,6 +153,7 @@ function grimView(s, activeIds) {
       dead: !seat.alive,
       ghost: seat.alive ? null : seat.ghostVote,
       active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)),
+      hand: store.game.live && live.hands.includes(seat.id) ? live.hands.indexOf(seat.id) + 1 : null,
       alignment: seat.alignment,
       reminders: [
         ...seat.reminders,
@@ -565,9 +566,19 @@ function dayPanel(s) {
     df.nominator = null; df.nominee = null;
     render();
   };
+  const liveVote = (nom) => (live.vote && live.vote.id === nom.id ? live.vote : null);
+  const saveVote = (nom, voters) => dispatch({ type: 'VOTE', sk: 'vote:' + nom.id, nominationId: nom.id, voters, log: `${t('votes')}: ${seatName(getSeat(s, nom.nomineeId))} ${voters.length}` });
   const toggleVoter = (nom, seatId) => {
-    const voters = nom.voters.includes(seatId) ? nom.voters.filter((x) => x !== seatId) : [...nom.voters, seatId];
-    dispatch({ type: 'VOTE', sk: 'vote:' + nom.id, nominationId: nom.id, voters, log: `${t('votes')}: ${seatName(getSeat(s, nom.nomineeId))} ${voters.length}` });
+    const lv = liveVote(nom);
+    const cur = lv && lv.open ? lv.voters : nom.voters;
+    const voters = cur.includes(seatId) ? cur.filter((x) => x !== seatId) : [...cur, seatId];
+    if (lv && lv.open) { setVoteVoters(voters); render(); } else saveVote(nom, voters);
+  };
+  const finishVote = (nom) => {
+    const lv = liveVote(nom);
+    if (!lv) return;
+    saveVote(nom, lv.voters);
+    closeVote();
   };
   const execute = (seatId) => {
     const aliveBefore = aliveSeats(s).length;
@@ -605,16 +616,23 @@ function dayPanel(s) {
       nw.length ? h('div', { class: 'small warn-text' }, nw.map((w) => h('p', null, w))) : null,
       noms.length ? h('ul', { class: 'nom-list' }, noms.map((nom) => {
         const isBlock = block.nomination && block.nomination.id === nom.id;
-        const vw = voteWarnings(s, nom.voters, lang);
-        return h('li', { class: 'nom' + (isBlock ? ' on-block' : '') },
+        const lv = liveVote(nom);
+        const voting = !!(lv && lv.open);
+        const shown = voting ? lv.voters : nom.voters;
+        const vw = voteWarnings(s, shown, lang);
+        return h('li', { class: 'nom' + (isBlock ? ' on-block' : '') + (voting ? ' voting' : '') },
           h('div', { class: 'row between wrap' },
             h('span', { class: 'strong' }, `${seatName(getSeat(s, nom.nominatorId))} → ${seatName(getSeat(s, nom.nomineeId))}`),
             h('span', { class: 'row gap' },
-              h('span', { class: 'vote-count' + (nom.votes >= need ? ' enough' : '') }, `${nom.votes} / ${need}`),
+              h('span', { class: 'vote-count' + (shown.length >= need ? ' enough' : '') }, `${shown.length} / ${need}`),
               isBlock ? h('span', { class: 'pill warn' }, t('onTheBlock')) : null,
               confirmButton({ key: 'delnom' + nom.id, label: '✕', confirmLabel: t('delete'), cls: 'btn danger small', onConfirm: () => dispatch({ type: 'NOMINATION_REMOVE', nominationId: nom.id, log: t('nominationRemoved') }) }))),
+          liveOpen() ? h('div', { class: 'row gap wrap vote-live' },
+            voting
+              ? [h('span', { class: 'pill live' }, '🗳 ' + t('votingOpen')), h('button', { class: 'btn primary', onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
+              : [h('button', { class: 'btn' + (nom.votes ? ' ghost' : ' primary'), onclick: () => openVote(nom, need) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
           h('div', { class: 'voters' }, s.seats.map((x) => {
-            const on = nom.voters.includes(x.id);
+            const on = shown.includes(x.id);
             const cant = !x.alive && !x.ghostVote && !on;
             return h('button', {
               class: 'voter' + (on ? ' on' : '') + (x.alive ? '' : ' dead') + (cant ? ' cant' : ''), 'aria-pressed': on ? 'true' : 'false',
@@ -758,6 +776,17 @@ function logPanel(s) {
 }
 
 // ——— live ———
+function handsBar(s) {
+  if (!store.game.live || !live.hands.length) return null;
+  return h('div', { class: 'hands-bar' },
+    h('span', { class: 'label' }, '✋ ' + t('handsQueue')),
+    h('ol', { class: 'hands-list' }, live.hands.map((id, i) => h('li', null,
+      h('button', { class: 'hand-chip' + (i === 0 ? ' first' : ''), onclick: () => lowerHand(id), title: t('handDone') },
+        h('span', { class: 'hand-n' }, String(i + 1)), seatName(getSeat(s, id)), h('span', { class: 'hand-x', 'aria-hidden': 'true' }, '✓'))))),
+    h('button', { class: 'btn small ghost', onclick: clearHands }, t('clearHands')),
+    h('span', { class: 'muted small' }, t('handsKey')));
+}
+
 function statusPill(cs) {
   if (cs === 'answered') return h('span', { class: 'pill ok' }, '✉ ' + t('stAnswered'));
   if (cs === 'read') return h('span', { class: 'pill ok' }, '✓ ' + t('stRead'));
@@ -833,7 +862,7 @@ function livePanel(s) {
         h('span', { class: 'muted small' }, seatOnline(x.id) ? t('online') : claimed(x.id) ? t('away') : t('notJoined')),
         claimed(x.id) ? confirmButton({ key: 'rel' + x.id, label: t('release'), confirmLabel: t('releaseConfirm'), cls: 'btn small ghost', onConfirm: () => releaseSeat(x.id) }) : null)))),
     board ? h('div', { class: 'panel' },
-      h('h3', { class: 'section-title' }, t('dreamBoard') + ' · ' + t('night') + ' ' + live.board.night),
+      h('h3', { class: 'section-title' }, t('dreamBoard')),
       h('ol', { class: 'board' }, board.board.map((b) => h('li', null, h('span', { class: 'grow' }, b.name), h('span', { class: 'strong' }, String(b.score)))))) : null,
     h('div', { class: 'row gap' },
       confirmButton({ key: 'closeroom', label: t('closeRoom'), confirmLabel: t('closeRoomConfirm'), onConfirm: () => closeRoom() })));
@@ -872,6 +901,7 @@ export function viewGame() {
       app.focusMode ? null : h('section', { class: 'grim-pane', 'aria-label': 'Grimoire' }, grimView(s, activeIds),
         h('p', { class: 'muted small center' }, s.phase.type === 'ended' ? t('grimHintReveal') : t('grimHint'))),
       h('section', { class: 'side-pane' },
+        handsBar(s),
         pendingBanner(s),
         h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([k, label]) => h('button', {
           role: 'tab', class: 'tab' + (app.gameTab === k ? ' active' : ''), 'aria-selected': app.gameTab === k ? 'true' : 'false',
@@ -890,6 +920,7 @@ export function gameKeydown(e) {
   if (mod && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
   if (typing || mod || e.altKey) return;
   if (e.key === 'f' || e.key === 'F') { app.focusMode = !app.focusMode; render(); return; }
+  if ((e.key === 'h' || e.key === 'H') && live.hands.length) { lowerHand(live.hands[0]); render(); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); app.gameTab = 'notes'; render(); setTimeout(() => { const el = document.getElementById('note-input'); if (el) el.focus(); }, 30); return; }
   if (!current) return;
   const { s, step, d, q } = current;

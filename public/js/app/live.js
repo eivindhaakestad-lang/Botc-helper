@@ -16,6 +16,8 @@ export const live = {
   claimed: {},
   online: {},
   board: null,
+  hands: [],
+  vote: null,
   lastSync: '',
   error: null,
 };
@@ -56,7 +58,7 @@ export function connectLive() {
 
 export function disconnectLive() {
   if (live.client) live.client.close();
-  Object.assign(live, { client: null, status: 'off', room: null, claimed: {}, online: {}, board: null, lastSync: '', error: null });
+  Object.assign(live, { client: null, status: 'off', room: null, claimed: {}, online: {}, board: null, hands: [], vote: null, lastSync: '', error: null });
 }
 
 export function closeRoom() {
@@ -73,6 +75,8 @@ function onMessage(m) {
       live.room = m.room;
       live.claimed = m.claimed || {};
       live.online = m.online || {};
+      live.hands = m.hands || [];
+      live.vote = m.vote || null;
       for (const [seatId, cards] of Object.entries(m.cards || {})) {
         for (const c of cards) {
           l.sent[c.id] = true;
@@ -110,6 +114,14 @@ function onMessage(m) {
     }
     case 'board':
       live.board = m;
+      render();
+      break;
+    case 'hands':
+      live.hands = m.hands || [];
+      render();
+      break;
+    case 'vote':
+      live.vote = m.vote || null;
       render();
       break;
     case 'error':
@@ -173,3 +185,34 @@ export function releaseSeat(seatId) {
   if (liveOpen()) live.client.send({ t: 'release', seatId });
 }
 
+
+// ——— håndsopprekning ———
+export function lowerHand(seatId) {
+  if (!liveOpen()) return;
+  live.hands = live.hands.filter((x) => x !== seatId);
+  live.client.send({ t: 'hand', seatId });
+}
+
+export function clearHands() {
+  if (!liveOpen()) return;
+  live.hands = [];
+  live.client.send({ t: 'handsClear' });
+}
+
+// ——— avstemning på elevenes PC-er ———
+export function openVote(nom, need) {
+  if (!liveOpen()) return;
+  live.client.send({ t: 'voteOpen', vote: { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, need, voters: nom.voters || [] } });
+}
+
+export function setVoteVoters(voters) {
+  if (!liveOpen() || !live.vote) return;
+  live.vote = { ...live.vote, voters };
+  live.client.send({ t: 'voteSet', voters });
+}
+
+export function closeVote() {
+  if (!liveOpen() || !live.vote) return;
+  live.vote = { ...live.vote, open: false };
+  live.client.send({ t: 'voteClose' });
+}

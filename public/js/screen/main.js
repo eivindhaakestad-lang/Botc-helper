@@ -6,11 +6,12 @@ import { LiveClient, joinUrl, qrSvg } from '../live/client.js';
 import { revealCircle } from '../live/reveal.js';
 
 const TXT = {
-  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Tell sauer for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal' },
-  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Count sheep to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal' },
+  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Tell sauer for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer' },
+  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Count sheep to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes' },
 };
 
-const S = { pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting' };
+const S = { pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null };
+const nameOf = (id) => { const x = S.pub && S.pub.seats.find((y) => y.id === id); return x ? x.names.join(' + ') : '?'; };
 const T = (k) => (TXT[S.pub && S.pub.lang === 'en' ? 'en' : 'no'][k]);
 const code = (new URLSearchParams(location.search).get('room') || '').toUpperCase();
 
@@ -20,12 +21,18 @@ function seatToken(seat, i, n) {
   const top = 50 + 40 * Math.sin(a);
   const joined = (S.claimed[seat.id] || 0) > 0;
   const initials = seat.names.map((x) => x.slice(0, 1)).join('');
+  const handPos = S.hands.indexOf(seat.id);
+  const v = S.vote;
+  const voted = v && v.voters.includes(seat.id);
+  const nominee = v && v.nomineeId === seat.id;
+  const nominator = v && v.nominatorId === seat.id;
   return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') },
+    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
-        h('span', { class: 'token-char' }, initials),
-        seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
+        h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : initials),
+        seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
+        handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null),
       h('span', { class: 'token-label' }, seat.names.join(' + '),
         seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○'))));
 }
@@ -55,7 +62,7 @@ function render() {
         h('div', { class: 'grim ' + ph.type, style: `--tok:min(120px, ${Math.min(26, (257 / n) * 0.7).toFixed(2)}cqw)` },
           h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
           h('div', { class: 'grim-center' },
-            h('div', { class: 'center-text' },
+            S.vote && ph.type === 'day' ? voteCenter(S.vote) : h('div', { class: 'center-text' },
               h('span', { class: 'display screen-phase' }, phaseText),
               ph.type === 'day' || ph.type === 'night' ? h('span', { class: 'center-stat' }, `${alive} ${T('alive')} · ${Math.ceil(alive / 2)} ${T('votes')}`) : null,
               ph.type === 'setup' ? h('span', { class: 'center-stat' }, `${joinedN} / ${p.seats.length} ${T('joined')}`) : null,
@@ -69,12 +76,41 @@ function render() {
           h('p', { class: 'join-url' }, url.replace(/^https?:\/\//, '')),
           h('p', { class: 'label' }, T('code')),
           h('p', { class: 'display big-code' }, code)) : null,
-        ph.type === 'night' && p.dream !== false ? h('div', { class: 'panel' },
+        handsPanel(),
+        ph.type === 'day' ? dayPanel(p) : null,
+        (ph.type === 'night' || ph.type === 'setup') && p.dream !== false ? h('div', { class: 'panel' },
           h('h3', { class: 'section-title' }, '🐑 ' + T('board')),
           S.board && S.board.board.length
             ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x) => h('li', null, h('span', { class: 'grow' }, x.name), h('span', { class: 'strong' }, String(x.score)))))
             : h('p', { class: 'muted' }, T('noScores'))) : null,
         h('button', { class: 'btn ghost small fs-btn', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen')))));
+}
+
+function voteCenter(v) {
+  const enough = v.voters.length >= v.need;
+  return h('div', { class: 'center-text vote-center' + (v.open ? ' open' : '') },
+    h('span', { class: 'display vote-names' }, `${nameOf(v.nominatorId)} → ${nameOf(v.nomineeId)}`),
+    h('span', { class: 'display vote-big' + (enough ? ' enough' : '') }, `${v.voters.length}`, h('span', { class: 'vote-need' }, ` / ${v.need}`)),
+    h('span', { class: 'center-stat' }, v.open ? '🗳 ' + T('voteNow') : T('voteClosed')));
+}
+
+function handsPanel() {
+  if (!S.hands.length || !S.pub || !['setup', 'day'].includes(S.pub.phase.type)) return null;
+  return h('div', { class: 'panel' },
+    h('h3', { class: 'section-title' }, '✋ ' + T('hands')),
+    h('ol', { class: 'board big hands-screen' }, S.hands.map((id) => h('li', null, h('span', { class: 'grow' }, nameOf(id))))));
+}
+
+function dayPanel(p) {
+  const d = p.day;
+  if (!d) return null;
+  return h('div', { class: 'panel' },
+    h('h3', { class: 'section-title' }, '⚖️ ' + T('noms')),
+    d.nominations.length ? h('ol', { class: 'noms-screen' }, d.nominations.map((n) => h('li', { class: d.block && d.block.nomineeId === n.nomineeId && n.votes === d.block.votes ? 'block' : '' },
+      h('span', { class: 'grow' }, `${nameOf(n.nominatorId)} → ${nameOf(n.nomineeId)}`),
+      h('span', { class: 'strong' }, `${n.votes} / ${d.need}`)))) : h('p', { class: 'muted' }, `${d.need} ${T('votes2')} ${T('need')}`),
+    d.block ? h('p', { class: 'strong' }, `${T('onBlock')}: ${nameOf(d.block.nomineeId)} (${d.block.votes})`) : d.tie ? h('p', { class: 'muted' }, T('tie')) : null,
+    d.executed ? h('p', { class: 'muted' }, d.executed === 'none' ? T('noExec') : `${T('executed')}: ${nameOf(d.executed)}`) : null);
 }
 
 if (!code) {
@@ -86,7 +122,7 @@ if (!code) {
     params: { role: 'screen' },
     onStatus: (st) => { S.status = st; },
     onMessage: (m) => {
-      if (m.t === 'public') { S.pub = m.public; S.room = m.room; S.claimed = m.claimed || {}; }
+      if (m.t === 'public') { S.pub = m.public; S.room = m.room; S.claimed = m.claimed || {}; S.hands = m.hands || []; S.vote = m.vote || null; }
       else if (m.t === 'board') S.board = m;
       else if (m.t === 'closed') S.error = 'closed';
       else if (m.t === 'error' && m.code === 'noroom') S.error = 'noroom';

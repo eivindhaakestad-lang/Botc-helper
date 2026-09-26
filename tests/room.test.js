@@ -119,16 +119,15 @@ test('rom: claim, rollekort, kort, lest, valg og toppliste', async () => {
   await say(room, p3, { t: 'score', score: 30 });
   await say(room, p1, { t: 'score', score: 5 });
   const board = screen.last('board');
-  assert.equal(board.night, 2);
   assert.deepEqual(board.board.map((x) => [x.name, x.score]), [['Nora', 30], ['Markus', 12]]);
   await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'day', number: 2 } }, roleCards: {} });
   await say(room, p1, { t: 'score', score: 99 });
   assert.equal(screen.last('board').open, false);
   assert.ok(!screen.last('board').board.some((x) => x.score === 99), 'ingen score om dagen');
 
-  // Neste natt nullstiller topplisten
+  // Rekordene gjelder hele spillrunden
   await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'night', number: 3 } }, roleCards: {} });
-  assert.equal(screen.last('board').board.length, 0);
+  assert.deepEqual(screen.last('board').board.map((x) => x.score), [30, 12]);
 
   // Låst rom
   await say(room, st, { t: 'release', seatId: 's3' });
@@ -158,4 +157,61 @@ test('rom: falske vekkinger går bare til andre plasser om natten', async () => 
   Math.random = orig;
   assert.equal(ps.s1.last('decoy'), undefined);
   assert.ok(ps.s2.last('decoy') && ps.s3.last('decoy'));
+});
+
+test('rom: drømmespill før start, håndsopprekning og avstemning', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const screen = await connect(room, 'screen');
+  await say(room, st, { t: 'sync', public: PUB, roleCards: {} });
+  const ps = {};
+  for (const id of ['s1', 's2', 's3']) { ps[id] = await connect(room, 'player'); await say(room, ps[id], { t: 'claim', seatId: id }); }
+
+  // Drømmespill før spillet starter
+  assert.equal(screen.last('board').open, true);
+  await say(room, ps.s1, { t: 'score', score: 7 });
+  assert.equal(screen.last('board').board[0].score, 7);
+
+  // Hender i rekkefølge; ny håndsopprekning havner nederst
+  await say(room, ps.s3, { t: 'hand', up: true });
+  await say(room, ps.s1, { t: 'hand', up: true });
+  await say(room, ps.s2, { t: 'hand', up: true });
+  assert.deepEqual(screen.last('public').hands, ['s3', 's1', 's2']);
+  await say(room, st, { t: 'hand', seatId: 's3' });
+  assert.deepEqual(st.last('hands').hands, ['s1', 's2']);
+  await say(room, ps.s3, { t: 'hand', up: true });
+  assert.deepEqual(screen.last('public').hands, ['s1', 's2', 's3']);
+  await say(room, ps.s1, { t: 'hand', up: false });
+  assert.deepEqual(screen.last('public').hands, ['s2', 's3']);
+
+  // Om natten: ingen hender, køen tømmes ved faseskifte
+  await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'night', number: 1 } }, roleCards: {} });
+  assert.deepEqual(screen.last('public').hands, []);
+  await say(room, ps.s1, { t: 'hand', up: true });
+  assert.deepEqual(screen.last('public').hands, []);
+  assert.equal(screen.last('board').board[0].score, 7, 'rekord fra før start beholdes');
+
+  // Dag: avstemning på elevenes PC-er
+  const dead = PUB.seats.map((x) => (x.id === 's3' ? { ...x, alive: false, ghostVote: false } : x));
+  await say(room, st, { t: 'sync', public: { ...PUB, seats: dead, phase: { type: 'day', number: 1 } }, roleCards: {} });
+  await say(room, ps.s1, { t: 'score', score: 50 });
+  assert.equal(screen.last('board').board[0].score, 7, 'ingen drømmespill om dagen');
+  await say(room, st, { t: 'voteOpen', vote: { id: 'n1', nominatorId: 's1', nomineeId: 's2', need: 2 } });
+  await say(room, ps.s1, { t: 'voteCast', voteId: 'n1', up: true });
+  await say(room, ps.s2, { t: 'voteCast', voteId: 'n1', up: true });
+  await say(room, ps.s3, { t: 'voteCast', voteId: 'n1', up: true });
+  assert.equal(ps.s3.last('error').code, 'noghost', 'død uten ghost vote kan ikke stemme');
+  assert.deepEqual(screen.last('public').vote.voters, ['s1', 's2']);
+  assert.deepEqual(st.last('vote').vote.voters, ['s1', 's2']);
+  await say(room, ps.s2, { t: 'voteCast', voteId: 'n1', up: false });
+  assert.deepEqual(st.last('vote').vote.voters, ['s1']);
+  await say(room, st, { t: 'voteSet', voters: ['s1', 's2'] });
+  await say(room, st, { t: 'voteClose' });
+  assert.equal(screen.last('public').vote.open, false);
+  await say(room, ps.s2, { t: 'voteCast', voteId: 'n1', up: false });
+  assert.deepEqual(screen.last('public').vote.voters, ['s1', 's2'], 'lukket avstemning endres ikke');
+  await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'night', number: 2 } }, roleCards: {} });
+  assert.equal(screen.last('public').vote, null, 'avstemningen forsvinner ved faseskifte');
 });

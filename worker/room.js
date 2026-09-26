@@ -43,6 +43,18 @@ function cleanPublic(p) {
     decoys: p.decoys !== false,
     winner: p.winner === 'good' || p.winner === 'evil' ? p.winner : null,
   };
+  if (phase.type === 'day' && p.day && typeof p.day === 'object') {
+    const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
+    out.day = {
+      need: Number(p.day.need) || 0,
+      nominations: (Array.isArray(p.day.nominations) ? p.day.nominations.slice(0, 30) : []).map((n) => ({
+        id: str(n.id, 80), nominatorId: str(n.nominatorId, 80), nomineeId: str(n.nomineeId, 80), votes: Number(n.votes) || 0, voters: ids(n.voters),
+      })),
+      block: p.day.block ? { nomineeId: str(p.day.block.nomineeId, 80), votes: Number(p.day.block.votes) || 0 } : null,
+      tie: !!p.day.tie,
+      executed: p.day.executed ? str(p.day.executed, 80) : null,
+    };
+  }
   if (phase.type === 'ended' && Array.isArray(p.reveal)) {
     out.reveal = p.reveal.slice(0, 30).map((r) => ({
       seatId: str(r.seatId, 80), character: str(r.character, 40), team: str(r.team, 12),
@@ -79,7 +91,7 @@ export class Room {
   async load() {
     if (this.room !== undefined) return;
     this.room = (await this.state.storage.get('room')) || null;
-    this.board = (await this.state.storage.get('board')) || { night: 0, scores: {} };
+    this.board = (await this.state.storage.get('board')) || { scores: {} };
   }
   async seat(id) {
     if (!this.seats[id]) this.seats[id] = (await this.state.storage.get('seat:' + id)) || { roleCard: null, inbox: [] };
@@ -114,10 +126,10 @@ export class Room {
     if (this.room) return new Response('exists', { status: 409 });
     this.room = {
       code: str(code, 10), stToken: str(stToken, 64), createdAt: Date.now(), lastActivity: Date.now(),
-      locked: false, claims: {},
+      locked: false, claims: {}, hands: [],
       public: { title: '', lang: 'no', phase: { type: 'setup', number: 0 }, seats: [], announcement: '', dream: true, decoys: true, winner: null },
     };
-    this.board = { night: 0, scores: {} };
+    this.board = { scores: {} };
     await this.saveRoom();
     await this.touchAlarm();
     return new Response('ok');
@@ -167,17 +179,34 @@ export class Room {
     return out;
   }
   publicMsg() {
-    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount() };
+    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null };
   }
   boardMsg() {
     const names = Object.fromEntries(this.room.public.seats.map((x) => [x.id, x.names.join(' + ')]));
     const list = Object.entries(this.board.scores).map(([seatId, score]) => ({ seatId, name: names[seatId] || '?', score }))
       .sort((a, b) => b.score - a.score).slice(0, 15);
-    return { t: 'board', night: this.board.night, open: this.dreamOpen(), board: list };
+    return { t: 'board', open: this.dreamOpen(), board: list };
   }
+  // Drømmespillet er åpent før spillet starter og om natten. Rekordene gjelder hele spillrunden.
   dreamOpen() {
     const p = this.room.public;
-    return p.phase.type === 'night' && p.dream !== false;
+    return (p.phase.type === 'night' || p.phase.type === 'setup') && p.dream !== false;
+  }
+  handsAllowed() {
+    const t = this.room.public.phase.type;
+    return t === 'setup' || t === 'day';
+  }
+  broadcastVote() {
+    this.broadcastPublic();
+    this.toSt({ t: 'vote', vote: this.room.vote || null });
+  }
+  validVoters(list) {
+    const ok = new Set(this.room.public.seats.map((x) => x.id));
+    return [...new Set((Array.isArray(list) ? list : []).map((x) => str(x, 80)).filter((x) => ok.has(x)))];
+  }
+  broadcastHands() {
+    this.broadcastPublic();
+    this.toSt({ t: 'hands', hands: this.room.hands || [] });
   }
   broadcastPublic() {
     const m = this.publicMsg();
@@ -199,7 +228,7 @@ export class Room {
       const seat = await this.seat(s.id);
       cards[s.id] = seat.inbox.map((c) => ({ id: c.id, status: c.status, response: c.response || null }));
     }
-    return { t: 'hello', room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards };
+    return { t: 'hello', room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
   }
   async youMsg(seatId, tok) {
     const seat = await this.seat(seatId);
@@ -254,11 +283,9 @@ export class Room {
         if (!pub) return;
         const before = r.public.phase;
         r.public = pub;
-        const newNight = pub.phase.type === 'night' && (before.type !== 'night' || before.number !== pub.phase.number);
-        if (newNight && this.board.night !== pub.phase.number) {
-          this.board = { night: pub.phase.number, scores: {} };
-          await this.state.storage.put('board', this.board);
-        }
+        const phaseChanged = before.type !== pub.phase.type || before.number !== pub.phase.number;
+        if (phaseChanged && (r.hands || []).length) { r.hands = []; this.toSt({ t: 'hands', hands: [] }); }
+        if (phaseChanged && r.vote) { r.vote = null; this.toSt({ t: 'vote', vote: null }); }
         await this.saveRoom();
         for (const [seatId, card] of Object.entries(msg.roleCards || {})) {
           if (!r.public.seats.some((x) => x.id === seatId)) continue;
@@ -271,7 +298,7 @@ export class Room {
           }
         }
         this.broadcastPublic();
-        if (newNight || before.type !== pub.phase.type) this.broadcastBoard();
+        if (phaseChanged) this.broadcastBoard();
         await this.touchAlarm();
         break;
       }
@@ -296,9 +323,49 @@ export class Room {
         this.broadcastPublic();
         send(ws, { t: 'room', room: { code: r.code, locked: r.locked } });
         break;
+      case 'hand': {
+        const seatId = str(msg.seatId, 80);
+        r.hands = (r.hands || []).filter((x) => x !== seatId);
+        await this.saveRoom();
+        this.broadcastHands();
+        break;
+      }
+      case 'voteOpen': {
+        const v = msg.vote || {};
+        r.vote = {
+          id: str(v.id, 80), nominatorId: str(v.nominatorId, 80), nomineeId: str(v.nomineeId, 80),
+          need: Number(v.need) || 0, open: true, voters: this.validVoters(v.voters),
+        };
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      }
+      case 'voteSet':
+        if (!r.vote) return;
+        r.vote.voters = this.validVoters(msg.voters);
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      case 'voteClose':
+        if (!r.vote) return;
+        r.vote.open = false;
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      case 'voteClear':
+        r.vote = null;
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      case 'handsClear':
+        r.hands = [];
+        await this.saveRoom();
+        this.broadcastHands();
+        break;
       case 'release': {
         const seatId = str(msg.seatId, 80);
         delete r.claims[seatId];
+        r.hands = (r.hands || []).filter((x) => x !== seatId);
         await this.saveRoom();
         for (const p of this.playersOf(seatId)) {
           send(p, { t: 'released' });
@@ -372,11 +439,35 @@ export class Room {
         for (const p of this.playersOf(seatId)) send(p, { t: 'card', card });
         break;
       }
+      case 'voteCast': {
+        // Eleven stemmer på egen PC. Døde kan bare stemme hvis de har ghost vote igjen.
+        const seatId = meta.seatId;
+        const v = r.vote;
+        if (!seatId || !v || !v.open || (msg.voteId && msg.voteId !== v.id)) return;
+        const seat = r.public.seats.find((x) => x.id === seatId);
+        if (!seat) return;
+        if (msg.up && !seat.alive && !seat.ghostVote) { send(ws, { t: 'error', code: 'noghost' }); return; }
+        v.voters = v.voters.filter((x) => x !== seatId);
+        if (msg.up) v.voters.push(seatId);
+        await this.saveRoom();
+        this.broadcastVote();
+        break;
+      }
+      case 'hand': {
+        // Rekk opp / ta ned hånden. Ny håndsopprekning havner alltid nederst i køen.
+        const seatId = meta.seatId;
+        if (!seatId) return;
+        const hands = (r.hands || []).filter((x) => x !== seatId);
+        if (msg.up && this.handsAllowed()) hands.push(seatId);
+        r.hands = hands;
+        await this.saveRoom();
+        this.broadcastHands();
+        break;
+      }
       case 'score': {
         const seatId = meta.seatId;
         if (!seatId || !this.dreamOpen()) return;
         const score = Math.max(0, Math.min(99999, Math.floor(Number(msg.score) || 0)));
-        if (this.board.night !== r.public.phase.number) this.board = { night: r.public.phase.number, scores: {} };
         if (score > (this.board.scores[seatId] || 0)) {
           this.board.scores[seatId] = score;
           await this.state.storage.put('board', this.board);

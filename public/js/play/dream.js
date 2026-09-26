@@ -9,14 +9,14 @@ const JUMP_V = -860;
 const CUT_V = -330;
 
 export class DreamGame {
-  constructor(canvas, { onGameOver, onScore, text }) {
+  constructor(canvas, { onGameOver, onScore, text, best = 0 }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onGameOver = onGameOver || (() => {});
     this.onScore = onScore || (() => {});
     this.text = text;
     this.state = 'ready';
-    this.best = 0;
+    this.best = best;
     this.stars = Array.from({ length: 40 }, () => ({ x: Math.random() * W, y: Math.random() * (GROUND - 60), r: Math.random() * 1.4 + 0.4, p: Math.random() * 6 }));
     this.hills = [0, 260, 520].map((x) => ({ x, w: 260 + Math.random() * 120, h: 30 + Math.random() * 30 }));
     this.reset();

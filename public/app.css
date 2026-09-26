@@ -611,6 +611,44 @@ button.token:hover .token-disc { transform: scale(1.05); }
 .token.revealed-st .token-disc { box-shadow: 0 0 0 3px var(--brass-2); }
 .token.hidden-st .token-disc { opacity: 0.55; }
 
+
+/* ——— håndsopprekning og avstemning ——— */
+.hand-badge { position: absolute; top: -6px; right: -10px; padding: 1px 6px; border-radius: 999px; background: var(--brass); color: var(--brass-ink); font-weight: 700; font-size: max(0.7rem, calc(var(--tok) * 0.15)); font-family: var(--body); line-height: 1.4; box-shadow: 0 2px 6px rgb(0 0 0 / 0.4); }
+.hands-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--brass); background: rgb(216 166 79 / 0.1); }
+.hands-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.hand-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--bg-3); font-weight: 700; }
+.hand-chip.first { border-color: var(--brass); background: rgb(216 166 79 / 0.2); }
+.hand-chip:hover { border-color: var(--ok); }
+.hand-n { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--brass); color: var(--brass-ink); font-size: var(--f-xs); }
+.hand-x { color: var(--ok); }
+.hand-panel { align-items: stretch; }
+.hand-panel.up { border-color: var(--brass); background: rgb(216 166 79 / 0.1); }
+.hand-btn { min-height: 56px; font-size: var(--f-lg); }
+.hand-queue { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 2px; }
+.hand-queue li.me { color: var(--brass-2); font-weight: 700; }
+.vote-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--bg-2); text-align: center; }
+.vote-card.open { border-color: var(--brass); background: linear-gradient(180deg, rgb(216 166 79 / 0.16), var(--bg-2)); }
+.vote-title { font-size: var(--f-xl); }
+.vote-num { color: var(--muted); }
+.big-num { font-family: var(--display); font-size: var(--f-3xl); color: var(--text); line-height: 1; }
+.vote-btn { min-height: 64px; font-size: var(--f-lg); }
+.vote-btn.on { background: var(--ok); border-color: var(--ok); color: #0c2417; font-weight: 700; }
+.nom.voting { border-color: var(--private); box-shadow: inset 3px 0 0 var(--private); }
+.vote-live { padding-top: 2px; }
+.screen-token.voted .token-disc { border-color: var(--brass-2); box-shadow: 0 0 0 3px rgb(241 200 119 / 0.5), 0 0 24px rgb(241 200 119 / 0.4); }
+.screen-token.nominee .token-disc { border-color: var(--demon); box-shadow: 0 0 0 3px rgb(220 68 80 / 0.45); }
+.screen-token.nominator .token-label { color: var(--brass-2); }
+.vote-center { gap: 2px; }
+.vote-names { font-size: clamp(1rem, 3.6cqw, 2rem); }
+.vote-big { font-size: clamp(3rem, 16cqw, 8rem); line-height: 1; font-variant-numeric: tabular-nums; }
+.vote-big.enough { color: var(--brass-2); }
+.vote-need { font-size: 0.4em; color: var(--muted); }
+.vote-center.open .center-stat { color: var(--brass-2); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+.noms-screen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: var(--f-lg); font-variant-numeric: tabular-nums; }
+.noms-screen li { display: flex; gap: 10px; padding: 4px 8px; border-radius: var(--r-sm); }
+.noms-screen li.block { background: rgb(233 168 62 / 0.14); border: 1px solid var(--warn); }
+
 /* ——— responsivt ——— */
 @media (max-width: 1100px) {
   .game-body { grid-template-columns: 1fr; }
