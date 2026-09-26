@@ -704,9 +704,9 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 html.theme-day body::before {
   opacity: 1;
   background:
-    radial-gradient(900px 520px at 85% -8%, rgb(255 255 255 / 0.75), transparent 60%),
-    radial-gradient(1200px 800px at 50% 120%, rgb(255 170 40 / 0.35), transparent 60%),
-    linear-gradient(180deg, #ffe38a, #f6cd57);
+    radial-gradient(900px 520px at 85% -8%, rgb(255 255 255 / 0.55), transparent 60%),
+    radial-gradient(1200px 800px at 50% 120%, rgb(230 160 50 / 0.22), transparent 60%),
+    linear-gradient(180deg, #f6dd92, #ebc867);
 }
 html.theme-night body::before {
   opacity: 1;
@@ -728,7 +728,7 @@ html.theme-night {
 }
 html.theme-day {
   color-scheme: light;
-  --bg: #f6d35f; --bg-2: #fff5cf; --bg-3: #ffeaa6; --bg-4: #fde08c;
+  --bg: #eccd6c; --bg-2: #fcf1d0; --bg-3: #f8e4ad; --bg-4: #f2d894;
   --line: #deb24a; --line-2: #c2922a;
   --text: #2a1c05; --muted: #69511f; --faint: #8b6f37;
   --brass: #a8600a; --brass-2: #8a4a00; --brass-ink: #fff8e6;
