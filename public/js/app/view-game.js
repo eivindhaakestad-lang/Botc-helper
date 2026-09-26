@@ -190,6 +190,7 @@ function gameBar(s) {
     h('div', { class: 'row gap wrap bar-actions' },
       h('button', { class: 'btn', disabled: !canUndo, onclick: undo, title: 'Ctrl+Z' }, '↶ ' + t('undo')),
       h('button', { class: 'btn', disabled: !canRedo, onclick: redo, title: 'Ctrl+Y' }, '↷ ' + t('redo')),
+      h('button', { class: 'btn ghost' + (app.hideRoles ? ' active' : ''), 'aria-pressed': app.hideRoles ? 'true' : 'false', onclick: () => { app.hideRoles = !app.hideRoles; render(); }, title: 'G' }, app.hideRoles ? '👁 ' + t('showRoles') : '🙈 ' + t('hideRoles')),
       h('button', { class: 'btn ghost', 'aria-pressed': app.focusMode ? 'true' : 'false', onclick: () => { app.focusMode = !app.focusMode; render(); }, title: 'F' }, app.focusMode ? t('showGrim') : t('focusMode')),
       liveBadge(s),
       h('button', { class: 'btn ghost', onclick: () => openModal(gameMenu) }, '⋯ ' + t('game')),
@@ -1099,7 +1100,8 @@ export function viewGame() {
   else content = endPanel(s);
   if (app.gameTab !== 'phase' || s.phase.type !== 'night') current = null;
 
-  return h('div', { class: 'game' + (app.focusMode ? ' focus' : '') + ' phase-' + s.phase.type },
+  return h('div', { class: 'game' + (app.focusMode ? ' focus' : '') + (app.hideRoles ? ' roles-hidden' : '') + ' phase-' + s.phase.type },
+    app.hideRoles ? h('div', { class: 'hidden-banner' }, '🙈 ' + t('rolesHiddenBanner')) : null,
     gameBar(s),
     h('div', { class: 'game-body' },
       app.focusMode ? null : h('section', { class: 'grim-pane' + (app.nomMode ? ' nom-mode' : ''), 'aria-label': 'Grimoire', ...(s.phase.type === 'day' ? nomDragHandlers() : {}) },
@@ -1122,11 +1124,14 @@ export function gameKeydown(e) {
   const tag = (e.target && e.target.tagName) || '';
   const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || (e.target && e.target.isContentEditable);
   const mod = e.ctrlKey || e.metaKey;
-  if (!store.game || app.modal) return;
+  if (!store.game) return;
+  if ((e.key === 'g' || e.key === 'G') && !typing && !mod && !e.altKey) { app.hideRoles = !app.hideRoles; if (app.hideRoles) app.modal = null; render(); return; }
+  if (app.modal) return;
   if (mod && !typing && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
   if (mod && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); redo(); return; }
   if (typing || mod || e.altKey) return;
   if (e.key === 'f' || e.key === 'F') { app.focusMode = !app.focusMode; render(); return; }
+  if (app.hideRoles) return; // ingen hurtigtaster som viser noe mens rollene er skjult
   if (e.key === 'Escape' && app.nomMode) { app.nomMode = null; render(); return; }
   if ((e.key === 'h' || e.key === 'H') && live.hands.length) { lowerHand(live.hands[0]); render(); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); app.gameTab = 'notes'; render(); setTimeout(() => { const el = document.getElementById('note-input'); if (el) el.focus(); }, 30); return; }

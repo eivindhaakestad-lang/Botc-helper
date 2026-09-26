@@ -849,3 +849,11 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .vcs-tie { font-weight: 700; font-size: clamp(1rem, 1.5vw, 1.4rem); }
 .tie-hint { color: var(--warn); font-weight: 700; }
 .tie-row { display: block; }
+
+/* ——— skjul roller (G) ——— */
+.roles-hidden .grim .token-char, .roles-hidden .grim .token-shown, .roles-hidden .grim .token-rem, .roles-hidden .grim .token-sub,
+.roles-hidden .grim .center-bluffs { visibility: hidden; }
+.roles-hidden .grim .token { --tc: var(--line-2); }
+.roles-hidden .grim .token-disc { background: radial-gradient(circle at 35% 30%, #3a334b, #231e2e 70%); }
+.roles-hidden .side-pane, .roles-hidden .pending, .roles-hidden .step-rail { filter: blur(14px); pointer-events: none; user-select: none; }
+.hidden-banner { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 40; white-space: nowrap; padding: 8px 18px; border-radius: 999px; background: var(--brass); color: var(--brass-ink); font-weight: 700; box-shadow: var(--shadow); }
