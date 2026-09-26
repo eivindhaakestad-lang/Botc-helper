@@ -311,3 +311,21 @@ test('stemmemål: med noen på blokka gir likt antall uavgjort og ett mer tar ov
   assert.deepEqual(voteTarget(s, 'n2'), { threshold: 5, need: 7, tieAt: 6, blockId: 's1' });
   assert.equal(voteTarget(s, 'n1').need, 5, 'egen nominasjon teller ikke mot seg selv');
 });
+
+test('Scarlet Woman: forgiftet SW blir ikke Demon, og appen sier fra', async () => {
+  const chars = ['washerwoman', 'empath', 'monk', 'chef', 'soldier', 'imp', 'scarletwoman', 'poisoner'];
+  const g = makeGame(chars);
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'DAWN_REVEAL' }, { type: 'EXECUTE', sk: 'exec:1', seatId: 's5' }];
+  let s = replay(g, ev);
+  const ok = postDeathChecks(s, ['s5'], 8, 'execution', 'no', 'short');
+  assert.equal(ok[0].type, 'sw');
+  ev.push({ type: 'EFFECTS', effects: ok[0].effects, messages: ok[0].messages }, { type: 'NIGHT_START' });
+  s = replay(g, ev);
+  const imp = nightQueue(s).filter((x) => x.characterId === 'imp');
+  assert.deepEqual(imp.map((x) => [x.seatId, x.autoSkip]), [['s5', true], ['s6', false]], 'den døde Imp hoppes over, SW våkner som Imp');
+  const g2 = makeGame(chars);
+  const ev2 = [{ type: 'NIGHT_START' }, { type: 'EFFECTS', effects: [{ t: 'addReminder', seatId: 's6', reminder: { kind: 'poisoned', label: 'Poisoned', expires: 'dusk' } }] }, { type: 'DAY_START' }, { type: 'EXECUTE', sk: 'exec:1', seatId: 's5' }];
+  const bad = postDeathChecks(replay(g2, ev2), ['s5'], 8, 'execution', 'no', 'short');
+  assert.equal(bad[0].type, 'info');
+  assert.equal(bad[1].type, 'win');
+});

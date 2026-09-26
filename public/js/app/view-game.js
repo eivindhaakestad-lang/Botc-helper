@@ -45,7 +45,17 @@ function runPostDeath(killed, aliveBefore, cause) {
   const s = store.state();
   if (!killed.length) return;
   const list = postDeathChecks(s, killed, aliveBefore, cause, ui(), s.style);
-  app.pending = [...app.pending.filter((p) => p.type === 'virgin'), ...list];
+  // Scarlet Woman blir Demon med en gang (regelen er fast). Du kan angre, og meldingen går rett til eleven.
+  const out = list.map((p) => {
+    if (p.type !== 'sw') return p;
+    dispatch({ type: 'EFFECTS', effects: p.effects, messages: p.messages, log: p.text });
+    const s2 = store.state();
+    const m = s2.messages.filter((x) => x.kind === 'private' && x.seatId === p.seatId).slice(-1)[0];
+    const sent = m && liveOpen() ? sendCard(p.seatId, { id: m.id, kind: 'info', text: m.text }) : false;
+    if (m && sent) store.game.copied[m.id] = true;
+    return { type: 'swDone', text: p.text, sub: sent ? t('swSent', { name: seatName(getSeat(s2, p.seatId)) }) : t('swCopy', { name: seatName(getSeat(s2, p.seatId)) }) };
+  });
+  app.pending = [...app.pending.filter((p) => p.type === 'virgin'), ...out];
 }
 
 function undo() {
@@ -314,11 +324,16 @@ function pendingBanner(s) {
   if (!app.pending.length) return null;
   const drop = (p) => { app.pending = app.pending.filter((x) => x !== p); render(); };
   return h('div', { class: 'pending' }, app.pending.map((p) => h('div', { class: 'pending-item ' + (p.winner || p.type) },
-    h('p', { class: 'pending-text' }, p.text),
+    h('p', { class: 'pending-text' }, (p.type === 'swDone' ? '🔥 ' : '') + p.text),
+    p.sub ? h('p', { class: 'small' }, p.sub) : null,
     h('div', { class: 'row gap wrap' },
       p.type === 'sw' ? [
         h('button', { class: 'btn primary', onclick: () => { dispatch({ type: 'EFFECTS', effects: p.effects, messages: p.messages, log: p.text }); drop(p); } }, t('yesApply')),
         h('button', { class: 'btn ghost', onclick: () => drop(p) }, t('no')),
+      ] : null,
+      p.type === 'swDone' || p.type === 'info' ? [
+        h('button', { class: 'btn primary', onclick: () => drop(p) }, 'OK'),
+        p.type === 'swDone' ? h('button', { class: 'btn ghost', onclick: () => { undo(); } }, '↶ ' + t('swUndo')) : null,
       ] : null,
       p.type === 'virgin' ? [
         h('button', { class: 'btn primary', onclick: () => {

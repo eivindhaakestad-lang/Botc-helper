@@ -110,7 +110,9 @@ export function postDeathChecks(s, killed, aliveBefore, cause, lang, style) {
       out.push({ type: 'win', winner: 'evil', text: st(lang, 'dSaint') });
     }
     if (seatTeam(seat) === 'demon' && cause !== 'starpass') {
-      const sw = s.seats.find((x) => x.alive && x.characterId === 'scarletwoman' && !compromised(s, x).any);
+      const swAny = s.seats.find((x) => x.alive && x.characterId === 'scarletwoman');
+      const sw = swAny && !compromised(s, swAny).any ? swAny : null;
+      if (swAny && !sw && aliveBefore >= 5) out.push({ type: 'info', text: st(lang, 'dSWCompromised', { name: seatName(swAny) }) });
       if (sw && aliveBefore >= 5) {
         out.push({
           type: 'sw', seatId: sw.id,
