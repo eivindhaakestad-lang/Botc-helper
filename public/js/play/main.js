@@ -33,7 +33,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
+    newChat: 'Ny melding fra {name}', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -58,7 +58,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
+    newChat: 'New message from {name}', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
   },
 };
 
@@ -68,7 +68,7 @@ const P = {
   me: null, roleCard: null, inbox: [], board: null,
   view: 'home', overlay: [], shown: {}, choiceSel: {}, revealMsg: null,
   dream: null, decoyTimers: [], hands: [], vote: null, timer: null, offset: 0,
-  chats: {}, chatTab: 'st', chatDraft: {},
+  chats: {}, chatTab: 'st', chatDraft: {}, seenShots: new Set(),
 };
 
 const lang = () => (P.pub && P.pub.lang === 'en' ? 'en' : 'no');
@@ -101,10 +101,19 @@ function onMessage(m) {
     case 'public': {
       const before = P.pub && P.pub.phase;
       const wasHidden = !!(P.pub && P.pub.rolesOut === false);
+      const firstPub = !P.pub;
       P.pub = m.public;
       P.room = m.room;
       P.claimed = m.claimed || {};
       P.hands = m.hands || [];
+      for (const sh of (P.pub.day && P.pub.day.shots) || []) {
+        if (P.seenShots.has(sh.id)) continue;
+        P.seenShots.add(sh.id);
+        if (firstPub) continue;
+        toast('🏹 ' + T('shotFired', { a: seatName(sh.from), b: seatName(sh.to) }));
+        sfx.whoosh();
+        setTimeout(() => { toast(sh.hit ? '💥 ' + T('shotHit', { b: seatName(sh.to) }) : '💨 ' + T('shotMiss')); if (sh.hit) sfx.hit(); else sfx.thunk(); }, 900);
+      }
       const pv = P.vote;
       if (wasHidden && P.pub.rolesOut !== false && P.me) { toast('🎭 ' + T('rolesOut')); sfx.reveal(); }
       P.vote = m.vote || null;

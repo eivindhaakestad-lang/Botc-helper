@@ -41,6 +41,7 @@ export function createGame({ seats, script, lang = 'no', style = 'short', bluffs
     progress: {},
     deaths: [],
     dawnHidden: false,
+    shots: [],
     executions: [],
     nominations: [],
     messages: messages.map((m, i) => ({ id: m.id || 'setup#' + i, phase: { type: 'setup', number: 0 }, ...m })),
@@ -169,6 +170,8 @@ export function applyEvent(s, ev) {
     case 'EFFECTS':
       (ev.effects || []).forEach((e) => applyEffect(s, e, phase));
       pushMessages(s, ev, ev.messages, phase);
+      // Slayer-skudd huskes, så storskjermen kan vise pila.
+      if (ev.shot) (s.shots || (s.shots = [])).push({ id: ev.shot.id, from: ev.shot.from, to: ev.shot.to, hit: !!ev.shot.hit, day: phase.number });
       break;
     case 'NOMINATE':
       s.nominations.push({ id: ev.nominationId, day: phase.number, nominatorId: ev.nominatorId, nomineeId: ev.nomineeId, voters: [], votes: 0 });

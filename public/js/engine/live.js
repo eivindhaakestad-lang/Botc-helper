@@ -42,6 +42,7 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
       block: block.nomination ? { nomineeId: block.nomination.nomineeId, votes: block.votes } : null,
       tie: !!block.tie,
       executed: ex ? ex.seatId || 'none' : null,
+      shots: (s.shots || []).filter((x) => x.day === s.phase.number).map((x) => ({ id: x.id, from: x.from, to: x.to, hit: x.hit })),
     };
   }
   if (ended) {

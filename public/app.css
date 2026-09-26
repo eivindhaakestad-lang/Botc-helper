@@ -857,3 +857,23 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .roles-hidden .grim .token-disc { background: radial-gradient(circle at 35% 30%, #3a334b, #231e2e 70%); }
 .roles-hidden .side-pane, .roles-hidden .pending, .roles-hidden .step-rail { filter: blur(14px); pointer-events: none; user-select: none; }
 .hidden-banner { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 40; white-space: nowrap; padding: 8px 18px; border-radius: 999px; background: var(--brass); color: var(--brass-ink); font-weight: 700; box-shadow: var(--shadow); }
+
+/* ——— Slayer-skudd på storskjermen ——— */
+.shot-layer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.shot-trail { position: absolute; inset: 0; }
+.shot-trail svg { width: 100%; height: 100%; overflow: visible; }
+.shot-trail line { stroke: var(--brass-2); stroke-width: 0.9; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; animation: shot-draw 0.9s cubic-bezier(0.3, 0, 0.7, 1) forwards; filter: drop-shadow(0 0 2px var(--brass-2)); }
+.shot-layer.landed .shot-trail line { stroke-dashoffset: 0; animation: shot-fade 1.6s ease-out forwards; }
+@keyframes shot-draw { to { stroke-dashoffset: 0; } }
+@keyframes shot-fade { to { opacity: 0; } }
+.shot-arrow { position: absolute; left: var(--x1); top: var(--y1); font-size: clamp(2rem, 7cqw, 4.5rem); line-height: 1; color: var(--brass-2); transform: translate(-50%, -50%) rotate(var(--ang)); animation: shot-fly 0.9s cubic-bezier(0.3, 0, 0.7, 1) forwards; text-shadow: 0 0 12px var(--brass-2); }
+@keyframes shot-fly { to { left: var(--x2); top: var(--y2); } }
+.shot-impact { position: absolute; left: var(--x2); top: var(--y2); transform: translate(-50%, -50%); font-size: clamp(3rem, 12cqw, 8rem); animation: impact 1.4s ease-out forwards; }
+@keyframes impact { 0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; } 40% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+.screen-token.shooter .token-disc { box-shadow: 0 0 0 5px var(--brass-2), 0 0 30px var(--brass-2); }
+.screen-token.shot-target .token-disc { box-shadow: 0 0 0 4px var(--danger); }
+.screen-token.shot-hit .token-disc { animation: shot-shake 0.5s ease-in-out 2; box-shadow: 0 0 0 6px var(--danger), 0 0 50px var(--danger); }
+.screen-token.shot-miss .token-disc { animation: shot-wobble 0.6s ease-in-out; }
+@keyframes shot-shake { 25% { transform: translateX(-6px) rotate(-4deg); } 75% { transform: translateX(6px) rotate(4deg); } }
+@keyframes shot-wobble { 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .shot-arrow, .shot-trail line { animation-duration: 0.01s; } }

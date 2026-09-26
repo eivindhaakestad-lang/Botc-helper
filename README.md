@@ -54,6 +54,8 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Etter avstemningen:** Trykk **✓ Ferdig – fjern fra skjermen** for å få vekk avstemningsvisningen. Den ryddes også av seg selv når du registrerer en ny nominasjon eller en henrettelse. Den som er på blokka, får en 💀 og rød glød på storskjermen, i grimen din og i elevenes byliste, helt til noen er henrettet.
 
+**Slayer:** Under Dagsevner velger du hvem som bruker Slayer-evnen og hvem de skyter på, og trykker **🏹 Skyt**. Storskjermen viser en pil fra skytteren til målet. Treffer den (Demonen, eller en Recluse eller Spy du lar dø), smeller det, målet rister og dør. Ellers kommer det et matt dunk. Elevene får beskjed på sin PC.
+
 **Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
 
 **Daggry:** Dødsfall om natten (for eksempel Demonens drap) vises ikke på storskjermen eller hos elevene mens det er natt. Når du starter dagen, ser de at det er dag, men ikke hvem som døde («Byen våkner …»). Du ser hvem som døde, og trykker **📣 Kunngjør natten** (eller Enter) når du er klar. Da dukker dødsfallene og morgenmeldingen opp, og storskjermen spiller en lyd.

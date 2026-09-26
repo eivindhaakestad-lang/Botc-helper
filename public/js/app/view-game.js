@@ -721,7 +721,9 @@ function dayPanel(s) {
     const aliveBefore = aliveSeats(s).length;
     const target = getSeat(s, df.slayTarget);
     const effects = [...sc.effects, ...(hit ? [{ t: 'kill', seatId: target.id, cause: 'slayer' }] : [])];
-    dispatch({ type: 'EFFECTS', effects, messages: [{ kind: 'public', text: hit ? msg(s.lang, s.style, 'slayerHit', { a: seatName(target) }) : msg(s.lang, s.style, 'slayerMiss') }], log: `Slayer → ${seatName(target)}: ${hit ? '☠' : '–'}` });
+    if (live.vote && !live.vote.open) clearVote(); // storskjermen må vise grimen for å vise pila
+    const from = df.slayer || (slayers[0] && slayers[0].id);
+    dispatch({ type: 'EFFECTS', effects, shot: { id: uid('shot_'), from, to: target.id, hit }, messages: [{ kind: 'public', text: hit ? msg(s.lang, s.style, 'slayerHit', { a: seatName(target) }) : msg(s.lang, s.style, 'slayerMiss') }], log: `Slayer ${seatName(getSeat(s, from))} → ${seatName(target)}: ${hit ? '☠' : '–'}` });
     if (hit) runPostDeath([target.id], aliveBefore, 'slayer');
     df.slayTarget = null;
     render();
@@ -806,8 +808,8 @@ function dayPanel(s) {
       sc ? h('div', { class: 'callout' },
         h('p', null, sc.text),
         h('div', { class: 'row gap wrap' },
-          sc.hit || sc.maybe ? h('button', { class: 'btn danger', onclick: () => shoot(true) }, t('targetDies')) : null,
-          !sc.hit ? h('button', { class: 'btn', onclick: () => shoot(false) }, t('nothingHappens')) : null)) : null,
+          sc.hit || sc.maybe ? h('button', { class: 'btn danger', onclick: () => shoot(true) }, '🏹 ' + t('shootDies')) : null,
+          !sc.hit ? h('button', { class: 'btn' + (sc.maybe ? '' : ' primary'), onclick: () => shoot(false) }, '🏹 ' + t('shootMiss')) : null)) : null,
       h('p', { class: 'muted small' }, t('dayAbilitiesHelp'))),
     h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: startNight }, '🌙 ' + t('startNightN', { n: s.phase.number + 1 }))));
 }

@@ -19,6 +19,29 @@ const nameOf = (id) => { const x = S.pub && S.pub.seats.find((y) => y.id === id)
 const T = (k) => (TXT[S.pub && S.pub.lang === 'en' ? 'en' : 'no'][k]);
 const code = (new URLSearchParams(location.search).get('room') || '').toUpperCase();
 
+// ——— Slayer-skudd: pil fra skytteren til målet ———
+const SHOT_FLY = 900;
+const SHOT_TOTAL = 2600;
+function seatXY(i, n) {
+  const a = (-90 + (360 / n) * i) * (Math.PI / 180);
+  return [50 + 40 * Math.cos(a), 50 + 40 * Math.sin(a)];
+}
+function shotLayer(p, n) {
+  const a = S.shotAnim;
+  if (!a) return null;
+  const i = p.seats.findIndex((x) => x.id === a.shot.from);
+  const j = p.seats.findIndex((x) => x.id === a.shot.to);
+  if (i < 0 || j < 0) return null;
+  const [x1, y1] = seatXY(i, n);
+  const [x2, y2] = seatXY(j, n);
+  const ang = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
+  const landed = Date.now() - a.start >= SHOT_FLY;
+  return h('div', { class: 'shot-layer' + (landed ? ' landed' : ''), 'aria-hidden': 'true', style: `--x1:${x1}%;--y1:${y1}%;--x2:${x2}%;--y2:${y2}%;--ang:${ang}deg` },
+    h('div', { class: 'shot-trail', html: `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" pathLength="100"/></svg>` }),
+    landed ? null : h('span', { class: 'shot-arrow' }, '➳'),
+    landed ? h('span', { class: 'shot-impact ' + (a.shot.hit ? 'hit' : 'miss') }, a.shot.hit ? '💥' : '💨') : null);
+}
+
 function seatToken(seat, i, n) {
   const a = (-90 + (360 / n) * i) * (Math.PI / 180);
   const left = 50 + 40 * Math.cos(a);
@@ -32,8 +55,10 @@ function seatToken(seat, i, n) {
   const nominator = v && v.nominatorId === seat.id;
   const d = S.pub.day;
   const block = !!(d && d.block && !d.executed && d.block.nomineeId === seat.id);
+  const sa = S.shotAnim;
+  const shotCls = sa ? (sa.shot.from === seat.id ? ' shooter' : sa.shot.to === seat.id ? (Date.now() - sa.start >= SHOT_FLY ? (sa.shot.hit ? ' shot-hit' : ' shot-miss') : ' shot-target') : '') : '';
   return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') },
+    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
         h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : initials),
@@ -49,9 +74,13 @@ function render() {
   const root = document.getElementById('screen');
   if (S.error) { root.replaceChildren(h('div', { class: 'screen-msg display' }, T(S.error) || S.error)); return; }
   if (!S.pub) { root.replaceChildren(h('div', { class: 'screen-msg display' }, '✦ Botc Helper')); return; }
-  const p = S.pub;
+  let p = S.pub;
   const ph = p.phase;
   applyTheme(ph.type);
+  if (S.shotAnim && Date.now() - S.shotAnim.start < SHOT_FLY + 400) {
+    // Målet lever til pila treffer, og kunngjøringen venter.
+    p = { ...p, announcement: '', seats: p.seats.map((x) => (x.id === S.shotAnim.shot.to ? { ...x, alive: true } : x)) };
+  }
   if (ph.type === 'ended') {
     root.replaceChildren(h('div', { class: 'screen screen-reveal' },
       revealCircle({ seats: p.seats, reveal: p.reveal || [], winner: p.winner, size: 150, text: { title: T('reveal'), good: T('good'), evil: T('evil') } }),
@@ -77,7 +106,8 @@ function render() {
               (ph.type === 'day' && !p.dawnPending) || ph.type === 'night' ? h('span', { class: 'center-stat' }, `${alive} ${T('alive')} · ${Math.ceil(alive / 2)} ${T('votes')}`) : null,
               ph.type === 'setup' ? h('span', { class: 'center-stat' }, `${joinedN} / ${p.seats.length} ${T('joined')}`) : null,
               p.winner ? h('span', { class: 'display screen-winner ' + p.winner }, T(p.winner)) : null)),
-          p.seats.map((seat, i) => seatToken(seat, i, n)))),
+          p.seats.map((seat, i) => seatToken(seat, i, n)),
+          shotLayer(p, n))),
       h('aside', { class: 'screen-side' },
         timerCard(),
         S.vote && ph.type === 'day' && S.vote.open ? h('div', { class: 'vote-card-screen' + (S.vote.clock ? ' clock' : '') },
@@ -192,6 +222,20 @@ function soundsFor(prev, m) {
   if (rb > ra) sfx.reveal();
 }
 let lastPublic = null;
+const seenShots = new Set();
+function detectShots(m, first) {
+  const shots = (m.public.day && m.public.day.shots) || [];
+  for (const sh of shots) {
+    if (seenShots.has(sh.id)) continue;
+    seenShots.add(sh.id);
+    if (first) continue; // gamle skudd spilles ikke av på nytt ved tilkobling
+    S.shotAnim = { shot: sh, start: Date.now() };
+    sfx.whoosh();
+    setTimeout(() => { if (sh.hit) sfx.hit(); else sfx.thunk(); render(); }, SHOT_FLY);
+    setTimeout(render, SHOT_FLY + 450);
+    setTimeout(() => { if (S.shotAnim && S.shotAnim.shot.id === sh.id) { S.shotAnim = null; render(); } }, SHOT_TOTAL);
+  }
+}
 
 function handsPanel() {
   if (!S.hands.length || !S.pub || !['setup', 'day'].includes(S.pub.phase.type)) return null;
@@ -223,6 +267,7 @@ if (!code) {
     onMessage: (m) => {
       if (m.t === 'public') {
         soundsFor(lastPublic, m);
+        detectShots(m, !lastPublic);
         lastPublic = m;
         if (m.now) S.offset = m.now - Date.now();
         S.pub = m.public; S.room = m.room; S.claimed = m.claimed || {}; S.hands = m.hands || []; S.vote = m.vote || null; S.timer = m.timer || null;

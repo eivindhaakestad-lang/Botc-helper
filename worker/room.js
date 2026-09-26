@@ -58,6 +58,7 @@ function cleanPublic(p) {
       block: p.day.block ? { nomineeId: str(p.day.block.nomineeId, 80), votes: Number(p.day.block.votes) || 0 } : null,
       tie: !!p.day.tie,
       executed: p.day.executed ? str(p.day.executed, 80) : null,
+      shots: (Array.isArray(p.day.shots) ? p.day.shots.slice(-10) : []).map((x) => ({ id: str(x.id, 40), from: str(x.from, 80), to: str(x.to, 80), hit: !!x.hit })),
     };
   }
   if (phase.type === 'ended' && Array.isArray(p.reveal)) {
