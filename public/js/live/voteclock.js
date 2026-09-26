@@ -102,8 +102,7 @@ export function tickVoteCircle(root, vote, offset, text) {
   });
   const st = el.querySelector('.vc-status');
   if (st) {
-    const cur = info.current ? el.querySelector(`.grim-slot[data-seat="${info.current}"] .token-label`) : null;
-    st.textContent = !vote.open ? text.closed : info.countdown > 0 ? `${text.startsIn} ${info.countdown}` : info.done ? text.closed : `${text.handAt} ${cur ? cur.textContent : ''}`;
+    st.textContent = !vote.open ? text.closed : info.countdown > 0 ? `${text.startsIn} ${info.countdown}` : info.done ? text.closed : '';
   }
   return info;
 }
