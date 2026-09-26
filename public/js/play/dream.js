@@ -45,6 +45,7 @@ export class DreamGame {
     this.sheep = { x: 92, y: GROUND, vy: 0, onGround: true, legT: 0 };
     this.fences = [];
     this.eagleWarned = false;
+    this.shield = 0;
     this.speed = 360;
     this.score = 0;
     this.nextGap = 420;
@@ -105,7 +106,12 @@ export class DreamGame {
   }
   resume() {
     if (this.state !== 'paused') return;
-    if (this.wasRunning) { this.state = 'running'; this.countdown = 3; }
+    if (this.wasRunning) {
+      this.state = 'running';
+      this.countdown = 3;
+      // Fikk du melding midt i en god runde (over 20 poeng)? Da er du udødelig i 4 sekunder etterpå.
+      if (this.score > 20) this.shield = 4;
+    }
     else this.state = this.pausedFrom || 'ready';
   }
 
@@ -133,6 +139,7 @@ export class DreamGame {
     if (this.state !== 'running') return;
     if (this.countdown > 0) { this.countdown -= dt; return; }
     this.time += dt;
+    if (this.shield > 0) this.shield = Math.max(0, this.shield - dt);
     // Farten øker jevnt hele tiden (også etter 50 poeng), opp til et tak langt fram.
     this.speed = Math.min(1650, 380 + this.time * 12);
     const sh = this.sheep;
@@ -180,6 +187,7 @@ export class DreamGame {
       const hit = f.eagle
         ? box.x < f.x + f.w - 8 && box.x + box.w > f.x + 8 && box.y < f.y + f.h - 4 && box.y + box.h > f.y + 4
         : box.x < f.x + f.w - 4 && box.x + box.w > f.x + 4 && box.y + box.h > GROUND - f.h + 4;
+      if (hit && this.shield > 0) continue; // udødelig: løper rett gjennom
       if (hit) {
         this.state = 'over';
         this.overAt = performance.now();
@@ -219,7 +227,15 @@ export class DreamGame {
     c.fillRect(0, GROUND, W, 3);
     // gjerder
     for (const f of this.fences) { if (f.eagle) this.drawEagle(f); else this.drawFence(f); }
-    this.drawSheep();
+    // Blinker mens den er udødelig (raskere de siste sekundene)
+    const blinkRate = this.shield > 1.2 ? 8 : 16;
+    if (!(this.shield > 0 && Math.floor(t * blinkRate) % 2 === 0)) this.drawSheep();
+    if (this.shield > 0 && this.state === 'running' && this.countdown <= 0) {
+      c.fillStyle = '#f1c877';
+      c.font = '700 18px "Alegreya Sans", system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.fillText(`🛡 ${Math.ceil(this.shield)}`, this.sheep.x - 16, this.sheep.y - 52);
+    }
     // tekst
     c.fillStyle = '#efe9f5';
     c.font = '700 22px "Alegreya Sans", system-ui, sans-serif';
