@@ -17,6 +17,12 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
     dawnPending: false,
     dream, decoys, chat,
+    // Scriptet er offentlig: alle roller med beskrivelse, sortert etter team.
+    script: {
+      name: s.script.name || '',
+      roles: s.script.characters.map((id) => { const info = charInfo(id); return { id, name: info.name, team: info.team, text: summary(id, s.lang, info) }; })
+        .filter((r) => ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'].includes(r.team)),
+    },
     // Rollene deles ut når Storytelleren trykker «Send ut roller», og alltid når spillet er i gang.
     rolesOut: !!rolesOut || s.phase.type !== 'setup',
     winner: s.winner || null,

@@ -877,3 +877,16 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 @keyframes shot-shake { 25% { transform: translateX(-6px) rotate(-4deg); } 75% { transform: translateX(6px) rotate(4deg); } }
 @keyframes shot-wobble { 50% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .shot-arrow, .shot-trail line { animation-duration: 0.01s; } }
+
+/* ——— scriptet for elevene ——— */
+.script-btn { align-self: stretch; }
+.script-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.script-roles li { display: flex; flex-direction: column; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.script-roles li:last-child { border-bottom: 0; padding-bottom: 0; }
+.script-name { font-size: var(--f-lg); }
+.script-text { color: var(--muted); }
+.script-team.team-townsfolk .section-title, .script-team.team-townsfolk .script-name { color: var(--townsfolk); }
+.script-team.team-outsider .section-title, .script-team.team-outsider .script-name { color: var(--outsider); }
+.script-team.team-minion .section-title, .script-team.team-minion .script-name { color: var(--minion); }
+.script-team.team-demon .section-title, .script-team.team-demon .script-name { color: var(--demon); }
+.script-team.team-traveller .section-title, .script-team.team-traveller .script-name { color: var(--traveller); }

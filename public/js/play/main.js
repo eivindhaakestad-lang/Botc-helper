@@ -33,7 +33,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
+    newChat: 'Ny melding fra {name}', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -58,7 +58,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
+    newChat: 'New message from {name}', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
   },
 };
 
@@ -388,6 +388,22 @@ function blockId() {
   return d && d.block && !d.executed ? d.block.nomineeId : null;
 }
 
+// ——— scriptet: alle roller med beskrivelse ———
+const TEAMS = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
+function scriptView() {
+  const sc = P.pub.script;
+  const roles = (sc && sc.roles) || [];
+  return h('div', { class: 'stack script-view' },
+    h('div', { class: 'row between' },
+      h('button', { class: 'btn ghost', onclick: () => { P.view = 'home'; render(); } }, '← ' + T('back')),
+      h('span', { class: 'display' }, '📜 ' + (sc && sc.name ? sc.name : T('script')))),
+    roles.length ? TEAMS.filter((tm) => roles.some((r) => r.team === tm)).map((tm) => h('section', { class: 'panel script-team team-' + tm },
+      h('h3', { class: 'section-title' }, T('team_' + tm)),
+      h('ul', { class: 'script-roles' }, roles.filter((r) => r.team === tm).map((r) => h('li', null,
+        h('span', { class: 'script-name display' }, r.name),
+        h('span', { class: 'script-text' }, r.text)))))) : h('p', { class: 'muted' }, T('noScript')));
+}
+
 function townView() {
   return h('div', { class: 'panel' },
     h('h3', { class: 'section-title' }, T('town')),
@@ -502,6 +518,7 @@ function homeView() {
   const me = P.pub.seats.find((x) => x.id === P.me.seatId);
   return h('div', { class: 'play-home' },
     phaseBanner(),
+    h('button', { class: 'btn script-btn', onclick: () => { P.view = 'script'; render(); window.scrollTo(0, 0); } }, '📜 ' + T('showScript')),
     timerView(),
     voteView(),
     P.pub.rolesOut === false ? null : h('div', { class: 'hold-row' },
@@ -576,6 +593,7 @@ function render() {
   else if (P.pub.phase.type === 'ended') main = revealView();
   else if (!P.me) main = seatPicker();
   else if (P.view === 'dream' && dreamPhase()) main = dreamView();
+  else if (P.view === 'script') main = scriptView();
   else main = homeView();
   const keepDream = P.view === 'dream' && P.dream && document.getElementById('dream-canvas');
   if (keepDream && P.me && dreamPhase()) {
