@@ -9,6 +9,7 @@ import { t } from './i18n.js';
 import { publicProjection, roleCardsFor } from '../engine/live.js';
 import { seatName, getSeat } from '../engine/state.js';
 import { clockInfo } from '../live/voteclock.js';
+import { storedKey } from './lock.js';
 
 export const live = {
   client: null,
@@ -35,8 +36,9 @@ export function liveAvailable() {
 
 export async function startLive() {
   live.error = null;
+  if (!storedKey()) { live.error = 'key'; render(); return; }
   try {
-    const { code, stToken } = await createRoom();
+    const { code, stToken } = await createRoom(storedKey());
     store.game.live = { code, stToken, acks: {}, responses: {}, sent: {}, settings: { dream: true, decoys: true, chat: 'always' } };
     store.saveGame();
     connectLive();

@@ -74,6 +74,10 @@ Kopier-knappene virker fortsatt for elever uten PC.
 
 **Snarveier i spillet:** Enter = fullfør steg · C = kopier melding · ← → = forrige/neste steg · Ctrl+Z / Ctrl+Y = angre/gjør om · N = notat · F = fokusmodus · G = skjul/vis roller (når elever kommer bort til deg)
 
+**Passord:** «Nytt spill» og «Start live-rom» krever passord. Passordet huskes på maskinen etter første gang. Serveren nekter også å opprette live-rom uten passordet.
+
+**Drømmespillet og dagen:** Er en elev midt i en runde når dagen starter (eller trykker Tilbake), lagres runden. Neste natt fortsetter den der eleven slapp, med nedtelling og 4 sekunders beskyttelse.
+
 ## Personvern
 
 - Klassebibliotek, elevmerker, spill og historikk lagres bare i nettleseren på maskinen du bruker (localStorage).

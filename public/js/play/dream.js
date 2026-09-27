@@ -130,6 +130,30 @@ export class DreamGame {
     else this.state = this.pausedFrom || 'ready';
   }
 
+  // Lagre en pågående runde (f.eks. når dagen kommer), så den kan fortsette neste natt.
+  snapshot() {
+    const running = this.state === 'running' || (this.state === 'paused' && this.wasRunning);
+    if (!running) return null;
+    const plain = (a) => a.map((x) => { const o = { ...x }; delete o.targeted; return o; });
+    return {
+      v: 1, sheep: { ...this.sheep }, fences: plain(this.fences), items: plain(this.items),
+      rockets: this.rockets + this.shots.length, lives: this.lives, fly: this.fly, slow: this.slow, double: this.double,
+      score: this.score, time: this.time, speed: this.speed, nextGap: this.nextGap, eagleWarned: this.eagleWarned,
+    };
+  }
+  restore(s) {
+    if (!s || s.v !== 1) return;
+    this.reset();
+    Object.assign(this, {
+      sheep: s.sheep, fences: s.fences || [], items: s.items || [], rockets: s.rockets || 0, lives: s.lives || 0, fly: s.fly || 0,
+      slow: s.slow || 0, double: s.double || 0, score: s.score || 0, time: s.time || 0, speed: s.speed || 380, nextGap: s.nextGap || 420, eagleWarned: !!s.eagleWarned,
+    });
+    // Fortsett med nedtelling og noen sekunders beskyttelse
+    this.state = 'running';
+    this.countdown = 3;
+    this.shield = 4;
+  }
+
   destroy() {
     this.destroyed = true;
     cancelAnimationFrame(this.raf);

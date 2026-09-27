@@ -17,6 +17,7 @@ import {
 } from '../engine/day.js';
 import { msg } from '../engine/text.js';
 import { uid } from '../engine/rng.js';
+import { tryUnlock } from './lock.js';
 
 const ui = () => store.lib.settings.uiLang;
 let current = null; // aktivt nattsteg, for tastatursnarveier
@@ -1035,6 +1036,14 @@ function livePanel(s) {
         h('p', { class: 'step-instruction' }, t('liveIntro')),
         h('ul', { class: 'hints' }, [t('liveP1'), t('liveP2'), t('liveP3'), t('liveP4')].map((x) => h('li', null, x))),
         live.error === 'create' ? h('p', { class: 'warn-text small' }, t('liveCreateFailed')) : null,
+        live.error === 'key' ? h('form', { class: 'stack tight', onsubmit: async (e) => {
+          e.preventDefault();
+          if (await tryUnlock(e.target.querySelector('input').value)) startLive();
+          else { toast(t('wrongPassword'), 'warn'); e.target.querySelector('input').value = ''; }
+        } },
+          h('p', { class: 'small' }, t('lockText')),
+          h('input', { class: 'input', type: 'password', autocomplete: 'off', 'aria-label': t('password') }),
+          h('button', { class: 'btn', type: 'submit' }, t('unlock'))) : null,
         h('div', { class: 'step-actions' }, h('button', { class: 'btn primary big', onclick: () => startLive() }, '📡 ' + t('startLive')))));
   }
   const settings = l.settings || {};

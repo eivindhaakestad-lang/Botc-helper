@@ -6,6 +6,8 @@ import { Room } from './room.js';
 
 export { Room };
 
+const ST_KEY = '3131';
+
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 function roomCode() {
@@ -25,6 +27,8 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === '/api/rooms' && request.method === 'POST') {
+      // Bare Storytelleren (med passordet) kan opprette rom.
+      if (request.headers.get('X-Botc-Key') !== ST_KEY) return Response.json({ error: 'key' }, { status: 403 });
       for (let i = 0; i < 6; i++) {
         const code = roomCode();
         const stToken = secret();

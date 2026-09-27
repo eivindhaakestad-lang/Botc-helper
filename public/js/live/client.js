@@ -15,8 +15,8 @@ export function screenUrl(code) {
   return `${location.origin}/screen?room=${encodeURIComponent(code)}`;
 }
 
-export async function createRoom() {
-  const res = await fetch('/api/rooms', { method: 'POST' });
+export async function createRoom(key = '') {
+  const res = await fetch('/api/rooms', { method: 'POST', headers: { 'X-Botc-Key': key } });
   if (!res.ok) throw new Error('create ' + res.status);
   return res.json();
 }

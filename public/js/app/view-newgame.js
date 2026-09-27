@@ -14,6 +14,7 @@ import { parseScript } from '../engine/script.js';
 import { shuffle } from '../engine/rng.js';
 import { msg } from '../engine/text.js';
 import { closeRoom } from './live.js';
+import { isUnlocked, tryUnlock } from './lock.js';
 
 const STEPS = ['wzPlayers', 'wzScript', 'wzRoles', 'wzSeating', 'wzSetup'];
 
@@ -384,7 +385,29 @@ function startGame(d) {
   toast(t('gameStarted'));
 }
 
+function lockScreen() {
+  const submit = async (e) => {
+    e.preventDefault();
+    const input = e.target.querySelector('input');
+    if (await tryUnlock(input.value)) { render(); return; }
+    input.value = '';
+    app.lockError = true;
+    render();
+    setTimeout(() => { const el = document.getElementById('st-pass'); if (el) el.focus(); }, 30);
+  };
+  return h('div', { class: 'page lock-page' },
+    h('form', { class: 'panel lock-card', onsubmit: submit },
+      h('h1', { class: 'page-title' }, '🔒 ' + t('newGame')),
+      h('p', null, t('lockText')),
+      h('label', { class: 'label', for: 'st-pass' }, t('password')),
+      h('input', { id: 'st-pass', class: 'input', type: 'password', autocomplete: 'off' }),
+      app.lockError ? h('p', { class: 'warn-text small' }, t('wrongPassword')) : null,
+      h('button', { class: 'btn primary', type: 'submit' }, t('unlock'))));
+}
+
 export function viewNewGame() {
+  if (!isUnlocked()) return lockScreen();
+  app.lockError = false;
   const d = ensureDraft();
   script(d);
   if (d.step >= 3 && !d.rolled) roll(d);

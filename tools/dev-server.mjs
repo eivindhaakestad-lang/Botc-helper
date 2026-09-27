@@ -109,6 +109,7 @@ const rand = (n, a) => Array.from(crypto.getRandomValues(new Uint8Array(n)), (x)
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (url.pathname === '/api/rooms' && req.method === 'POST') {
+    if (req.headers['x-botc-key'] !== '3131') { res.writeHead(403, { 'Content-Type': 'application/json' }); res.end('{"error":"key"}'); return; }
     const code = rand(5, ALPHA);
     const stToken = rand(32, '0123456789abcdef');
     const r = await getRoom(code).room.init({ code, stToken });

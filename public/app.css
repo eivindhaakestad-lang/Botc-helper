@@ -890,3 +890,4 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .script-team.team-minion .section-title, .script-team.team-minion .script-name { color: var(--minion); }
 .script-team.team-demon .section-title, .script-team.team-demon .script-name { color: var(--demon); }
 .script-team.team-traveller .section-title, .script-team.team-traveller .script-name { color: var(--traveller); }
+.lock-page { max-width: 460px; margin: 60px auto; } .lock-card { gap: 12px; }

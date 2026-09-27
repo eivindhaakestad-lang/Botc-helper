@@ -220,8 +220,12 @@ function openDream() {
   P.view = 'dream';
   render();
 }
+// En runde som avbrytes (dagen kommer, eller eleven går tilbake) lagres og fortsetter neste gang.
+const dreamKey = () => `botc-dream-${P.code}-${P.me ? P.me.seatId : ''}`;
+function saveDream(snap) { try { if (snap) localStorage.setItem(dreamKey(), JSON.stringify(snap)); else localStorage.removeItem(dreamKey()); } catch { /* */ } }
+function loadDream() { try { return JSON.parse(localStorage.getItem(dreamKey()) || 'null'); } catch { return null; } }
 function closeDream() {
-  if (P.dream) { P.dream.destroy(); P.dream = null; }
+  if (P.dream) { saveDream(P.dream.snapshot()); P.dream.destroy(); P.dream = null; }
   if (P.view === 'dream') P.view = 'home';
 }
 function syncPause() {
@@ -629,7 +633,9 @@ function render() {
     if (P.dream) P.dream.destroy();
     const canvas = document.getElementById('dream-canvas');
     const text = TXT[lang()];
-    P.dream = new DreamGame(canvas, { text, best: myBest(), onGameOver: (score) => P.client.send({ t: 'score', score }) });
+    P.dream = new DreamGame(canvas, { text, best: myBest(), onGameOver: (score) => { saveDream(null); P.client.send({ t: 'score', score }); } });
+    const saved = loadDream();
+    if (saved) { P.dream.restore(saved); saveDream(null); }
     syncPause();
   }
 }
@@ -641,7 +647,8 @@ function connView() {
 }
 
 // Liten feilsøkingskrok (viser bare elevens egen tilstand).
-window.botcPlay = { dreamState: () => (P.dream ? P.dream.state : null), overlay: () => P.overlay.length };
+window.botcPlay = { dreamState: () => (P.dream ? P.dream.state : null), dreamInfo: () => (P.dream ? { score: P.dream.score, shield: P.dream.shield, countdown: P.dream.countdown } : null), overlay: () => P.overlay.length };
+window.addEventListener('pagehide', () => { if (P.dream) saveDream(P.dream.snapshot()); });
 
 const code = new URLSearchParams(location.search).get('room');
 render();
