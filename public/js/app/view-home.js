@@ -16,6 +16,12 @@ export function viewHome() {
   const classes = lib.classes.length;
   const students = lib.students.length;
   return h('div', { class: 'home' },
+    // For elevene: stort og tydelig øverst – rett til spillet
+    h('section', { class: 'join-hero' },
+      h('a', { class: 'join-big display', href: '/play' }, '🎮 ' + t('joinGame')),
+      h('form', { class: 'join-code', onsubmit: (e) => { e.preventDefault(); const v = e.target.querySelector('input').value.trim().toUpperCase(); location.href = '/play' + (v ? '?room=' + encodeURIComponent(v) : ''); } },
+        h('input', { class: 'input', placeholder: t('roomCode'), 'aria-label': t('roomCode'), autocomplete: 'off', autocapitalize: 'characters', maxlength: 8 }),
+        h('button', { class: 'btn primary', type: 'submit' }, t('joinGo')))),
     h('section', { class: 'home-hero' },
       h('p', { class: 'eyebrow' }, t('homeEyebrow')),
       h('h1', { class: 'display' }, t('homeTitle')),
