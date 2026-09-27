@@ -32,6 +32,7 @@ export function roleToken({ characterId, shownId, label, sub, dead, active, onCl
   },
   h('span', { class: 'token-disc' },
     index !== null ? h('span', { class: 'token-num' }, String(index + 1)) : null,
+    info ? (info.image ? h('img', { class: 'token-img', src: info.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' }) : h('span', { class: 'token-icon', 'aria-hidden': 'true' }, info.icon)) : null,
     h('span', { class: 'token-char' + (info && info.name.length > 12 ? ' xlong' : info && Math.max(...info.name.split(' ').map((w) => w.length)) > 8 ? ' long' : '') }, info ? info.name : '?'),
     shownId ? h('span', { class: 'token-shown' }, charInfo(shownId).name) : null,
     dead ? h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†') : null,

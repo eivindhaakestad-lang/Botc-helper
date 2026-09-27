@@ -3,6 +3,7 @@
 
 import { OFFICIAL, NIGHT_FIRST, NIGHT_OTHER } from './data/official.js';
 import { DEFS } from './defs.js';
+import { roleIcon } from './icons.js';
 
 export const TEAMS = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
 
@@ -41,6 +42,8 @@ export function charInfo(id, ctx = registry) {
     modeled: !!DEFS[id],
     def: DEFS[id] || null,
     ability: (text && text.ability) || (custom && custom.ability) || null,
+    icon: roleIcon(id, (custom && custom.team) || (off ? off[1] : (text && text.team) || 'townsfolk')),
+    image: (text && text.image) || (custom && custom.image) || null,
     firstNight: custom ? Number(custom.firstNight) || 0 : null,
     otherNight: custom ? Number(custom.otherNight) || 0 : null,
   };

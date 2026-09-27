@@ -4,13 +4,14 @@
 import { h } from '../app/dom.js';
 import { LiveClient, joinUrl, qrSvg } from '../live/client.js';
 import { revealCircle } from '../live/reveal.js';
+import { podium } from '../live/podium.js';
 import { voteCircle, tickVoteCircle, tieLine } from '../live/voteclock.js';
-import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
+import { sfx, enableSound, disableSound, soundEnabled, playMusic, stopMusic } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 
 const TXT = {
-  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka' },
-  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block' },
+  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka' },
+  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block' },
 };
 
 const S = { pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
@@ -61,12 +62,13 @@ function seatToken(seat, i, n) {
     h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
-        h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : initials),
+        h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
         seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
         handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null,
         block ? h('span', { class: 'block-badge' }, '💀') : null),
       h('span', { class: 'token-label' }, seat.names.join(' + '),
         seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○')),
+      seat.traveller ? h('span', { class: 'trav-tag' }, seat.traveller.name) : null,
       block ? h('span', { class: 'vc-role nominee block-label' }, '💀 ' + T('onBlock')) : null));
 }
 
@@ -77,6 +79,7 @@ function render() {
   let p = S.pub;
   const ph = p.phase;
   applyTheme(ph.type);
+  syncMusic();
   if (S.shotAnim && Date.now() - S.shotAnim.start < SHOT_FLY + 400) {
     // Målet lever til pila treffer, og kunngjøringen venter.
     p = { ...p, announcement: '', seats: p.seats.map((x) => (x.id === S.shotAnim.shot.to ? { ...x, alive: true } : x)) };
@@ -84,6 +87,7 @@ function render() {
   if (ph.type === 'ended') {
     root.replaceChildren(h('div', { class: 'screen screen-reveal' },
       revealCircle({ seats: p.seats, reveal: p.reveal || [], winner: p.winner, size: 150, text: { title: T('reveal'), good: T('good'), evil: T('evil') } }),
+      podium({ board: S.board && S.board.board, step: S.dreamReveal, text: { title: T('champs'), points: T('points') } }),
       h('button', { class: 'btn ghost small fs-btn', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen'))));
     return;
   }
@@ -129,9 +133,19 @@ function render() {
             ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x) => h('li', null, h('span', { class: 'grow' }, x.name), h('span', { class: 'strong' }, String(x.score)))))
             : h('p', { class: 'muted' }, T('noScores'))) : null,
         h('div', { class: 'row gap screen-tools' },
+          musicButton(),
           soundButton(),
           h('button', { class: 'btn ghost small', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen'))))));
   tick(true);
+}
+
+// Stemningsmusikk om natten – egen knapp, uavhengig av lydeffektene
+let musicWanted = false;
+function syncMusic() {
+  if (musicWanted && S.pub && S.pub.phase.type === 'night') playMusic(); else stopMusic();
+}
+function musicButton() {
+  return h('button', { class: 'btn small sound-btn' + (musicWanted ? ' ghost' : ''), onclick: () => { musicWanted = !musicWanted; syncMusic(); render(); }, title: T('musicHelp') }, musicWanted ? '🎵 ' + T('musicOn') : '🎵 ' + T('musicOff'));
 }
 
 function soundButton() {
@@ -270,6 +284,8 @@ if (!code) {
         detectShots(m, !lastPublic);
         lastPublic = m;
         if (m.now) S.offset = m.now - Date.now();
+        if ((m.dreamReveal || 0) > (S.dreamReveal || 0)) { if ((m.dreamReveal || 0) >= Math.min(3, (S.board && S.board.board.length) || 3)) sfx.fanfare(); else sfx.reveal(); }
+        S.dreamReveal = m.dreamReveal || 0;
         S.pub = m.public; S.room = m.room; S.claimed = m.claimed || {}; S.hands = m.hands || []; S.vote = m.vote || null; S.timer = m.timer || null;
       }
       else if (m.t === 'board') S.board = m;

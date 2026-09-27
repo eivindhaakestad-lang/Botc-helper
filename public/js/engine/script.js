@@ -75,6 +75,7 @@ export function parseCharacterTexts(text) {
       ability: item.ability || '',
       firstNightReminder: item.firstNightReminder || '',
       otherNightReminder: item.otherNightReminder || '',
+      image: typeof item.image === 'string' ? item.image : Array.isArray(item.image) && typeof item.image[0] === 'string' ? item.image[0] : '',
     };
   }
   return { texts, count: Object.keys(texts).length };

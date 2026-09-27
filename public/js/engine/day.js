@@ -12,8 +12,14 @@ export function nominationsToday(s) {
   return s.nominations.filter((n) => n.day === s.phase.number);
 }
 
+// Terskel: halvparten av de levende spillerne – Travellers teller med.
 export function voteThreshold(s) {
-  return Math.ceil(aliveSeats(s).length / 2);
+  return Math.ceil(s.seats.filter((x) => x.alive).length / 2);
+}
+
+// Eksil av en Traveller: halvparten av ALLE spillere, også døde (døde bruker ikke ghost vote).
+export function exileThreshold(s) {
+  return Math.ceil(s.seats.length / 2);
 }
 
 // Hvem er «på blokka»: flest stemmer ≥ terskel; uavgjort = ingen.

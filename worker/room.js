@@ -34,6 +34,7 @@ function cleanPublic(p) {
     names: Array.isArray(x.names) ? x.names.slice(0, 3).map((n) => str(n, 40)) : [],
     alive: x.alive !== false,
     ghostVote: x.ghostVote !== false,
+    ...(x.traveller && typeof x.traveller === 'object' ? { traveller: { name: str(x.traveller.name, 40), icon: str(x.traveller.icon, 16) } } : {}),
   })) : [];
   const out = {
     title: str(p.title, 80),
@@ -48,7 +49,7 @@ function cleanPublic(p) {
     rolesOut: p.rolesOut !== false,
     script: p.script && Array.isArray(p.script.roles) ? {
       name: str(p.script.name, 80),
-      roles: p.script.roles.slice(0, 60).map((r) => ({ id: str(r.id, 40), name: str(r.name, 40), team: str(r.team, 12), text: str(r.text, 500) })),
+      roles: p.script.roles.slice(0, 60).map((r) => ({ id: str(r.id, 40), name: str(r.name, 40), team: str(r.team, 12), icon: str(r.icon, 16), text: str(r.text, 500) })),
     } : null,
     dawnPending: !!p.dawnPending,
   };
@@ -68,15 +69,33 @@ function cleanPublic(p) {
   if (phase.type === 'ended' && Array.isArray(p.reveal)) {
     out.reveal = p.reveal.slice(0, 30).map((r) => ({
       seatId: str(r.seatId, 80), character: str(r.character, 40), team: str(r.team, 12),
-      alignment: r.alignment === 'evil' ? 'evil' : 'good', shown: r.shown ? str(r.shown, 40) : null,
+      alignment: r.alignment === 'evil' ? 'evil' : 'good', shown: r.shown ? str(r.shown, 40) : null, icon: str(r.icon, 16),
     }));
   }
+  return out;
+}
+
+// Bureaucrat/Thief: noen stemmer teller 3 eller negativt
+function cleanWeights(w) {
+  const out = {};
+  if (!w || typeof w !== 'object') return out;
+  for (const [k, v] of Object.entries(w).slice(0, 30)) { const n = Math.round(Number(v)); if (n && n >= -3 && n <= 3 && n !== 1) out[str(k, 80)] = n; }
   return out;
 }
 
 function cleanCard(c) {
   if (!c || typeof c !== 'object' || !c.id) return null;
   const card = { id: str(c.id, 120), kind: c.kind === 'choice' ? 'choice' : 'info', text: str(c.text, 3000), status: 'new', sentAt: Date.now() };
+  if (c.grim && Array.isArray(c.grim.seats)) {
+    // Spy: strukturert grimoire (sendes bare til Spy-eleven)
+    card.grim = {
+      night: Number(c.grim.night) || 0,
+      seats: c.grim.seats.slice(0, 30).map((x) => ({
+        name: str(x.name, 60), character: str(x.character, 40), icon: str(x.icon, 16), team: str(x.team, 12), alive: x.alive !== false,
+        shown: x.shown ? str(x.shown, 40) : null, reminders: (Array.isArray(x.reminders) ? x.reminders.slice(0, 4) : []).map((r) => str(r, 30)),
+      })),
+    };
+  }
   if (card.kind === 'choice') {
     const ch = c.choice || {};
     card.choice = { count: Math.max(1, Math.min(3, Number(ch.count) || 1)), allowSelf: !!ch.allowSelf };
@@ -223,7 +242,7 @@ export class Room {
     return out;
   }
   publicMsg() {
-    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null, timer: this.room.timer || null, now: Date.now() };
+    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null, timer: this.room.timer || null, dreamReveal: this.room.dreamReveal || 0, now: Date.now() };
   }
   boardMsg() {
     const names = Object.fromEntries(this.room.public.seats.map((x) => [x.id, x.names.join(' + ')]));
@@ -340,12 +359,12 @@ export class Room {
         const phaseChanged = before.type !== pub.phase.type || before.number !== pub.phase.number;
         if (phaseChanged && (r.hands || []).length) { r.hands = []; this.toSt({ t: 'hands', hands: [] }); }
         if (phaseChanged && r.vote) { r.vote = null; this.toSt({ t: 'vote', vote: null, now: Date.now() }); }
-        if (phaseChanged) r.timer = null;
+        if (phaseChanged) { r.timer = null; r.dreamReveal = 0; }
         await this.saveRoom();
         for (const [seatId, card] of Object.entries(msg.roleCards || {})) {
           if (!r.public.seats.some((x) => x.id === seatId)) continue;
           const seat = await this.seat(seatId);
-          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), text: str(card.text, 2000) } : null;
+          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), icon: str(card.icon, 16), text: str(card.text, 2000) } : null;
           if (JSON.stringify(seat.roleCard) !== JSON.stringify(next)) {
             seat.roleCard = next;
             await this.saveSeat(seatId);
@@ -391,6 +410,7 @@ export class Room {
           id: str(v.id, 80), nominatorId: str(v.nominatorId, 80), nomineeId: str(v.nomineeId, 80),
           need: Number(v.need) || 0, open: true, voters: this.validVoters(v.voters),
           tieAt: Number(v.tieAt) > 0 ? Number(v.tieAt) : null, blockId: v.blockId ? str(v.blockId, 80) : null,
+          weights: cleanWeights(v.weights),
         };
         await this.saveRoom();
         this.broadcastVote();
@@ -406,6 +426,12 @@ export class Room {
         this.toSt({ t: 'chat', key, msg: m });
         break;
       }
+      case 'dreamReveal':
+        r.dreamReveal = Math.max(0, Math.min(3, Number(msg.step) || 0));
+        await this.saveRoom();
+        this.broadcastPublic();
+        this.toSt({ t: 'dreamReveal', step: r.dreamReveal });
+        break;
       case 'voteClock': {
         // Viseren starter om 3 sekunder og går én plass per stepMs, i rekkefølgen Storytelleren sender.
         if (!r.vote || !r.vote.open) return;
@@ -481,8 +507,9 @@ export class Room {
         const seatId = str(msg.seatId, 80);
         const seatPub = r.public.seats.find((x) => x.id === seatId);
         if (!seatPub) { send(ws, { t: 'error', code: 'noseat' }); return; }
-        if (r.locked) { send(ws, { t: 'error', code: 'locked' }); return; }
         const list = r.claims[seatId] || [];
+        // Låst rom: bare en ledig Traveller-plass (elev som kommer sent) kan fortsatt velges.
+        if (r.locked && !(seatPub.traveller && !list.length)) { send(ws, { t: 'error', code: 'locked' }); return; }
         if (list.length >= Math.max(1, seatPub.names.length)) { send(ws, { t: 'error', code: 'taken' }); return; }
         const tok = token();
         r.claims[seatId] = [...list, tok];

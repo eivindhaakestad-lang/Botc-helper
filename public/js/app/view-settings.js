@@ -1,10 +1,10 @@
 import { h, readFile, download, toast, copyText } from './dom.js';
 import { store } from './store.js';
-import { navigate, app } from './core.js';
+import { navigate, app, render } from './core.js';
 import { t } from './i18n.js';
 import { segmented, confirmButton, emptyState } from './ui.js';
 import { parseCharacterTexts } from '../engine/script.js';
-import { configureCharacters, charInfo } from '../engine/characters.js';
+import { configureCharacters, charInfo, teamAlignment } from '../engine/characters.js';
 
 export function viewSettings() {
   const set = store.lib.settings;
@@ -63,14 +63,78 @@ export function viewSettings() {
       confirmButton({ key: 'wipe', label: t('deleteAll'), confirmLabel: t('deleteAllConfirm'), onConfirm: () => { store.wipe(); app.draft = null; toast(t('deleted')); navigate('home'); } })));
 }
 
+// ——— statistikk per elev (regnes ut fra den lagrede historikken) ———
+function playerStats(list, classFilter) {
+  const by = new Map();
+  for (const g of list) {
+    if (classFilter && g.className !== classFilter) continue;
+    for (const seat of g.seats) {
+      const info = charInfo(seat.characterId);
+      const align = seat.alignment || teamAlignment(info.team);
+      for (const name of seat.names) {
+        const key = name.trim().toLowerCase();
+        const p = by.get(key) || { name, games: 0, good: 0, evil: 0, wins: 0, demon: 0, minion: 0, survived: 0, roles: {} };
+        p.games += 1;
+        p[align === 'evil' ? 'evil' : 'good'] += 1;
+        if (g.winner && g.winner === align) p.wins += 1;
+        if (info.team === 'demon') p.demon += 1;
+        if (info.team === 'minion') p.minion += 1;
+        if (seat.alive) p.survived += 1;
+        p.roles[info.name] = (p.roles[info.name] || 0) + 1;
+        by.set(key, p);
+      }
+    }
+  }
+  return [...by.values()].sort((a, b) => b.games - a.games || b.wins - a.wins || a.name.localeCompare(b.name));
+}
+
+function statsView(list) {
+  const classes = [...new Set(list.map((g) => g.className).filter(Boolean))].sort();
+  const cf = app.statsClass && classes.includes(app.statsClass) ? app.statsClass : '';
+  const rows = playerStats(list, cf);
+  const pct = (a, b) => (b ? Math.round((100 * a) / b) + ' %' : '–');
+  return h('div', { class: 'stack' },
+    h('p', { class: 'muted small' }, t('statsHelp', { n: store.lib.settings.historyWeeks })),
+    classes.length > 1 ? h('div', { class: 'row gap wrap' },
+      h('label', { class: 'label', for: 'stats-class' }, t('class')),
+      h('select', { id: 'stats-class', class: 'input', onchange: (e) => { app.statsClass = e.target.value; render(); } },
+        h('option', { value: '' }, t('allClasses')), classes.map((c) => h('option', { value: c, selected: c === cf }, c)))) : null,
+    rows.length ? h('div', { class: 'table-wrap' }, h('table', { class: 'table stats-table' },
+      h('thead', null, h('tr', null, [t('player'), t('statGames'), t('statWins'), '😇', '😈', t('statDemon'), t('statSurvived'), t('statTopRole')].map((x, i) => h('th', { class: i ? 'right' : '' }, x)))),
+      h('tbody', null, rows.map((p) => {
+        const top = Object.entries(p.roles).sort((a, b) => b[1] - a[1])[0];
+        return h('tr', null,
+          h('td', { class: 'strong' }, p.name),
+          h('td', { class: 'right' }, String(p.games)),
+          h('td', { class: 'right' }, `${p.wins} (${pct(p.wins, p.games)})`),
+          h('td', { class: 'right' }, String(p.good)),
+          h('td', { class: 'right' }, String(p.evil)),
+          h('td', { class: 'right' }, String(p.demon)),
+          h('td', { class: 'right' }, pct(p.survived, p.games)),
+          h('td', { class: 'right muted' }, top ? `${top[0]}${top[1] > 1 ? ' ×' + top[1] : ''}` : ''));
+      })))) : emptyState(t('noHistory'), t('noHistoryHint')));
+}
+
+function historyTabs() {
+  return segmented({ value: app.historyTab === 'stats' ? 'stats' : 'games', options: [{ value: 'games', label: t('pastGames') }, { value: 'stats', label: '📊 ' + t('stats') }], onChange: (v) => { app.historyTab = v; render(); } });
+}
+
 export function viewHistory() {
   const list = store.lib.history;
+  if (app.historyTab === 'stats') {
+    return h('div', { class: 'page' },
+      h('div', { class: 'page-head row between wrap' },
+        h('h1', { class: 'page-title' }, t('stats')),
+        historyTabs()),
+      statsView(list));
+  }
   const fmt = (ts) => new Date(ts).toLocaleDateString(store.lib.settings.uiLang === 'no' ? 'nb-NO' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   return h('div', { class: 'page narrow' },
     h('div', { class: 'page-head row between wrap' },
       h('div', null, h('h1', { class: 'page-title' }, t('pastGames')),
         h('p', { class: 'muted' }, store.lib.settings.historyEnabled ? t('deletedAfter', { n: store.lib.settings.historyWeeks }) : t('historyOff'))),
-      list.length ? confirmButton({ key: 'delhist', label: t('deleteAllHistory'), onConfirm: () => store.deleteHistory(null) }) : null),
+      h('div', { class: 'row gap wrap' }, historyTabs(),
+        list.length ? confirmButton({ key: 'delhist', label: t('deleteAllHistory'), onConfirm: () => store.deleteHistory(null) }) : null)),
     list.length ? h('ul', { class: 'history-list' }, list.map((g) => h('li', { class: 'panel' },
       h('div', { class: 'row between wrap' },
         h('div', null,

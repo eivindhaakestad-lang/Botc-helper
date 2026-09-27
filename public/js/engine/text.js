@@ -97,6 +97,27 @@ export const SUMMARY = {
     no: 'Det er to ekstra Outsiders i spill.',
     en: 'There are two extra Outsiders in play.',
   },
+  // Trouble Brewing – Travellers (egne omskrivninger)
+  scapegoat: {
+    no: 'Blir en spiller på ditt lag henrettet, kan Storytelleren henrette deg i stedet.',
+    en: 'If a player of your alignment is executed, you might be executed instead.',
+  },
+  gunslinger: {
+    no: 'Hver dag, etter at den første avstemningen er talt, kan du velge en spiller som stemte: de dør.',
+    en: 'Each day, after the first vote has been tallied, you may choose a player who voted: they die.',
+  },
+  beggar: {
+    no: 'Du må få en stemmebrikke av noen for å stemme. Gir en død spiller deg sin, får du vite om de er gode eller onde.',
+    en: 'You need a vote token from someone to vote. If a dead player gives you theirs, you learn their alignment.',
+  },
+  bureaucrat: {
+    no: 'Hver natt velger du en spiller (ikke deg selv): stemmen deres teller som 3 stemmer i morgen.',
+    en: 'Each night, choose a player (not yourself): their vote counts as 3 votes tomorrow.',
+  },
+  thief: {
+    no: 'Hver natt velger du en spiller (ikke deg selv): stemmen deres teller negativt i morgen.',
+    en: 'Each night, choose a player (not yourself): their vote counts negatively tomorrow.',
+  },
   imp: {
     no: 'Hver natt unntatt den første velger du en spiller som dør. Velger du deg selv, dør du, og en Minion blir den nye Impen.',
     en: 'Each night except the first, pick a player to die. If you pick yourself, you die and a Minion becomes the new Imp.',
@@ -145,6 +166,9 @@ const M = {
       chooseTarget: () => '👆 Velg én spiller.',
       choosePoison: () => '☠️ Velg én spiller som skal forgiftes i natt.',
       chooseProtect: () => '🛡️ Velg én spiller du vil beskytte i natt (ikke deg selv).',
+      chooseVoteMod: () => '🗳 Velg én spiller (ikke deg selv).',
+      exiled: (p) => `🚪 ${p.a} er forvist fra byen.`,
+      gunslinger: (p) => `🤠 ${p.a} skyter ${p.b}. ${p.b} dør.`,
       chooseMaster: () => '🎩 Velg mesteren din for i morgen (ikke deg selv).',
       chooseKill: () => '🗡️ Velg én spiller som skal dø i natt. Velger du deg selv, dør du, og en Minion blir ny Demon.',
       chooseFortune: () => '🔮 Velg to spillere. Du får vite om en av dem er Demon.',
@@ -205,6 +229,9 @@ const M = {
       chooseTarget: () => '👆 Choose one player.',
       choosePoison: () => '☠️ Choose one player to poison tonight.',
       chooseProtect: () => '🛡️ Choose one player to protect tonight (not yourself).',
+      chooseVoteMod: () => '🗳 Choose one player (not yourself).',
+      exiled: (p) => `🚪 ${p.a} is exiled from the town.`,
+      gunslinger: (p) => `🤠 ${p.a} shoots ${p.b}. ${p.b} dies.`,
       chooseMaster: () => '🎩 Choose your master for tomorrow (not yourself).',
       chooseKill: () => '🗡️ Choose one player to die tonight. If you choose yourself, you die and a Minion becomes the new Demon.',
       chooseFortune: () => '🔮 Choose two players. You learn whether either is the Demon.',

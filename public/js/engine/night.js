@@ -277,6 +277,24 @@ const KINDS = {
     },
   },
 
+  voteMod: {
+    effect: true,
+    suggest() { return { target: null }; },
+    model(s, step, input, lang, m) {
+      m.fields.push({ name: 'target', type: 'player', label: st(lang, 'fTarget') });
+      if (input.target) m.effects.push(st(lang, step.def.mod === 'thief' ? 'effThief' : 'effBureaucrat', { name: nm(s, input.target) }));
+      if (input.target === step.seatId) m.warnings.push(st(lang, 'hTargetSelf'));
+    },
+    resolve(s, step, input) {
+      if (!input.target) return { incomplete: true };
+      const kind = step.def.mod;
+      return { effects: [
+        { t: 'removeReminder', kind, sourceSeatId: step.seatId },
+        { t: 'addReminder', seatId: input.target, reminder: { kind, label: kind === 'thief' ? 'Negative vote' : '3 votes', sourceSeatId: step.seatId, expires: 'dusk' } },
+      ] };
+    },
+  },
+
   master: {
     effect: true,
     suggest() { return { target: null, ack: false }; },
@@ -433,8 +451,19 @@ const KINDS = {
     },
     suggest() { return {}; },
     model() {},
+    // Strukturert grim, så Spy-eleven får se en ordentlig grimoire-sirkel på skjermen sin.
+    snapshot(s) {
+      return {
+        night: s.phase.number,
+        seats: s.seats.map((x) => {
+          const info = charInfo(x.characterId);
+          const shown = x.shownCharacterId && x.shownCharacterId !== x.characterId ? cname(x.shownCharacterId) : null;
+          return { name: seatName(x), character: info.name, icon: info.icon, team: info.team, alive: x.alive, shown, reminders: x.reminders.filter((r) => r.label).map((r) => r.label).slice(0, 4) };
+        }),
+      };
+    },
     resolve(s, step, input, lang, style) {
-      return { messages: [{ seatId: step.seatId, text: msg(lang, style, 'grimoire', { list: KINDS.grimoire.listing(s, lang) }) }] };
+      return { messages: [{ seatId: step.seatId, text: msg(lang, style, 'grimoire', { list: KINDS.grimoire.listing(s, lang) }), grim: KINDS.grimoire.snapshot(s) }] };
     },
   },
 
@@ -514,6 +543,7 @@ const INSTRUCTION = {
   poison: (lang, p) => st(lang, 'poisonDo', p),
   protect: (lang, p) => st(lang, 'protectDo', p),
   master: (lang, p) => st(lang, 'masterDo', p),
+  voteMod: (lang, p) => st(lang, 'voteModDo', p),
   demonKill: (lang, p) => st(lang, 'killDo', p),
   ravenkeeper: (lang, p) => st(lang, 'ravenDo', p),
   undertaker: (lang, p) => st(lang, 'undertakerDo', p),
@@ -594,6 +624,7 @@ const CHOICE = {
   poison: { count: 1, fields: ['target'], key: 'choosePoison', allowSelf: true },
   protect: { count: 1, fields: ['target'], key: 'chooseProtect', allowSelf: false },
   master: { count: 1, fields: ['target'], key: 'chooseMaster', allowSelf: false },
+  voteMod: { count: 1, fields: ['target'], key: 'chooseVoteMod', allowSelf: false },
   demonKill: { count: 1, fields: ['target'], key: 'chooseKill', allowSelf: true },
   fortune: { count: 2, fields: ['p1', 'p2'], key: 'chooseFortune', allowSelf: true },
   ravenkeeper: { count: 1, fields: ['target'], key: 'chooseRaven', allowSelf: true },

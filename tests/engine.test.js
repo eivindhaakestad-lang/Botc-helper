@@ -352,3 +352,35 @@ test('Scarlet Woman: ingen valgforespørsel før hun har fått vite at hun er De
   s = replay(g, ev);
   assert.ok(choiceRequest(s, nightQueue(s).find((x) => x.key === 'n2:imp:s6')));
 });
+
+test('Travellers: legges til, teller ikke i «to igjen», Bureaucrat ×3 og Thief negativt', async () => {
+  const { voteWeights } = await import('../public/js/engine/state.js');
+  const { exileThreshold, checkWin } = await import('../public/js/engine/day.js');
+  const g = makeGame(['washerwoman', 'empath', 'monk', 'chef', 'soldier', 'imp', 'scarletwoman']);
+  const ev = [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'DAWN_REVEAL' },
+    { type: 'ADD_TRAVELLER', seat: { id: 't1', names: ['Ida'], characterId: 'bureaucrat', alignment: 'evil' }, afterSeatId: 's2' },
+    { type: 'ADD_TRAVELLER', seat: { id: 't2', names: ['Ole'], characterId: 'thief', alignment: 'good' }, afterSeatId: 's5' }];
+  let s = replay(g, ev);
+  assert.deepEqual(s.seats.map((x) => x.id), ['s0', 's1', 's2', 't1', 's3', 's4', 's5', 't2', 's6']);
+  assert.equal(voteThreshold(s), 5, 'Travellers teller med i terskelen (9 levende)');
+  assert.equal(exileThreshold(s), 5);
+  ev.push({ type: 'NIGHT_START' });
+  s = replay(g, ev);
+  const keys = nightQueue(s).map((x) => x.key);
+  assert.ok(keys.indexOf('n2:bureaucrat:t1') >= 0 && keys.indexOf('n2:bureaucrat:t1') < keys.indexOf('n2:imp:s5'), keys.join(','));
+  runStep(g, ev, 'n2:bureaucrat:t1', { target: 's0' });
+  runStep(g, ev, 'n2:thief:t2', { target: 's1' });
+  ev.push({ type: 'DAY_START' }, { type: 'NOMINATE', nominationId: 'n1', nominatorId: 's2', nomineeId: 's3' },
+    { type: 'VOTE', sk: 'vote:n1', nominationId: 'n1', voters: ['s0', 's1', 's2'] });
+  s = replay(g, ev);
+  assert.deepEqual(voteWeights(s), { s0: 3, s1: -1 });
+  assert.equal(s.nominations[0].votes, 3, '3 − 1 + 1');
+  // Neste natt forsvinner vektene
+  ev.push({ type: 'NIGHT_START' });
+  assert.deepEqual(voteWeights(replay(g, ev)), {});
+  // To igjen (uten Travellers) gir ond seier
+  const g2 = makeGame(['washerwoman', 'empath', 'monk', 'chef', 'soldier', 'imp', 'scarletwoman']);
+  const kill = (ids) => ({ type: 'EFFECTS', effects: ids.map((id) => ({ t: 'kill', seatId: id })) });
+  const s2 = replay(g2, [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'ADD_TRAVELLER', seat: { id: 't1', names: ['Ida'], characterId: 'beggar', alignment: 'good' } }, kill(['s0', 's1', 's2', 's3', 's6'])]);
+  assert.equal(checkWin(s2, 'no').winner, 'evil');
+});

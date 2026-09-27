@@ -5,7 +5,8 @@ import { h, toast } from '../app/dom.js';
 import { LiveClient } from '../live/client.js';
 import { DreamGame } from './dream.js';
 import { revealCircle } from '../live/reveal.js';
-import { voteCircle, tickVoteCircle, lockAt, tieLine } from '../live/voteclock.js';
+import { podium } from '../live/podium.js';
+import { voteCircle, tickVoteCircle, lockAt, tieLine, voteTotal } from '../live/voteclock.js';
 import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 
@@ -33,7 +34,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
+    newChat: 'Ny melding fra {name}', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -58,7 +59,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
+    newChat: 'New message from {name}', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
   },
 };
 
@@ -104,6 +105,7 @@ function onMessage(m) {
       const firstPub = !P.pub;
       P.pub = m.public;
       P.room = m.room;
+      P.dreamReveal = m.dreamReveal || 0;
       P.claimed = m.claimed || {};
       P.hands = m.hands || [];
       for (const sh of (P.pub.day && P.pub.day.shots) || []) {
@@ -295,6 +297,10 @@ function overlayView() {
           h('button', { class: 'btn ghost', onclick: () => { P.shown[card.id] = false; render(); } }, T('hide')),
           h('button', { class: 'btn primary big', disabled: sel.length !== count, onclick: () => choose(card) }, T('send')))]
       : [h('button', { class: 'hold-cover big-cover', onclick: () => { P.shown[card.id] = true; render(); } }, '👁 ' + T('tapShow'))];
+  } else if (card.grim) {
+    body = [h('p', { class: 'card-text' }, '📖 ' + T('grimIntro')),
+      h('button', { class: 'btn big', onclick: () => { P.grimOpen = card; render(); } }, '📖 ' + T('grimOpen')),
+      h('button', { class: 'btn primary big', onclick: () => ack(card) }, '✓ ' + T('read'))];
   } else {
     body = [holdReveal(T('holdRead'), h('p', { class: 'card-text' }, card.text)), h('button', { class: 'btn primary big', onclick: () => ack(card) }, '✓ ' + T('read'))];
   }
@@ -302,6 +308,35 @@ function overlayView() {
     h('div', { class: 'wake-card' },
       h('p', { class: 'eyebrow' }, '📜 ' + T('wake')),
       h('div', { class: 'stack' }, body)));
+}
+
+// Spy: grimoiren som en ordentlig sirkel (bare på Spy-elevens skjerm)
+function grimSheet() {
+  const card = P.grimOpen;
+  if (!card || !card.grim) return null;
+  const seats = card.grim.seats;
+  const n = Math.max(1, seats.length);
+  const tok = Math.min(26, (257 / n) * 0.7).toFixed(2);
+  return h('div', { class: 'grim-sheet', role: 'dialog', 'aria-modal': 'true' },
+    h('div', { class: 'grim-sheet-inner' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'display' }, `📖 ${T('grimTitle')} · ${T('night')} ${card.grim.night}`),
+        h('button', { class: 'btn primary', onclick: () => { P.grimOpen = null; render(); } }, '✕ ' + T('hide'))),
+      h('div', { class: 'grim spy-grim', style: `--tok:min(110px, ${tok}cqw)` },
+        h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
+        h('div', { class: 'grim-center' }, h('div', { class: 'center-text' }, h('span', { class: 'muted small' }, T('grimSecret')))),
+        seats.map((x, i) => {
+          const a = (-90 + (360 / n) * i) * (Math.PI / 180);
+          return h('div', { class: 'grim-slot', style: `left:${(50 + 40 * Math.cos(a)).toFixed(2)}%;top:${(50 + 40 * Math.sin(a)).toFixed(2)}%` },
+            h('div', { class: `token team-${x.team}${x.alive ? '' : ' dead'}` },
+              h('span', { class: 'token-disc' },
+                h('span', { class: 'token-icon', 'aria-hidden': 'true' }, x.icon),
+                h('span', { class: 'token-char' + (x.character.length > 12 ? ' xlong' : x.character.length > 8 ? ' long' : '') }, x.character),
+                x.shown ? h('span', { class: 'token-shown' }, x.shown) : null,
+                x.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
+              h('span', { class: 'token-label' }, x.name),
+              x.reminders.length ? h('span', { class: 'token-rem' }, x.reminders.map((r) => h('span', { class: 'rem' }, r))) : null));
+        }))));
 }
 
 function phaseBanner() {
@@ -409,16 +444,62 @@ function scriptView() {
     roles.length ? TEAMS.filter((tm) => roles.some((r) => r.team === tm)).map((tm) => h('section', { class: 'panel script-team team-' + tm },
       h('h3', { class: 'section-title' }, T('team_' + tm)),
       h('ul', { class: 'script-roles' }, roles.filter((r) => r.team === tm).map((r) => h('li', null,
-        h('span', { class: 'script-name display' }, r.name),
+        h('span', { class: 'script-name display' }, r.icon ? h('span', { class: 'script-icon', 'aria-hidden': 'true' }, r.icon + ' ') : null, r.name),
         h('span', { class: 'script-text' }, r.text)))))) : h('p', { class: 'muted' }, T('noScript')));
 }
 
+// ——— egen status ———
+function statusLine() {
+  const me = P.me && P.pub.seats.find((x) => x.id === P.me.seatId);
+  if (!me || P.pub.phase.type === 'setup') return null;
+  const onBlock = blockId() === me.id;
+  const txt = me.alive ? T('stAlive') : me.ghostVote ? T('stDeadGhost') : T('stDeadNoGhost');
+  return h('div', { class: 'status-line' + (me.alive ? ' alive' : ' dead') + (onBlock ? ' block' : '') },
+    h('span', null, me.alive ? '🟢' : '💀'), h('span', { class: 'grow' }, txt),
+    onBlock ? h('span', { class: 'strong' }, '💀 ' + T('stOnBlock')) : null,
+    me.traveller ? h('span', { class: 'trav-tag' }, `${me.traveller.icon} ${me.traveller.name}`) : null);
+}
+
+// ——— diskret notatblokk: egne markeringer per spiller (bare på denne PC-en) ———
+const notesKey = () => `botc-notes-${P.code}-${P.me ? P.me.seatId : ''}`;
+function loadNotes() { try { return JSON.parse(localStorage.getItem(notesKey()) || '{}'); } catch { return {}; } }
+function saveNotes(n) { try { localStorage.setItem(notesKey(), JSON.stringify(n)); } catch { /* */ } }
+const MARKS = [null, 'good', 'evil', 'unsure'];
+const MARK_ICON = { good: '😇', evil: '😈', unsure: '❓' };
+
+function noteChips(note) {
+  if (!note) return null;
+  const roles = (P.pub.script && P.pub.script.roles) || [];
+  const r = note.role && roles.find((x) => x.id === note.role);
+  const parts = [note.mark ? MARK_ICON[note.mark] : '', r ? `${r.icon || ''} ${r.name}` : '', note.text || ''].filter(Boolean);
+  return parts.length ? h('span', { class: 'note-chip' }, parts.join(' · ')) : null;
+}
+
+function noteEditor(x, notes) {
+  const n = notes[x.id] || {};
+  const upd = (patch, rerender = true) => { notes[x.id] = { ...n, ...patch }; saveNotes(notes); if (rerender) render(); };
+  const roles = (P.pub.script && P.pub.script.roles) || [];
+  return h('div', { class: 'note-edit' },
+    h('button', { class: 'btn small ghost', title: T('noteMark'), onclick: () => upd({ mark: MARKS[(MARKS.indexOf(n.mark || null) + 1) % MARKS.length] }) }, n.mark ? MARK_ICON[n.mark] : '○'),
+    h('select', { class: 'input small', 'aria-label': T('noteRole'), onchange: (e) => upd({ role: e.target.value || null }) },
+      h('option', { value: '' }, '—'),
+      roles.map((r) => h('option', { value: r.id, selected: n.role === r.id }, `${r.icon || ''} ${r.name}`))),
+    h('input', { id: 'note-' + x.id, class: 'input small grow', value: n.text || '', placeholder: T('notePh'), maxlength: 80, oninput: (e) => upd({ text: e.target.value }, false) }));
+}
+
 function townView() {
+  const notes = loadNotes();
   return h('div', { class: 'panel' },
-    h('h3', { class: 'section-title' }, T('town')),
-    h('ol', { class: 'town' }, P.pub.seats.map((x) => h('li', { class: (x.alive ? '' : 'dead') + (P.me && x.id === P.me.seatId ? ' me' : '') + (blockId() === x.id ? ' on-block' : '') },
-      h('span', { class: 'grow' }, (blockId() === x.id ? '💀 ' : '') + x.names.join(' + ')),
-      h('span', { class: 'muted small' }, x.alive ? T('alive') : `† ${x.ghostVote ? '● ' + T('ghost') : ''}`)))));
+    h('div', { class: 'row between' },
+      h('h3', { class: 'section-title' }, T('town')),
+      h('button', { class: 'btn small ghost note-toggle' + (P.notesOpen ? ' active' : ''), onclick: () => { P.notesOpen = !P.notesOpen; render(); }, title: T('notesHelp') }, P.notesOpen ? '✓ ' + T('notesDone') : '✎ ' + T('notes'))),
+    P.notesOpen ? h('p', { class: 'muted small' }, T('notesHelp')) : null,
+    h('ol', { class: 'town' + (P.notesOpen ? ' noting' : '') }, P.pub.seats.map((x) => h('li', { class: (x.alive ? '' : 'dead') + (P.me && x.id === P.me.seatId ? ' me' : '') + (blockId() === x.id ? ' on-block' : '') },
+      h('div', { class: 'town-row' },
+        h('span', { class: 'grow' }, (blockId() === x.id ? '💀 ' : '') + x.names.join(' + '), x.traveller ? h('span', { class: 'trav-tag' }, ` ${x.traveller.icon} ${x.traveller.name}`) : null,
+          P.notesOpen ? null : noteChips(notes[x.id])),
+        h('span', { class: 'muted small' }, x.alive ? T('alive') : `† ${x.ghostVote ? '● ' + T('ghost') : ''}`)),
+      P.notesOpen && !(P.me && x.id === P.me.seatId) ? noteEditor(x, notes) : null))));
 }
 
 function handView() {
@@ -451,7 +532,7 @@ function voteView() {
   return h('div', { class: 'vote-card' + (v.open ? ' open' : '') + (v.clock ? ' clock' : '') },
     h('p', { class: 'eyebrow' }, v.open ? (v.clock ? '🕐 ' + T('voteBefore') : '🗳 ' + T('voteOpen')) : T('voteClosed')),
     h('p', { class: 'display vote-title vote-who' }, h('span', { class: 'vc-nominator' }, seatName(v.nominatorId)), h('span', { class: 'vcs-arrow' }, ' ➜ '), h('span', { class: 'vc-nominee' }, seatName(v.nomineeId))),
-    h('p', { class: 'vote-num' }, h('span', { class: 'big-num' }, String(v.voters.length)), ' ', T('voteCount', { n: '', need: v.need }).replace(/^\s*/, '')),
+    h('p', { class: 'vote-num' }, h('span', { class: 'big-num' }, String(voteTotal(v))), ' ', T('voteCount', { n: '', need: v.need }).replace(/^\s*/, '')),
     v.tieAt ? h('p', { class: 'vcs-tie small' }, tieLine(v, seatName, T).split(' · ').map((x) => h('span', { class: 'tie-row' }, x))) : null,
     v.open
       ? (cant ? h('p', { class: 'warn-text' }, T('noGhost'))
@@ -519,7 +600,8 @@ function revealView() {
   return h('div', { class: 'play-reveal' },
     revealCircle({ seats: P.pub.seats, reveal: P.pub.reveal || [], winner: P.pub.winner, me: P.me && P.me.seatId, size: 96,
       text: { title: T('revealTitle'), good: T('winnerGood'), evil: T('winnerEvil') } }),
-    P.pub.winner ? null : h('p', { class: 'muted center' }, T('revealWait')));
+    P.pub.winner ? null : h('p', { class: 'muted center' }, T('revealWait')),
+    podium({ board: P.board && P.board.board, step: P.dreamReveal, text: { title: T('champs'), points: T('sheepCounted') } }));
 }
 
 function homeView() {
@@ -527,12 +609,13 @@ function homeView() {
   const me = P.pub.seats.find((x) => x.id === P.me.seatId);
   return h('div', { class: 'play-home' },
     phaseBanner(),
+    statusLine(),
     h('button', { class: 'btn script-btn', onclick: () => { P.view = 'script'; render(); window.scrollTo(0, 0); } }, '📜 ' + T('showScript')),
     timerView(),
     voteView(),
     P.pub.rolesOut === false ? null : h('div', { class: 'hold-row' },
       P.roleCard
-        ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
+        ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.icon ? P.roleCard.icon + ' ' : '', P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
         : h('p', { class: 'muted' }, T('noRole')),
       lastMessageView()),
     handView(),
@@ -546,7 +629,8 @@ function homeView() {
         ? h('ol', { class: 'inbox' }, P.inbox.slice().reverse().map((c) => h('li', null,
           c.kind === 'choice'
             ? h('p', { class: 'muted small' }, c.status === 'answered' ? `✉ ${T('answered')}: ${(c.response || []).map(seatName).join(' + ')}` : '…')
-            : holdReveal(T('holdRead'), h('p', { class: 'card-text' }, c.text), 'small-hold'))))
+            : c.grim ? h('button', { class: 'btn small', onclick: () => { P.grimOpen = c; render(); } }, `📖 ${T('grimTitle')} · ${T('night')} ${c.grim.night}`)
+              : holdReveal(T('holdRead'), h('p', { class: 'card-text' }, c.text), 'small-hold'))))
         : h('p', { class: 'muted small' }, T('noMessages'))),
     townView(),
     me ? h('p', { class: 'muted small center' }, `${T('you')}: ${me.names.join(' + ')}`) : null);
@@ -613,10 +697,15 @@ function render() {
     if (lbl) lbl.textContent = dreamLabel();
     root.querySelector('.overlay-slot').replaceChildren(overlayView() || '');
     root.querySelector('.conn').replaceChildren(connView());
+    const oldSheet = root.querySelector('.grim-sheet');
+    if (oldSheet) oldSheet.remove();
+    const sheet = grimSheet();
+    if (sheet) root.append(sheet);
     return;
   }
   const act = document.activeElement;
-  const refocus = act && act.id === 'chat-input' ? act.selectionStart : null;
+  const focusId = act && (act.id === 'chat-input' || (act.id || '').startsWith('note-')) ? act.id : null;
+  const refocus = focusId && typeof act.selectionStart === 'number' ? act.selectionStart : null;
   root.replaceChildren(
     h('header', { class: 'play-top' },
       h('span', { class: 'brand-name' }, '✦ Botc Helper'),
@@ -624,10 +713,11 @@ function render() {
       h('span', { class: 'conn' }, connView()),
       soundToggle()),
     h('main', { class: 'play-main' + (P.view === 'dream' && dreamPhase() ? ' wide' : '') }, main),
-    h('div', { class: 'overlay-slot' }, P.me ? overlayView() || '' : ''));
-  if (refocus !== null) {
-    const el = document.getElementById('chat-input');
-    if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(refocus, refocus); } catch { /* */ } }
+    h('div', { class: 'overlay-slot' }, P.me ? overlayView() || '' : ''),
+    (P.me && grimSheet()) || '');
+  if (focusId) {
+    const el = document.getElementById(focusId);
+    if (el) { el.focus({ preventScroll: true }); if (refocus !== null) { try { el.setSelectionRange(refocus, refocus); } catch { /* */ } } }
   }
   if (P.view === 'dream' && dreamPhase() && P.me) {
     if (P.dream) P.dream.destroy();

@@ -179,8 +179,8 @@ export const store = {
         className: s.meta.className || '',
         groupName: s.meta.groupName || '',
         scriptName: s.script.name,
-        winner: s.winner,
-        seats: s.seats.map((x) => ({ names: x.names, characterId: x.characterId, alive: x.alive })),
+        winner: s.announced || s.winner,
+        seats: s.seats.map((x) => ({ names: x.names, characterId: x.characterId, alive: x.alive, alignment: x.alignment })),
         notes: s.notes.map((n) => n.text),
         expiresAt: Date.now() + this.lib.settings.historyWeeks * 7 * 864e5,
       });

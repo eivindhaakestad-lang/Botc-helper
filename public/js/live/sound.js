@@ -5,17 +5,19 @@ let ctx = null;
 let enabled = false;
 let master = null;
 
+function ensureCtx() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = 0.8;
+    master.connect(ctx.destination);
+  }
+  ctx.resume();
+  return ctx;
+}
+
 export function enableSound() {
-  try {
-    if (!ctx) {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      master = ctx.createGain();
-      master.gain.value = 0.8;
-      master.connect(ctx.destination);
-    }
-    ctx.resume();
-    enabled = true;
-  } catch { enabled = false; }
+  try { ensureCtx(); enabled = true; } catch { enabled = false; }
   return enabled;
 }
 
@@ -80,3 +82,130 @@ export const sfx = {
   hit() { noise(0.1, { gain: 0.45, freq: 2600, q: 2 }); tone(70, 2.6, { gain: 0.5, slideTo: 30, release: 2.6, delay: 0.05 }); noise(1.6, { gain: 0.25, freq: 220, q: 0.5, type: 'lowpass', delay: 0.05 }); bellAt(330, 0.7, 0.18, 3.2); },
   reveal() { tone(220, 0.6, { type: 'sine', gain: 0.2, slideTo: 660 }); bellAt(1320, 0.45, 0.07, 1.4); },
 };
+
+
+// ——— Stemningsmusikk: dyster, generativ nattmusikk (egen av/på, uavhengig av lydeffektene) ———
+// D-moll: drone, langsomme akkorder (i – VI – iv – V), spredte spilledåse-toner med ekko og litt vind.
+const NOTE = (m) => 440 * Math.pow(2, (m - 69) / 12);
+const CHORDS = [[62, 65, 69], [58, 62, 65], [55, 58, 62], [57, 61, 64]]; // Dm, Bb, Gm, A
+const MELODY = [74, 77, 79, 81, 84, 86, 72, 69];
+let music = null;
+
+function buildMusic() {
+  const c = ensureCtx();
+  const out = c.createGain();
+  out.gain.value = 0;
+  out.connect(c.destination);
+  // Ekko til melodien
+  const delay = c.createDelay(2);
+  delay.delayTime.value = 0.55;
+  const fb = c.createGain();
+  fb.gain.value = 0.42;
+  const wet = c.createGain();
+  wet.gain.value = 0.5;
+  delay.connect(fb).connect(delay);
+  delay.connect(wet).connect(out);
+  // Drone
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 380;
+  const lfo = c.createOscillator();
+  const lfoGain = c.createGain();
+  lfo.frequency.value = 0.05;
+  lfoGain.gain.value = 160;
+  lfo.connect(lfoGain).connect(lp.frequency);
+  lfo.start();
+  const droneGain = c.createGain();
+  droneGain.gain.value = 0.07;
+  lp.connect(droneGain).connect(out);
+  const drones = [NOTE(38), NOTE(38) * 1.004, NOTE(45) * 0.998].map((f) => { const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.connect(lp); o.start(); return o; });
+  // Vind
+  const len = c.sampleRate * 4;
+  const buf = c.createBuffer(1, len, c.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const wind = c.createBufferSource();
+  wind.buffer = buf;
+  wind.loop = true;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 420;
+  bp.Q.value = 0.6;
+  const windGain = c.createGain();
+  windGain.gain.value = 0.02;
+  const wlfo = c.createOscillator();
+  const wlfoGain = c.createGain();
+  wlfo.frequency.value = 0.08;
+  wlfoGain.gain.value = 0.015;
+  wlfo.connect(wlfoGain).connect(windGain.gain);
+  wlfo.start();
+  wind.connect(bp).connect(windGain).connect(out);
+  wind.start();
+  const m = { out, delay, nodes: [lfo, wlfo, wind, ...drones], chord: 0, nextChord: 0, nextNote: 0, timer: null, playing: false };
+  const pad = (freq, t0) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = 'triangle';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.035, t0 + 2.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 9);
+    o.connect(g).connect(out);
+    o.start(t0);
+    o.stop(t0 + 9.2);
+  };
+  const bell = (freq, t0) => {
+    [[1, 0.035], [2.76, 0.012], [5.4, 0.006]].forEach(([k, a]) => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.frequency.value = freq * k;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(a, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 2.4);
+      o.connect(g);
+      g.connect(out);
+      g.connect(delay);
+      o.start(t0);
+      o.stop(t0 + 2.5);
+    });
+  };
+  m.tick = () => {
+    const now = c.currentTime;
+    if (now + 0.5 >= m.nextChord) {
+      const t0 = Math.max(now, m.nextChord);
+      CHORDS[m.chord % CHORDS.length].forEach((n) => pad(NOTE(n - 12), t0));
+      m.chord += 1;
+      m.nextChord = t0 + 8;
+    }
+    if (now + 0.5 >= m.nextNote) {
+      const t0 = Math.max(now, m.nextNote);
+      if (Math.random() < 0.7) bell(NOTE(MELODY[Math.floor(Math.random() * MELODY.length)]), t0);
+      m.nextNote = t0 + 1.6 + Math.random() * 2.8;
+    }
+  };
+  return m;
+}
+
+export function musicPlaying() { return !!(music && music.playing); }
+
+export function playMusic() {
+  try {
+    if (!music) music = buildMusic();
+    if (music.playing) return;
+    const c = ensureCtx();
+    music.playing = true;
+    music.nextChord = c.currentTime + 0.2;
+    music.nextNote = c.currentTime + 1.5;
+    music.out.gain.cancelScheduledValues(c.currentTime);
+    music.out.gain.setTargetAtTime(0.9, c.currentTime, 1.5);
+    clearInterval(music.timer);
+    music.timer = setInterval(music.tick, 250);
+  } catch { /* ingen lyd tilgjengelig */ }
+}
+
+export function stopMusic() {
+  if (!music || !music.playing) return;
+  music.playing = false;
+  music.out.gain.setTargetAtTime(0, ctx.currentTime, 1.2);
+  clearInterval(music.timer);
+}

@@ -296,3 +296,38 @@ test('rom: chat med Storytelleren og naboer, Storytelleren leser alt', async () 
   const st2 = await connect(room, 'st', 'secret');
   assert.equal(Object.keys(st2.sent[0].chats).length, 3);
 });
+
+test('rom: låst rom slipper bare inn på ledig Traveller-plass, og stemmevekter lagres', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const seats = [...PUB.seats, { id: 't1', names: ['Ida'], alive: true, ghostVote: true, traveller: { name: 'Thief', icon: '🦝' } }];
+  await say(room, st, { t: 'sync', public: { ...PUB, seats, phase: { type: 'day', number: 1 } }, roleCards: {} });
+  await say(room, st, { t: 'lock', locked: true });
+  const a = await connect(room, 'player');
+  await say(room, a, { t: 'claim', seatId: 's1' });
+  assert.equal(a.last('error').code, 'locked');
+  await say(room, a, { t: 'claim', seatId: 't1' });
+  assert.ok(a.last('you'), 'Traveller-plassen kan tas selv om rommet er låst');
+  const b = await connect(room, 'player');
+  await say(room, b, { t: 'claim', seatId: 't1' });
+  assert.equal(b.last('error').code, 'locked', 'men bare én gang');
+  await say(room, st, { t: 'voteOpen', vote: { id: 'n1', nominatorId: 's1', nomineeId: 's2', need: 2, weights: { s3: 3, t1: -1, x: 'y', s1: 99 } } });
+  assert.deepEqual(st.last('vote').vote.weights, { s3: 3, t1: -1 });
+});
+
+test('rom: drømmemestere avsløres steg for steg og nullstilles ved faseskifte', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const screen = await connect(room, 'screen');
+  await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'ended', number: 2 }, reveal: [] }, roleCards: {} });
+  await say(room, st, { t: 'dreamReveal', step: 2 });
+  assert.equal(screen.last('public').dreamReveal, 2);
+  await say(room, st, { t: 'dreamReveal', step: 9 });
+  assert.equal(screen.last('public').dreamReveal, 3);
+  await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'setup', number: 0 } }, roleCards: {} });
+  assert.equal(screen.last('public').dreamReveal, 0);
+});

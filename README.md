@@ -58,6 +58,20 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Scriptet:** Elevene har knappen **📜 Se scriptet – alle roller** øverst. Den viser alle rollene i scriptet med beskrivelse, sortert etter Townsfolk, Outsiders, Minions og Demon. Har du importert de offisielle rolletekstene, er det dem elevene ser.
 
+**Travellers (TB):** Under **⋯ Spill → Legg til Traveller** legger du til en elev som kommer sent, som Scapegoat, Gunslinger, Beggar, Bureaucrat eller Thief, velger lag og plass i sirkelen. Rollen er offentlig (vises på storskjermen), laget er hemmelig. Travellers teller ikke i sammensetningen, men teller med i stemmeterskelen. Bureaucrat og Thief velger om natten; stemmen teller 3 eller negativt dagen etter (vises med ×3 eller −1 på storskjermen). I Dag-fanen kan du forvise Travellers, og Gunslinger kan skyte en som stemte i den første avstemningen. En låst rom slipper fortsatt inn eleven på en ledig Traveller-plass.
+
+**Spy:** Når du sender Spy-steget, får Spy-eleven en «Åpne grimoiren»-knapp som viser hele grimen som en sirkel med roller, ikoner, døde og påminnelser.
+
+**For elevene:** En statuslinje viser «Du lever», «Du er død – du har 1 ghost vote igjen» osv. I bylista kan eleven trykke **✎ Notater** og markere hver spiller som god/ond/usikker, velge rollen de påstår og skrive et kort notat. Notatene lagres bare på elevens egen PC.
+
+**Drømmemestere:** Etter grim reveal kan du vise topp 3 i drømmespillet på storskjermen, én plass om gangen (3. → 2. → vinneren), på en pall.
+
+**Stemningsmusikk:** Storskjermen har egen knapp **🎵 Slå på musikk**: dyster, rolig musikk om natten, laget i nettleseren. Den er uavhengig av lydeffektene.
+
+**Statistikk:** Under **Tidligere spill → 📊 Statistikk** ser du per elev: antall spill, seire, god/ond, Demon, hvor ofte de overlevde og rollen de oftest har hatt. Regnes ut fra historikken på din PC.
+
+**Rolleikoner:** Appen bruker egne enkle ikoner (emoji). Importerer du rolletekster med bildelenker, vises bildene i grimen din.
+
 **Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
 
 **Daggry:** Dødsfall om natten (for eksempel Demonens drap) vises ikke på storskjermen eller hos elevene mens det er natt. Når du starter dagen, ser de at det er dag, men ikke hvem som døde («Byen våkner …»). Du ser hvem som døde, og trykker **📣 Kunngjør natten** (eller Enter) når du er klar. Da dukker dødsfallene og morgenmeldingen opp, og storskjermen spiller en lyd.

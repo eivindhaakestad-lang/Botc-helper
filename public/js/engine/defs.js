@@ -42,6 +42,13 @@ export const DEFS = {
 
   // Trouble Brewing – Demon
   imp: { other: { kind: 'demonKill', when: 'notNewDemon' } },
+
+  // Trouble Brewing – Travellers (legges til under spillet, teller ikke i sammensetningen)
+  bureaucrat: { first: { kind: 'voteMod', mod: 'bureaucrat' }, other: { kind: 'voteMod', mod: 'bureaucrat' } },
+  thief: { first: { kind: 'voteMod', mod: 'thief' }, other: { kind: 'voteMod', mod: 'thief' } },
+  gunslinger: { day: 'gunslinger' },
+  scapegoat: { passive: 'scapegoat' },
+  beggar: { day: 'beggar' },
 };
 
 export const TROUBLE_BREWING = {
@@ -56,5 +63,6 @@ export const TROUBLE_BREWING = {
     'poisoner', 'spy', 'scarletwoman', 'baron',
     'imp',
   ],
+  travellers: ['scapegoat', 'gunslinger', 'beggar', 'bureaucrat', 'thief'],
   custom: {},
 };

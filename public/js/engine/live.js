@@ -13,14 +13,21 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     title: [s.meta.className, s.meta.groupName].filter(Boolean).join(' · '),
     lang: s.lang,
     phase: { type: s.phase.type, number: s.phase.number },
-    seats: s.seats.map((x) => ({ id: x.id, names: x.names.slice(), alive: x.alive, ghostVote: x.ghostVote })),
+    // Travellers er offentlige: alle vet hvem som er Beggar, Thief osv. (men ikke hvilket lag de er på).
+    seats: s.seats.map((x) => {
+      const info = charInfo(x.characterId);
+      const o = { id: x.id, names: x.names.slice(), alive: x.alive, ghostVote: x.ghostVote };
+      if (info.team === 'traveller') o.traveller = { name: info.name, icon: info.icon };
+      return o;
+    }),
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
     dawnPending: false,
     dream, decoys, chat,
     // Scriptet er offentlig: alle roller med beskrivelse, sortert etter team.
     script: {
       name: s.script.name || '',
-      roles: s.script.characters.map((id) => { const info = charInfo(id); return { id, name: info.name, team: info.team, text: summary(id, s.lang, info) }; })
+      roles: [...new Set([...s.script.characters, ...s.seats.map((x) => x.characterId).filter((id) => charInfo(id).team === 'traveller')])]
+        .map((id) => { const info = charInfo(id); return { id, name: info.name, team: info.team, icon: info.icon, text: summary(id, s.lang, info) }; })
         .filter((r) => ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'].includes(r.team)),
     },
     // Rollene deles ut når Storytelleren trykker «Send ut roller», og alltid når spillet er i gang.
@@ -59,7 +66,7 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     out.reveal = s.seats.filter((x) => rev.has(x.id)).map((x) => {
       const info = charInfo(x.characterId);
       const shown = actingId(x) !== x.characterId ? charInfo(actingId(x)).name : null;
-      return { seatId: x.id, character: info.name, team: info.team, alignment: x.alignment, shown };
+      return { seatId: x.id, character: info.name, team: info.team, alignment: x.alignment, shown, icon: info.icon };
     });
   }
   return out;
@@ -72,10 +79,14 @@ export function roleCardsFor(s) {
     // Har eleven fått en ny rolle som ikke er fortalt ennå, vises den gamle rollen.
     const shownId = seat.newRole && !seat.newRole.told && seat.newRole.from ? seat.newRole.from : actingId(seat);
     const info = charInfo(shownId);
+    const labels = TEAM_LABEL[s.lang] || TEAM_LABEL.no;
+    // En Traveller får vite hvilket lag de er på.
+    const team = info.team === 'traveller' ? `${labels.traveller} – ${s.lang === 'en' ? (seat.alignment === 'evil' ? 'evil' : 'good') : (seat.alignment === 'evil' ? 'ond' : 'god')}` : labels[info.team] || info.team;
     out[seat.id] = {
       character: info.name,
       team: info.team,
-      text: msg(s.lang, s.style, 'roleCard', { char: info.name, team: (TEAM_LABEL[s.lang] || TEAM_LABEL.no)[info.team] || info.team, summary: summary(shownId, s.lang, info) }),
+      icon: info.icon,
+      text: msg(s.lang, s.style, 'roleCard', { char: info.name, team, summary: summary(shownId, s.lang, info) }),
     };
   }
   return out;

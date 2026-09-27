@@ -178,11 +178,23 @@ export function applyEvent(s, ev) {
       (ev.effects || []).forEach((e) => applyEffect(s, e, phase));
       pushMessages(s, ev, ev.messages, phase);
       break;
+    case 'ADD_TRAVELLER': {
+      // En Traveller blir med midt i spillet og settes inn etter en valgt plass.
+      const t = ev.seat;
+      if (!t || s.seats.some((x) => x.id === t.id)) break;
+      const seat = {
+        id: t.id, names: t.names.slice(), studentIds: (t.studentIds || []).slice(), tags: [], characterId: t.characterId, shownCharacterId: null,
+        alignment: t.alignment === 'evil' ? 'evil' : 'good', alive: true, ghostVote: true, reminders: [], characterSince: { ...phase },
+      };
+      const i = s.seats.findIndex((x) => x.id === ev.afterSeatId);
+      s.seats.splice(i < 0 ? s.seats.length : i + 1, 0, seat);
+      break;
+    }
     case 'VOTE': {
       const nom = s.nominations.find((n) => n.id === ev.nominationId);
       if (!nom) break;
       nom.voters = ev.voters.slice();
-      nom.votes = ev.voters.length;
+      nom.votes = ev.voters.reduce((a, id) => a + voteWeight(s, id), 0);
       for (const id of ev.voters) {
         const seat = findSeat(s, id);
         if (seat && !seat.alive) seat.ghostVote = false;
@@ -256,6 +268,20 @@ export function actingId(seat) {
 export function isDrunkLike(seat) {
   const info = charInfo(seat.characterId);
   return !!(info.def && info.def.drunkLike);
+}
+
+// Bureaucrat: stemmen teller 3. Thief: stemmen teller negativt. Begge: −3.
+export function voteWeight(s, seatId) {
+  const seat = findSeat(s, seatId);
+  if (!seat) return 1;
+  const has = (k) => seat.reminders.some((r) => r.kind === k);
+  return (has('bureaucrat') ? 3 : 1) * (has('thief') ? -1 : 1);
+}
+
+export function voteWeights(s) {
+  const out = {};
+  for (const seat of s.seats) { const w = voteWeight(s, seat.id); if (w !== 1) out[seat.id] = w; }
+  return out;
 }
 
 export function seatTeam(seat) {

@@ -7,15 +7,16 @@ import { t } from './i18n.js';
 import { charSelect, playerSelect, copyButton, modal, openModal, closeModal, confirmButton, emptyState, segmented, teamPill } from './ui.js';
 import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
-import { seatName, getSeat, aliveSeats, compromised } from '../engine/state.js';
+import { seatName, getSeat, aliveSeats, compromised, voteWeights } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, revealDream, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
-  nominationsToday, voteThreshold, voteTarget, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
+  nominationsToday, voteThreshold, exileThreshold, voteTarget, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
   postDeathChecks, checkWin, mayorCheck, dawnMessage,
 } from '../engine/day.js';
-import { msg } from '../engine/text.js';
+import { msg, summary } from '../engine/text.js';
+import { TROUBLE_BREWING } from '../engine/defs.js';
 import { uid } from '../engine/rng.js';
 import { tryUnlock } from './lock.js';
 
@@ -206,6 +207,86 @@ function gameBar(s) {
       next));
 }
 
+// ——— Travellers ———
+function travellerModal() {
+  const s = store.state();
+  const f = app.travForm || (app.travForm = { name: '', characterId: 'scapegoat', alignment: 'good', after: s.seats[s.seats.length - 1] && s.seats[s.seats.length - 1].id });
+  const seated = new Set(s.seats.flatMap((x) => x.names.map((n) => n.toLowerCase())));
+  const names = [...new Set(store.lib.students.map((x) => x.firstName))].filter((n) => !seated.has(String(n).toLowerCase())).sort();
+  const options = (TROUBLE_BREWING.travellers || []).concat(Object.keys(s.script.custom || {}).filter((id) => charInfo(id).team === 'traveller'));
+  const add = () => {
+    const name = f.name.trim();
+    if (!name) { toast(t('travellerNeedName'), 'warn'); return; }
+    const id = uid('s_');
+    dispatch({ type: 'ADD_TRAVELLER', seat: { id, names: [name], characterId: f.characterId, alignment: f.alignment }, afterSeatId: f.after, log: `🧳 ${name}: ${charInfo(f.characterId).name} (${f.alignment === 'evil' ? t('evilTeam') : t('goodTeam')})` });
+    app.travForm = null;
+    app.modal = null;
+    if (store.game.live && live.room && live.room.locked) toast(t('travellerJoinHint', { name }));
+    render();
+  };
+  return modal({
+    title: '🧳 ' + t('addTraveller'),
+    body: h('div', { class: 'stack' },
+      h('p', { class: 'muted small' }, t('travellerHelp')),
+      h('label', { class: 'label', for: 'trav-name' }, t('travellerName')),
+      h('input', { id: 'trav-name', class: 'input', list: 'trav-names', value: f.name, autocomplete: 'off', oninput: (e) => { f.name = e.target.value; } }),
+      h('datalist', { id: 'trav-names' }, names.map((n) => h('option', { value: n }))),
+      h('span', { class: 'label' }, t('character')),
+      h('div', { class: 'trav-grid' }, options.map((id) => {
+        const info = charInfo(id);
+        return h('button', { type: 'button', class: 'trav-pick' + (f.characterId === id ? ' active' : ''), onclick: () => { f.characterId = id; render(); } },
+          h('span', { class: 'trav-icon' }, info.icon), h('span', { class: 'strong' }, info.name), h('span', { class: 'small muted' }, summary(id, s.lang, info)));
+      })),
+      h('span', { class: 'label' }, t('alignment')),
+      segmented({ value: f.alignment, options: [{ value: 'good', label: '😇 ' + t('goodTeam') }, { value: 'evil', label: '😈 ' + t('evilTeam') }], onChange: (v) => { f.alignment = v; render(); } }),
+      h('label', { class: 'label', for: 'trav-after' }, t('travellerSeat')),
+      h('select', { id: 'trav-after', class: 'input', onchange: (e) => { f.after = e.target.value; } },
+        s.seats.map((x) => h('option', { value: x.id, selected: x.id === f.after }, t('afterSeat', { name: seatName(x) }))))),
+    actions: [h('button', { class: 'btn ghost', onclick: () => { app.travForm = null; closeModal(); } }, t('cancel')), h('button', { class: 'btn primary', onclick: add }, t('addTraveller'))],
+  });
+}
+
+// Dag: eksil, Gunslinger og påminnelser om Travellers
+function travellersPanel(s) {
+  const travs = s.seats.filter((x) => charInfo(x.characterId).team === 'traveller');
+  if (!travs.length) return null;
+  const firstNom = nominationsToday(s).find((n) => n.voters.length);
+  const gun = travs.find((x) => x.alive && x.characterId === 'gunslinger');
+  const tf = app.travDay || (app.travDay = { gunTarget: null });
+  const exile = (seat) => {
+    dispatch({ type: 'EFFECTS', effects: [{ t: 'kill', seatId: seat.id, cause: 'exile' }], messages: [{ kind: 'public', text: msg(s.lang, s.style, 'exiled', { a: seatName(seat) }) }], log: '🚪 ' + seatName(seat) });
+    render();
+  };
+  const shootGun = () => {
+    const target = getSeat(s, tf.gunTarget);
+    if (!target || !gun) return;
+    const aliveBefore = aliveSeats(s).length;
+    if (live.vote && !live.vote.open) clearVote();
+    dispatch({ type: 'EFFECTS', effects: [{ t: 'kill', seatId: target.id, cause: 'gunslinger' }], shot: { id: uid('shot_'), from: gun.id, to: target.id, hit: true }, messages: [{ kind: 'public', text: msg(s.lang, s.style, 'gunslinger', { a: seatName(gun), b: seatName(target) }) }], log: `🤠 ${seatName(gun)} → ${seatName(target)}` });
+    tf.gunTarget = null;
+    if (target.alive) runPostDeath([target.id], aliveBefore, 'gunslinger');
+    render();
+  };
+  return h('section', { class: 'panel' },
+    h('h3', { class: 'section-title' }, '🧳 Travellers'),
+    h('ul', { class: 'trav-list' }, travs.map((x) => {
+      const info = charInfo(x.characterId);
+      return h('li', { class: x.alive ? '' : 'dead' },
+        h('span', { class: 'grow' }, `${info.icon} ${seatName(x)} · ${info.name} · ${x.alignment === 'evil' ? t('evilTeam') : t('goodTeam')}`),
+        x.alive ? confirmButton({ key: 'exile' + x.id, label: '🚪 ' + t('exile'), confirmLabel: t('exileConfirm', { name: seatName(x) }), cls: 'btn small', onConfirm: () => exile(x) }) : h('span', { class: 'muted small' }, '†'));
+    })),
+    h('p', { class: 'muted small' }, t('exileHelp', { n: exileThreshold(s) })),
+    travs.some((x) => x.alive && x.characterId === 'scapegoat') ? h('p', { class: 'small' }, '🐐 ' + t('scapegoatHint')) : null,
+    travs.some((x) => x.alive && x.characterId === 'beggar') ? h('p', { class: 'small' }, '🥣 ' + t('beggarHint')) : null,
+    gun ? h('div', { class: 'stack tight' },
+      h('span', { class: 'label' }, '🤠 Gunslinger'),
+      firstNom ? h('div', { class: 'row gap wrap' },
+        h('select', { class: 'input', onchange: (e) => { tf.gunTarget = e.target.value || null; render(); } },
+          h('option', { value: '' }, '—'),
+          firstNom.voters.map((id) => h('option', { value: id, selected: tf.gunTarget === id }, seatName(getSeat(s, id))))),
+        h('button', { class: 'btn danger', disabled: !tf.gunTarget, onclick: shootGun }, '🤠 ' + t('gunShoot'))) : h('p', { class: 'muted small' }, t('gunWait'))) : null);
+}
+
 function gameMenu() {
   const s = store.state();
   return modal({
@@ -216,6 +297,10 @@ function gameMenu() {
       h('div', { class: 'stack tight' }, h('span', { class: 'label' }, t('messageStyle')),
         segmented({ value: s.style, options: [{ value: 'short', label: t('styleShort') }, { value: 'flavor', label: t('styleFlavor') }], onChange: (v) => { dispatch({ type: 'SETTINGS', style: v }); } })),
       h('p', { class: 'muted small' }, t('langAppliesNew')),
+      h('hr'),
+      h('span', { class: 'label' }, 'Travellers'),
+      h('p', { class: 'muted small' }, t('travellerHelp')),
+      h('div', null, h('button', { class: 'btn', onclick: () => openModal(travellerModal) }, '🧳 ' + t('addTraveller'))),
       h('hr'),
       h('span', { class: 'label' }, t('endGame')),
       h('p', { class: 'muted small' }, t('endGameMenuHelp')),
@@ -387,7 +472,7 @@ function sendStepMessages(step, messages) {
   let n = 0;
   messages.forEach((m, i) => {
     const id = `step:${step.key}#${i}`;
-    if (m.seatId && claimed(m.seatId) && !cardState(id) && sendCard(m.seatId, { id, kind: 'info', text: m.text })) n++;
+    if (m.seatId && claimed(m.seatId) && !cardState(id) && sendCard(m.seatId, { id, kind: 'info', text: m.text, ...(m.grim ? { grim: m.grim } : {}) })) n++;
   });
   return n;
 }
@@ -762,12 +847,14 @@ function dayPanel(s) {
         const voting = !!(lv && lv.open);
         const tg = voteTarget(s, nom.id);
         const shown = voting ? lv.voters : nom.voters;
+        const W = voteWeights(s);
+        const total = shown.reduce((a, id) => a + (W[id] ?? 1), 0);
         const vw = voteWarnings(s, shown, lang);
         return h('li', { class: 'nom' + (isBlock ? ' on-block' : '') + (voting ? ' voting' : '') },
           h('div', { class: 'row between wrap' },
             h('span', { class: 'strong' }, `${seatName(getSeat(s, nom.nominatorId))} → ${seatName(getSeat(s, nom.nomineeId))}`),
             h('span', { class: 'row gap' },
-              h('span', { class: 'vote-count' + (shown.length >= tg.need ? ' enough' : shown.length === tg.tieAt ? ' tie' : '') }, `${shown.length} / ${tg.need}`),
+              h('span', { class: 'vote-count' + (total >= tg.need ? ' enough' : total === tg.tieAt ? ' tie' : '') }, `${total} / ${tg.need}`),
               isBlock ? h('span', { class: 'pill warn' }, t('onTheBlock')) : null,
               confirmButton({ key: 'delnom' + nom.id, label: '✕', confirmLabel: t('delete'), cls: 'btn danger small', onConfirm: () => dispatch({ type: 'NOMINATION_REMOVE', nominationId: nom.id, log: t('nominationRemoved') }) }))),
           tg.tieAt ? h('p', { class: 'small tie-hint' }, tieText(t, tg, seatName(getSeat(s, nom.nomineeId)), tg.blockId ? seatName(getSeat(s, tg.blockId)) : null)) : null,
@@ -775,7 +862,7 @@ function dayPanel(s) {
             voting
               ? [h('span', { class: 'pill live' }, lv.clock ? '🕐 ' + t('clockRunning') : '🗳 ' + t('votingOpen')),
                 lv.clock ? null : h('button', { class: 'btn primary', onclick: () => startClock(s, nom) }, '🕐 ' + t('startClock')),
-                h('button', { class: 'btn' + (lv.clock ? ' ghost' : ''), onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: shown.length }))]
+                h('button', { class: 'btn' + (lv.clock ? ' ghost' : ''), onclick: () => finishVote(nom) }, '🔒 ' + t('closeVote', { n: total }))]
               : [lv ? h('button', { class: 'btn primary', onclick: () => clearVote() }, '✓ ' + t('clearVote')) : null,
                 h('button', { class: 'btn' + (nom.votes || lv ? ' ghost' : ' primary'), onclick: () => openVote(nom, voteTarget(s, nom.id)) }, '🗳 ' + (lv ? t('reopenVote') : t('openVote')))]) : null,
           h('div', { class: 'voters' }, s.seats.map((x) => {
@@ -799,6 +886,7 @@ function dayPanel(s) {
           playerSelect({ id: 'exec-who', s, value: execDefault, onChange: (v) => { df.execTarget = v; render(); } }),
           h('button', { class: 'btn danger', disabled: !execDefault, onclick: () => execute(execDefault) }, '⚖️ ' + t('execute')),
           h('button', { class: 'btn ghost', onclick: () => execute(null) }, t('noExecution')))),
+    travellersPanel(s),
     h('section', { class: 'panel' },
       h('h3', { class: 'section-title' }, t('dayAbilities')),
       h('div', { class: 'row gap wrap' },
@@ -816,6 +904,21 @@ function dayPanel(s) {
 }
 
 // ——— slutt ———
+// Til slutt: drømmemestere (topp 3) avsløres én og én på storskjermen
+function dreamChampions() {
+  const board = live.board && live.board.board ? live.board.board.slice(0, 3) : [];
+  if (!liveOpen() || !board.length) return null;
+  const step = live.dreamReveal || 0;
+  const places = board.length;
+  const labels = [t('dreamThird'), t('dreamSecond'), t('dreamWinner')].slice(3 - places);
+  return h('div', { class: 'stack tight dream-champs' },
+    h('span', { class: 'label' }, '🏆 ' + t('dreamChamps')),
+    h('div', { class: 'row gap wrap' },
+      step < places ? h('button', { class: 'btn primary', onclick: () => revealDream(step + 1) }, '🏆 ' + t('dreamShow', { place: labels[step] })) : h('span', { class: 'pill' }, '✓ ' + t('dreamAllShown')),
+      step ? h('button', { class: 'btn ghost', onclick: () => revealDream(0) }, t('hide')) : null),
+    h('p', { class: 'muted small' }, board.map((b, i) => `${i + 1}. ${b.name} (${b.score})`).join(' · ')));
+}
+
 function endPanel(s) {
   const rev = new Set(s.revealed || []);
   const hidden = s.seats.filter((x) => !rev.has(x.id));
@@ -838,6 +941,7 @@ function endPanel(s) {
           h('button', { class: 'btn evil' + (s.announced === 'evil' ? ' active' : ''), onclick: () => announce(s, 'evil') }, '🏆 ' + t('evilWins')),
           s.announced ? h('button', { class: 'btn ghost', onclick: () => announce(s, null) }, t('unannounce')) : null),
         suggested ? h('p', { class: 'muted small' }, t('suggestedWinner', { team: t(suggested === 'good' ? 'teamGood' : 'teamEvil') })) : null),
+      dreamChampions(),
       h('div', { class: 'table-wrap' }, h('table', { class: 'table' },
         h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, t('player')), h('th', null, t('character')), h('th', null, t('team')), h('th', null, ''), h('th', { class: 'right' }, ''))),
         h('tbody', null, s.seats.map((x, i) => h('tr', { class: x.alive ? '' : 'is-dead' },
@@ -879,7 +983,7 @@ function messageCard(s, m) {
       editing
         ? [h('button', { class: 'btn primary', onclick: () => { dispatch({ type: 'MESSAGE_EDIT', messageId: m.id, text: app.editingText, log: t('messageEdited') }); app.editingMsg = null; } }, t('save')),
           h('button', { class: 'btn ghost', onclick: () => { app.editingMsg = null; render(); } }, t('cancel'))]
-        : [canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: m.id, kind: 'info', text: m.text })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
+        : [canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: m.id, kind: 'info', text: m.text, ...(m.grim ? { grim: m.grim } : {}) })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
           copyButton(m.text, { cls: copied || canSend ? '' : 'primary', onCopied: () => store.markCopied(m.id) }),
           h('button', { class: 'btn ghost', onclick: () => { app.editingMsg = m.id; app.editingText = m.text; render(); } }, '✎ ' + t('edit'))]));
 }

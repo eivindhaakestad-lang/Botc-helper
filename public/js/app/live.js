@@ -7,7 +7,7 @@ import { render } from './core.js';
 import { toast } from './dom.js';
 import { t } from './i18n.js';
 import { publicProjection, roleCardsFor } from '../engine/live.js';
-import { seatName, getSeat } from '../engine/state.js';
+import { seatName, getSeat, voteWeights } from '../engine/state.js';
 import { clockInfo } from '../live/voteclock.js';
 import { storedKey } from './lock.js';
 
@@ -123,6 +123,10 @@ function onMessage(m) {
       live.board = m;
       render();
       break;
+    case 'dreamReveal':
+      live.dreamReveal = m.step || 0;
+      render();
+      break;
     case 'hands':
       live.hands = m.hands || [];
       render();
@@ -229,7 +233,9 @@ export function clearHands() {
 export function openVote(nom, target) {
   if (!liveOpen()) return;
   const tg = typeof target === 'object' ? target : { need: target, tieAt: null, blockId: null };
-  live.client.send({ t: 'voteOpen', vote: { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, need: tg.need, tieAt: tg.tieAt, blockId: tg.blockId, voters: nom.voters || [] } });
+  const s = store.state();
+  const weights = s ? voteWeights(s) : {};
+  live.client.send({ t: 'voteOpen', vote: { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, need: tg.need, tieAt: tg.tieAt, blockId: tg.blockId, weights, voters: nom.voters || [] } });
 }
 
 export function setVoteVoters(voters) {
@@ -322,5 +328,13 @@ export function clearVote() {
   if (!liveOpen()) return;
   live.vote = null;
   live.client.send({ t: 'voteClear' });
+  render();
+}
+
+// ——— drømmemestere ved slutten ———
+export function revealDream(step) {
+  if (!liveOpen()) return;
+  live.dreamReveal = step;
+  live.client.send({ t: 'dreamReveal', step });
   render();
 }
