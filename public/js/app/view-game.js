@@ -600,7 +600,7 @@ function messagePreview(s, step, d, model, r) {
         ? h('textarea', { id: 'edit-' + msgId.replace(/[^a-zA-Z0-9]/g, '_'), class: 'textarea', rows: 3, value: text, oninput: (e) => { d.edits[i] = e.target.value; } })
         : h('p', { class: 'msg-text' }, text),
       h('div', { class: 'row gap wrap' },
-        canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: msgId, kind: 'info', text: d.edits[i] !== undefined ? d.edits[i] : m.text })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
+        canSend ? h('button', { class: 'btn primary', onclick: () => { if (sendCard(m.seatId, { id: msgId, kind: 'info', text: d.edits[i] !== undefined ? d.edits[i] : m.text, ...(m.grim ? { grim: m.grim } : {}) })) toast(t('sentN', { n: 1 })); } }, cs ? '📨 ' + t('resend') : '📨 ' + t('send')) : null,
         copyButton(() => (d.edits[i] !== undefined ? d.edits[i] : m.text), { id: i === 0 ? 'copy-current' : undefined, label: t('copy') + (i === 0 ? ' (C)' : ''), cls: canSend ? '' : 'primary', onCopied: () => store.markCopied(msgId) }),
         h('button', { class: 'btn ghost', onclick: () => { d.editing[i] = !editing; if (editing && d.edits[i] === m.text) delete d.edits[i]; render(); } }, editing ? t('done') : '✎ ' + t('edit')),
         d.edits[i] !== undefined && !editing ? h('button', { class: 'btn ghost', onclick: () => { delete d.edits[i]; render(); } }, t('resetText')) : null));
