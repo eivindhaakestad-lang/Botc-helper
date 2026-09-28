@@ -10,6 +10,7 @@ import { pickCircle } from '../live/pickcircle.js';
 import { voteCircle, tickVoteCircle, lockAt, tieLine, voteTotal } from '../live/voteclock.js';
 import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
+import { recapCircle, recapList } from '../live/recapview.js';
 
 const TXT = {
   no: {
@@ -35,7 +36,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.',
+    newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.', recap: 'Slik gikk det egentlig', tip: 'Tips:', myGrim: 'Min grim', myGrimHelp: 'Trykk på en spiller for å notere', markGood: 'God', markEvil: 'Ond', markUnsure: 'Usikker',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -60,7 +61,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.',
+    newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.', recap: 'What really happened', tip: 'Tip:', myGrim: 'My grim', myGrimHelp: 'Tap a player to take notes', markGood: 'Good', markEvil: 'Evil', markUnsure: 'Unsure',
   },
 };
 
@@ -524,6 +525,73 @@ function noteEditor(x, notes) {
     h('input', { id: 'note-' + x.id, class: 'input small grow', value: n.text || '', placeholder: T('notePh'), maxlength: 80, oninput: (e) => upd({ text: e.target.value }, false) }));
 }
 
+// ——— Min grim: notatblokka som en sirkel med rolle-tokens (som den offisielle appen) ———
+const MARK_LABEL = { good: 'markGood', evil: 'markEvil', unsure: 'markUnsure' };
+function myGrimView() {
+  const notes = loadNotes();
+  const seats = P.pub.seats;
+  const n = Math.max(1, seats.length);
+  const tok = Math.min(26, (257 / n) * 0.7).toFixed(2);
+  const roles = (P.pub.script && P.pub.script.roles) || [];
+  const me = P.me && P.me.seatId;
+  const circle = h('div', { class: 'grim my-grim', style: `--tok:min(92px, ${tok}cqw)` },
+    h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
+    h('div', { class: 'grim-center' }, h('div', { class: 'center-text' },
+      h('span', { class: 'display' }, '🎭 ' + T('myGrim')),
+      h('span', { class: 'muted small' }, T('myGrimHelp')))),
+    seats.map((x, i) => {
+      const a = (-90 + (360 / n) * i) * (Math.PI / 180);
+      const note = notes[x.id] || {};
+      const r = note.role && roles.find((y) => y.id === note.role);
+      const mine = x.id === me;
+      return h('div', { class: 'grim-slot', style: `left:${(50 + 40 * Math.cos(a)).toFixed(2)}%;top:${(50 + 40 * Math.sin(a)).toFixed(2)}%` },
+        h('button', {
+          type: 'button', class: `token my-token${note.mark ? ' mark-' + note.mark : ''}${r ? ' team-' + r.team : ''}${x.alive ? '' : ' dead'}${mine ? ' me' : ''}`,
+          disabled: mine, 'aria-label': x.names.join(' + '),
+          onclick: () => { P.noteSeat = x.id; render(); },
+        },
+        h('span', { class: 'token-disc' },
+          r ? h('span', { class: 'token-icon' }, r.icon || '✦') : null,
+          h('span', { class: 'token-char' + (r && r.name.length > 10 ? ' long' : '') }, r ? r.name : mine ? T('you') : x.names.map((y) => y[0]).join('')),
+          x.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
+          note.mark ? h('span', { class: 'my-mark', 'aria-hidden': 'true' }, MARK_ICON[note.mark]) : null),
+        h('span', { class: 'token-label' }, x.names.join(' + ')),
+        note.text ? h('span', { class: 'my-note-text' }, note.text) : null));
+    }));
+  return h('div', { class: 'stack my-grim-view' },
+    h('div', { class: 'row between' },
+      h('button', { class: 'btn ghost', onclick: () => { P.view = 'home'; P.noteSeat = null; render(); } }, '← ' + T('back')),
+      h('span', { class: 'muted small' }, T('notesHelp'))),
+    circle,
+    P.noteSeat ? noteSheet(P.noteSeat, notes, roles) : null);
+}
+
+function noteSheet(seatId, notes, roles) {
+  const x = P.pub.seats.find((y) => y.id === seatId);
+  if (!x) return null;
+  const n = notes[seatId] || {};
+  const upd = (patch, rerender = true) => { notes[seatId] = { ...(notes[seatId] || {}), ...patch }; saveNotes(notes); if (rerender) render(); };
+  const teams = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'];
+  return h('div', { class: 'note-sheet', role: 'dialog', 'aria-label': x.names.join(' + ') },
+    h('div', { class: 'row between' },
+      h('h3', { class: 'section-title' }, x.names.join(' + ')),
+      h('button', { class: 'btn primary', onclick: () => { P.noteSeat = null; render(); } }, '✓ ' + T('notesDone'))),
+    h('div', { class: 'row gap wrap mark-row' },
+      [null, 'good', 'evil', 'unsure'].map((m) => h('button', {
+        class: 'btn small' + ((n.mark || null) === m ? ' active primary' : ' ghost'), onclick: () => upd({ mark: m }),
+      }, m ? `${MARK_ICON[m]} ${T(MARK_LABEL[m])}` : '○'))),
+    h('input', { id: 'note-' + seatId, class: 'input', value: n.text || '', placeholder: T('notePh'), maxlength: 80, oninput: (e) => upd({ text: e.target.value }, false) }),
+    h('span', { class: 'label' }, T('noteRole')),
+    h('div', { class: 'role-grid' }, teams.map((team) => {
+      const list = roles.filter((r) => r.team === team);
+      if (!list.length) return null;
+      return [h('span', { class: 'role-grid-team team-' + team }, T('team_' + team)),
+        h('div', { class: 'role-grid-row' }, list.map((r) => h('button', {
+          class: 'role-chip team-' + r.team + (n.role === r.id ? ' on' : ''), onclick: () => upd({ role: n.role === r.id ? null : r.id }),
+        }, h('span', { class: 'role-chip-icon' }, r.icon || '✦'), h('span', null, r.name))))];
+    })));
+}
+
 // Kort markering i bylista når noen dør (samme regel som storskjermen)
 function freshDeaths() {
   const dead = new Set(P.pub.seats.filter((x) => !x.alive).map((x) => x.id));
@@ -542,7 +610,9 @@ function townView() {
   return h('div', { class: 'panel' },
     h('div', { class: 'row between' },
       h('h3', { class: 'section-title' }, T('town')),
-      h('button', { class: 'btn small ghost note-toggle' + (P.notesOpen ? ' active' : ''), onclick: () => { P.notesOpen = !P.notesOpen; render(); }, title: T('notesHelp') }, P.notesOpen ? '✓ ' + T('notesDone') : '✎ ' + T('notes'))),
+      h('div', { class: 'row gap' },
+        h('button', { class: 'btn small my-grim-btn', onclick: () => { P.view = 'mygrim'; P.noteSeat = null; render(); window.scrollTo(0, 0); } }, '🎭 ' + T('myGrim')),
+        h('button', { class: 'btn small ghost note-toggle' + (P.notesOpen ? ' active' : ''), onclick: () => { P.notesOpen = !P.notesOpen; render(); }, title: T('notesHelp') }, P.notesOpen ? '✓ ' + T('notesDone') : '✎ ' + T('notes')))),
     P.notesOpen ? h('p', { class: 'muted small' }, T('notesHelp')) : null,
     h('ol', { class: 'town' + (P.notesOpen ? ' noting' : '') }, P.pub.seats.map((x) => h('li', { class: (x.alive ? '' : 'dead') + (P.me && x.id === P.me.seatId ? ' me' : '') + (blockId() === x.id ? ' on-block' : '') + (P.dying && P.dying.has(x.id) ? ' dying' : '') },
       h('div', { class: 'town-row' },
@@ -685,6 +755,11 @@ function dayView() {
 }
 
 function revealView() {
+  if (P.pub.recap) {
+    return h('div', { class: 'play-reveal play-recap' },
+      recapCircle({ seats: P.pub.seats, recap: P.pub.recap, size: 90 }),
+      recapList(P.pub.recap, { title: '📜 ' + T('recap') }));
+  }
   return h('div', { class: 'play-reveal' },
     revealCircle({ seats: P.pub.seats, reveal: P.pub.reveal || [], winner: P.pub.winner, me: P.me && P.me.seatId, size: 96,
       text: { title: T('revealTitle'), good: T('winnerGood'), evil: T('winnerEvil') } }),
@@ -703,7 +778,7 @@ function homeView() {
     voteView(),
     P.pub.rolesOut === false ? null : h('div', { class: 'hold-row' },
       P.roleCard
-        ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.icon ? P.roleCard.icon + ' ' : '', P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text)), 'role-hold')
+        ? holdReveal(T('holdRole'), h('div', null, h('p', { class: 'display role-name team-' + P.roleCard.team }, P.roleCard.icon ? P.roleCard.icon + ' ' : '', P.roleCard.character), h('p', { class: 'card-text' }, P.roleCard.text), P.roleCard.tip ? h('p', { class: 'role-tip' }, h('strong', null, '💡 ' + T('tip') + ' '), P.roleCard.tip) : null), 'role-hold')
         : h('p', { class: 'muted' }, T('noRole')),
       lastMessageView()),
     handView(),
@@ -766,7 +841,7 @@ function soundToggle() {
 
 function render() {
   const root = document.getElementById('play');
-  applyTheme(P.pub && P.me ? P.pub.phase.type : 'none');
+  applyTheme(P.pub && P.me ? (P.pub.recap ? (P.pub.recap.type === 'night' ? 'night' : 'day') : P.pub.phase.type) : 'none');
   let main;
   if (!P.code) main = codeEntry();
   else if (P.error === 'closed' || P.error === 'noroom') main = h('p', { class: 'callout' }, T(P.error));
@@ -775,6 +850,7 @@ function render() {
   else if (!P.me) main = seatPicker();
   else if (P.view === 'dream' && dreamPhase()) main = dreamView();
   else if (P.view === 'script') main = scriptView();
+  else if (P.view === 'mygrim') main = myGrimView();
   else main = homeView();
   const keepDream = P.view === 'dream' && P.dream && document.getElementById('dream-canvas');
   if (keepDream && P.me && dreamPhase()) {

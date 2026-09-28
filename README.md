@@ -92,6 +92,16 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 Kopier-knappene virker fortsatt for elever uten PC.
 
+**Overgang mellom dag og natt:** Storskjermen viser byen i silhuett når fasen skifter. Sola går ned og månen opp (eller omvendt), vinduene tennes eller slukkes, og klokketårnet slår like mange slag som natt- eller dagnummeret. Om natten står et stearinlys midt i sirkelen og brenner sakte ned med tiden. Det sier ingenting om hvem eller hvor mange som vekkes.
+
+**Balanse (bare for deg):** Under dag- og nattpanelet ligger en liten balansemåler: en linje fra «Gode» til «Onde» og en kort vurdering. Trykk for å se detaljene: hvor mange gode og onde som lever, hvor mye av informasjonen til de gode som var riktig, om demonen er nominert, hvem som er forgiftet og omtrent hvor mange dager det er til finalen. Det er en tommelfingerregel og skjules når du trykker G.
+
+**Min grim for elevene:** Under «Byen» har elevene knappen 🎭 Min grim. Den viser en sirkel som i den offisielle appen. Eleven trykker på en spiller og velger en rolle-token, markerer 😇/😈/❓ og skriver et kort notat. Alt lagres bare på elevens egen PC.
+
+**Tips på rollekortet:** Når eleven holder inne for å se rollen, vises også et kort tips om hvordan rollen spilles (Trouble Brewing og Travellers, norsk og engelsk). Tipsene er skrevet for appen og er ikke offisielle tekster. En Drunk får tipset til rollen den tror den har.
+
+**Slik gikk det egentlig:** Når spillet er slutt, ligger en gjennomgang under grim reveal. Den går natt for natt og dag for dag gjennom hvem som ble forgiftet, beskyttet, drept av demonen eller henrettet, hvem som overlevde et angrep, og hvem som fikk feil informasjon. Den sier aldri hvem som gjorde det: demonen og minionene avsløres ikke. Du styrer hvert steg selv med Neste/Tilbake (eller piltastene), kan hoppe til neste kapittel og kan når som helst avslutte. Før eller underveis kan du skjule punkter (avkrysning) eller skrive dem om (✎). Storskjermen viser sirkelen med merker på dem det gjelder, og elevene ser det samme på sin skjerm.
+
 **Snarveier i spillet:** Enter = fullfør steg · C = kopier melding · ← → = forrige/neste steg · Ctrl+Z / Ctrl+Y = angre/gjør om · N = notat · F = fokusmodus · G = skjul/vis roller (når elever kommer bort til deg)
 
 **Passord:** «Nytt spill» og «Start live-rom» krever passord. Passordet huskes på maskinen etter første gang. Serveren nekter også å opprette live-rom uten passordet.

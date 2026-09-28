@@ -20,6 +20,8 @@ import { TROUBLE_BREWING } from '../engine/defs.js';
 import { uid } from '../engine/rng.js';
 import { tryUnlock } from './lock.js';
 import { clockInfo } from '../live/voteclock.js';
+import { balance } from '../engine/balance.js';
+import { getRecap, recapCtl, recapStepList, setRecap, recapGo, recapNextChapter } from './recap.js';
 
 const ui = () => store.lib.settings.uiLang;
 let current = null; // aktivt nattsteg, for tastatursnarveier
@@ -996,7 +998,79 @@ function dreamChampions() {
     h('p', { class: 'muted small' }, board.map((b, i) => `${i + 1}. ${b.name} (${b.score})`).join(' · ')));
 }
 
+// ——— balansemåler (bare for deg) ———
+function balanceCard(s) {
+  if (app.hideRoles) return null;
+  const r = getRecap();
+  const b = balance(s, store.game.initial, r ? r.stats : undefined);
+  const open = app.balOpen === true;
+  return h('div', { class: 'balance-card lean-' + b.lean },
+    h('button', { class: 'balance-head', 'aria-expanded': open ? 'true' : 'false', onclick: () => { app.balOpen = !open; render(); } },
+      h('span', { class: 'label' }, '⚖️ ' + t('balTitle')),
+      h('span', { class: 'balance-lean' }, t(b.lean === 'good' ? 'balLeanGood' : b.lean === 'evil' ? 'balLeanEvil' : 'balEven')),
+      h('span', { class: 'muted small' }, open ? '▾' : '▸')),
+    h('div', { class: 'balance-bar', role: 'img', 'aria-label': `${t('balGoodSide')} ${100 - b.score}% · ${t('balEvilSide')} ${b.score}%` },
+      h('span', { class: 'balance-marker', style: `left:${b.score}%` })),
+    open ? h('div', { class: 'balance-facts' },
+      h('span', null, '👥 ' + t('balAlive', { a: b.alive, g: b.good, e: b.evil })),
+      h('span', null, '🗝 ' + t('balInfo', { t: b.info - b.falseInfo, f: b.falseInfo })),
+      h('span', null, '😈 ' + t('balDemon') + ': ' + (!b.demonAlive ? t('balDemonDead') : b.demonNoms ? t('balDemonNom', { n: b.demonNoms, v: b.demonMaxVotes }) : t('balDemonSafe'))),
+      h('span', null, '⏳ ' + (b.alive <= 3 ? t('balFinalNow') : t('balFinal', { n: b.daysToFinal }))),
+      b.poisoned.length ? h('span', null, '🧪 ' + t('balPoisoned', { name: b.poisoned.map((id) => seatName(getSeat(s, id))).join(', ') })) : null,
+      h('span', { class: 'muted small' }, t('balHelp'))) : null);
+}
+
+// ——— «Slik gikk det egentlig»: gjennomgang du styrer steg for steg ———
+function recapCard(s) {
+  const r = getRecap();
+  const c = recapCtl();
+  const steps = recapStepList();
+  const cur = c.on ? steps[c.pos] : null;
+  const shownIds = new Set(c.on ? steps.slice(0, c.pos + 1).filter((x) => x.item && cur && x.ch === cur.ch).map((x) => x.item.id) : []);
+  const itemRow = (ch, it) => {
+    const hidden = !!c.hidden[it.id];
+    const editing = app.recapEdit === it.id;
+    const text = c.edits[it.id] !== undefined ? c.edits[it.id] : it.text;
+    const now = cur && cur.item && cur.item.id === it.id;
+    return h('li', { class: 'recap-item' + (hidden ? ' off' : '') + (shownIds.has(it.id) ? ' shown' : '') + (now ? ' now' : '') },
+      h('input', { type: 'checkbox', checked: !hidden, title: t('recapShowItem'), 'aria-label': t('recapShowItem'), onchange: (e) => { setRecap({ hidden: { ...c.hidden, [it.id]: !e.target.checked } }); } }),
+      h('span', { class: 'recap-icon', 'aria-hidden': 'true' }, it.icon),
+      editing
+        ? h('form', { class: 'row gap grow', onsubmit: (e) => { e.preventDefault(); const v = e.target.querySelector('input').value.trim(); app.recapEdit = null; setRecap({ edits: { ...c.edits, [it.id]: v || it.text } }); } },
+          h('input', { class: 'input small grow', value: text, maxlength: 280 }),
+          h('button', { class: 'btn small primary', type: 'submit' }, '✓'),
+          c.edits[it.id] !== undefined ? h('button', { class: 'btn small ghost', type: 'button', onclick: () => { const e2 = { ...c.edits }; delete e2[it.id]; app.recapEdit = null; setRecap({ edits: e2 }); } }, t('recapReset')) : null)
+        : h('span', { class: 'grow' }, text, c.edits[it.id] !== undefined ? h('span', { class: 'muted small' }, ' ✎') : null),
+      editing ? null : h('button', { class: 'btn small ghost', title: t('recapEditItem'), onclick: () => { app.recapEdit = it.id; render(); setTimeout(() => { const el = document.querySelector('.recap-item form input'); if (el) el.focus(); }, 0); } }, '✎'),
+      !hidden ? h('button', { class: 'btn small ghost', title: t('recapOnScreen'), onclick: () => { const i = steps.findIndex((x) => x.item && x.item.id === it.id); if (i >= 0) setRecap({ on: true, pos: i }); } }, '▶') : null);
+  };
+  return h('div', { class: 'step-card recap-card' + (c.on ? ' on' : '') },
+    h('span', { class: 'eyebrow' }, '📜 ' + t('recapTitle')),
+    h('p', { class: 'muted small' }, t('recapHelp')),
+    !r || !r.chapters.length ? h('p', { class: 'muted' }, t('recapEmpty')) : [
+      h('div', { class: 'row gap wrap recap-controls' },
+        c.on
+          ? [
+            h('button', { class: 'btn', disabled: c.pos <= 0, onclick: () => recapGo(-1) }, t('recapPrev')),
+            h('button', { id: 'recap-next', class: 'btn primary big', disabled: c.pos >= steps.length - 1, onclick: () => recapGo(1) }, t('recapNext')),
+            h('button', { class: 'btn ghost', disabled: c.pos >= steps.length - 1, onclick: recapNextChapter }, t('recapNextCh')),
+            h('span', { class: 'pill' }, t('recapStep', { a: Math.min(c.pos + 1, steps.length), n: steps.length })),
+            h('button', { class: 'btn ghost', onclick: () => setRecap({ on: false }) }, t('recapStop')),
+          ]
+          : h('button', { class: 'btn primary big', disabled: !steps.length, onclick: () => setRecap({ on: true, pos: 0 }) }, t('recapStart'))),
+      c.on && cur ? h('p', { class: 'recap-now' }, h('span', { class: 'label' }, t('recapOnScreen') + ': '), cur.item ? `${cur.item.icon} ${c.edits[cur.item.id] !== undefined ? c.edits[cur.item.id] : cur.item.text}` : `${cur.ch.title} (${t('recapChapterCard')})`) : null,
+      c.on ? h('p', { class: 'muted small' }, t('recapKeys')) : null,
+      h('div', { class: 'recap-list' }, r.chapters.map((ch) => h('div', { class: 'recap-ch' + (cur && cur.ch.key === ch.key ? ' current' : '') },
+        h('h4', { class: 'recap-ch-title' }, (ch.type === 'night' ? '🌙 ' : ch.type === 'day' ? '☀️ ' : '✦ ') + ch.title),
+        h('ol', { class: 'recap-items' }, ch.items.map((it) => itemRow(ch, it)))))),
+    ]);
+}
+
 function endPanel(s) {
+  return h('div', { class: 'stack' }, endMain(s), recapCard(s));
+}
+
+function endMain(s) {
   const rev = new Set(s.revealed || []);
   const hidden = s.seats.filter((x) => !rev.has(x.id));
   const next = hidden[0];
@@ -1312,8 +1386,8 @@ export function viewGame() {
   else if (app.gameTab === 'live') content = livePanel(s);
   else if (app.gameTab === 'chat' && store.game.live) content = chatPanel(s);
   else if (s.phase.type === 'setup') content = setupPanel(s);
-  else if (s.phase.type === 'night') content = nightPanel(s);
-  else if (s.phase.type === 'day') content = dayPanel(s);
+  else if (s.phase.type === 'night') content = h('div', { class: 'stack' }, nightPanel(s), balanceCard(s));
+  else if (s.phase.type === 'day') content = h('div', { class: 'stack' }, dayPanel(s), balanceCard(s));
   else content = endPanel(s);
   if (app.gameTab !== 'phase' || s.phase.type !== 'night') current = null;
 
@@ -1355,6 +1429,10 @@ export function gameKeydown(e) {
   if (e.key === 'Enter' && e.target.tagName !== 'BUTTON' && app.gameTab === 'phase') {
     const st = store.state();
     if (st && st.phase.type === 'day' && st.dawnHidden) { e.preventDefault(); revealDawn(); return; }
+  }
+  if (app.gameTab === 'phase' && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+    const st = store.state();
+    if (st && st.phase.type === 'ended' && recapCtl().on) { e.preventDefault(); recapGo(e.key === 'ArrowRight' ? 1 : -1); return; }
   }
   if (!current) return;
   const { s, step, d, q } = current;

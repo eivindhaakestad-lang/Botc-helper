@@ -5,6 +5,7 @@ import { charInfo } from './characters.js';
 import { seatName, actingId } from './state.js';
 import { msg, summary, TEAM_LABEL } from './text.js';
 import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
+import { tipFor } from './tips.js';
 
 export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false, nomProps = true } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
@@ -89,6 +90,7 @@ export function roleCardsFor(s) {
       // Vekkes rollen av Storytelleren om natten? (brukes til å gi færre tomme «falske» meldinger)
       wakes: info.def ? !!(info.def.first || info.def.other) || info.team === 'minion' || info.team === 'demon' : true,
       text: msg(s.lang, s.style, 'roleCard', { char: info.name, team, summary: summary(shownId, s.lang, info) }),
+      tip: tipFor(shownId, s.lang),
     };
   }
   return out;

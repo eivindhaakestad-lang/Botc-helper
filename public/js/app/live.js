@@ -10,6 +10,7 @@ import { publicProjection, roleCardsFor } from '../engine/live.js';
 import { seatName, getSeat, voteWeights } from '../engine/state.js';
 import { clockInfo } from '../live/voteclock.js';
 import { storedKey } from './lock.js';
+import { recapForPublic } from './recap.js';
 
 export const live = {
   client: null,
@@ -165,6 +166,7 @@ export function syncLive() {
   const s = store.state();
   if (!s) return;
   const pub = publicProjection(s, l.settings || {});
+  if (s.phase.type === 'ended') { const rc = recapForPublic(); if (rc) pub.recap = rc; }
   // Før rollene er sendt ut, får elevene ingen rollekort.
   const cards = pub.rolesOut ? roleCardsFor(s) : Object.fromEntries(s.seats.map((x) => [x.id, null]));
   const payload = JSON.stringify([pub, cards]);

@@ -70,6 +70,8 @@ export const sfx = {
   countdown() { tone(880, 0.12, { type: 'triangle', gain: 0.18 }); },
   go() { tone(1320, 0.3, { type: 'triangle', gain: 0.2 }); },
   bell() { bellAt(660); bellAt(660, 0.9, 0.16); },
+  // Kirkeklokka i tårnet: n dype slag
+  toll(n = 1, start = 0) { for (let i = 0; i < Math.min(12, n); i++) { bellAt(196, start + i * 1.15, 0.22, 3.6); bellAt(98, start + i * 1.15, 0.14, 4); } },
   gong() { [[55, 0.35], [110, 0.25], [164, 0.12], [233, 0.08]].forEach(([f, g]) => tone(f, 5, { gain: g, attack: 0.02, release: 5 })); noise(1.2, { gain: 0.05, freq: 300, q: 0.7 }); },
   sunrise() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 1.6, { type: 'sine', gain: 0.12, delay: i * 0.12, release: 1.6 })); bellAt(1568, 0.7, 0.08, 2); },
   gavel() { [0, 0.22].forEach((d) => { tone(140, 0.18, { gain: 0.35, delay: d, slideTo: 70 }); noise(0.08, { gain: 0.4, delay: d, freq: 900, q: 1.2 }); }); },

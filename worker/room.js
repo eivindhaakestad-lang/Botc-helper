@@ -67,6 +67,15 @@ function cleanPublic(p) {
       shots: (Array.isArray(p.day.shots) ? p.day.shots.slice(-10) : []).map((x) => ({ id: str(x.id, 40), from: str(x.from, 80), to: str(x.to, 80), hit: !!x.hit })),
     };
   }
+  if (phase.type === 'ended' && p.recap && typeof p.recap === 'object') {
+    const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
+    out.recap = {
+      title: str(p.recap.title, 60), type: str(p.recap.type, 12),
+      step: Number(p.recap.step) || 0, total: Number(p.recap.total) || 0,
+      items: (Array.isArray(p.recap.items) ? p.recap.items.slice(0, 40) : []).map((x) => ({ id: str(x.id, 40), kind: str(x.kind, 20), icon: str(x.icon, 8), seatIds: ids(x.seatIds), text: str(x.text, 300) })),
+      dead: ids(p.recap.dead),
+    };
+  }
   if (phase.type === 'ended' && Array.isArray(p.reveal)) {
     out.reveal = p.reveal.slice(0, 30).map((r) => ({
       seatId: str(r.seatId, 80), character: str(r.character, 40), team: str(r.team, 12),
@@ -377,7 +386,7 @@ export class Room {
         for (const [seatId, card] of Object.entries(msg.roleCards || {})) {
           if (!r.public.seats.some((x) => x.id === seatId)) continue;
           const seat = await this.seat(seatId);
-          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), icon: str(card.icon, 16), wakes: !!card.wakes, text: str(card.text, 2000) } : null;
+          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), icon: str(card.icon, 16), wakes: !!card.wakes, text: str(card.text, 2000), ...(card.tip ? { tip: str(card.tip, 400) } : {}) } : null;
           if (JSON.stringify(seat.roleCard) !== JSON.stringify(next)) {
             seat.roleCard = next;
             await this.saveSeat(seatId);

@@ -384,3 +384,37 @@ test('Travellers: legges til, teller ikke i «to igjen», Bureaucrat ×3 og Thie
   const s2 = replay(g2, [{ type: 'NIGHT_START' }, { type: 'DAY_START' }, { type: 'ADD_TRAVELLER', seat: { id: 't1', names: ['Ida'], characterId: 'beggar', alignment: 'good' } }, kill(['s0', 's1', 's2', 's3', 's6'])]);
   assert.equal(checkWin(s2, 'no').winner, 'evil');
 });
+
+test('gjennomgang: viser forgiftet, demondrap, feil info og henrettelse uten å avsløre hvem som gjorde det', async () => {
+  const { buildRecap, recapSteps, recapPublic } = await import('../public/js/engine/recap.js');
+  const chars = ['empath', 'soldier', 'monk', 'drunk', 'undertaker', 'mayor', 'poisoner', 'imp', 'chef', 'saint'];
+  const g = makeGame(chars, { drunkShown: 'washerwoman' });
+  const ev = [{ type: 'NIGHT_START' }];
+  runStep(g, ev, 'n1:poisoner:s6', { target: 's0' });
+  // Empath (forgiftet) får et galt tall: naboene s9 og s1 er gode, men får 1
+  runStep(g, ev, 'n1:empath:s0', { n: 1 });
+  ev.push({ type: 'DAY_START', messages: [] });
+  ev.push({ type: 'EXECUTE', seatId: 's4', sk: 'exec:1' });
+  ev.push({ type: 'NIGHT_START' });
+  runStep(g, ev, 'n2:monk:s2', { target: 's5' });
+  runStep(g, ev, 'n2:imp:s7', { target: 's5', outcome: 'none' });
+  const r = buildRecap(g, ev, 'no');
+  const all = r.chapters.flatMap((c) => c.items.map((x) => `${c.key}:${x.kind}:${x.seatIds.join('+')}`));
+  assert.ok(all.includes('setup:drunk:s3'));
+  assert.ok(all.includes('night1:poisoned:s0'));
+  assert.ok(all.includes('night1:falseInfo:s0'), all.join(' | '));
+  assert.ok(all.includes('day1:executed:s4'));
+  assert.ok(all.includes('night2:protected:s5'));
+  assert.ok(all.includes('night2:survived:s5'));
+  const text = r.chapters.flatMap((c) => c.items.map((x) => x.text)).join(' ');
+  assert.doesNotMatch(text, /Jonas|Sara/, 'nevner ikke Poisoner (Jonas) eller Imp (Sara)');
+  assert.match(text, /Markus fikk feil informasjon \(forgiftet\)/);
+  // Storytelleren kan skjule et punkt og overstyre teksten
+  const ctl = { hidden: { [r.chapters[0].items[0].id]: true }, edits: {} };
+  const steps = recapSteps(r, ctl);
+  assert.equal(steps[0].ch.key, 'night1', 'skjult oppsettkapittel faller bort');
+  ctl.edits[r.chapters[1].items[0].id] = 'Noen ble forgiftet';
+  const pub = recapPublic(r, ctl, 1);
+  assert.equal(pub.items[0].text, 'Noen ble forgiftet');
+  assert.equal(pub.title, 'Natt 1');
+});
