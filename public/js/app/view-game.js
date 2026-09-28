@@ -19,6 +19,7 @@ import { msg, summary } from '../engine/text.js';
 import { TROUBLE_BREWING } from '../engine/defs.js';
 import { uid } from '../engine/rng.js';
 import { tryUnlock } from './lock.js';
+import { clockInfo } from '../live/voteclock.js';
 
 const ui = () => store.lib.settings.uiLang;
 let current = null; // aktivt nattsteg, for tastatursnarveier
@@ -315,10 +316,80 @@ function gameMenu() {
 }
 
 // ——— grimoire ———
+// Nominasjonen som vises i grimen din: den live avstemningen, ellers dagens siste nominasjon
+function focusNomination(s) {
+  if (s.phase.type !== 'day') return null;
+  const W = voteWeights(s);
+  if (liveOpen() && live.vote) {
+    const v = live.vote;
+    return { ...v, weights: v.weights || W, live: true };
+  }
+  if (s.executions.some((e) => e.day === s.phase.number)) return null;
+  const nom = nominationsToday(s).slice(-1)[0];
+  if (!nom) return null;
+  const tg = voteTarget(s, nom.id);
+  return { id: nom.id, nominatorId: nom.nominatorId, nomineeId: nom.nomineeId, voters: nom.voters, need: tg.need, tieAt: tg.tieAt, blockId: tg.blockId, weights: W, open: false, live: false };
+}
+
+function nomOverlay(s, f) {
+  const n = s.seats.length;
+  const pos = (id) => { const i = s.seats.findIndex((x) => x.id === id); const a = (-90 + (360 / n) * i) * (Math.PI / 180); return [50 + 40 * Math.cos(a), 50 + 40 * Math.sin(a)]; };
+  const [ax, ay] = pos(f.nominatorId);
+  const [bx, by] = pos(f.nomineeId);
+  const dx = bx - ax; const dy = by - ay; const len = Math.hypot(dx, dy) || 1;
+  const cut = 8;
+  const x1 = ax + (dx / len) * cut; const y1 = ay + (dy / len) * cut;
+  const x2 = bx - (dx / len) * cut; const y2 = by - (dy / len) * cut;
+  return h('div', { class: 'st-nom-overlay', 'aria-hidden': 'true' },
+    h('div', { class: 'vc-arrow', html: `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><defs><marker id="st-head" markerWidth="4" markerHeight="4" refX="2.6" refY="2" orient="auto"><path d="M0,0 L4,2 L0,4 z" fill="currentColor"/></marker></defs><line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" marker-end="url(#st-head)"/></svg>` }),
+    f.clock ? h('div', { class: 'vc-hand-wrap st-hand' }, h('div', { class: 'vc-hand' })) : null);
+}
+
+function nomCenter(s, f) {
+  const W = f.weights || {};
+  const total = f.voters.reduce((a, id) => a + (W[id] ?? 1), 0);
+  const enough = total >= f.need;
+  const tie = !enough && f.tieAt && total === f.tieAt;
+  return h('div', { class: 'center-text st-nom-center' },
+    h('span', { class: 'vc-who' }, h('span', { class: 'vc-nominator' }, seatName(getSeat(s, f.nominatorId))), ' → ', h('span', { class: 'vc-nominee' }, seatName(getSeat(s, f.nomineeId)))),
+    h('span', { class: 'display vc-count' + (enough ? ' enough' : tie ? ' tie' : '') }, String(total), h('span', { class: 'vote-need' }, ` / ${f.need}`)),
+    f.tieAt ? h('span', { class: 'small tie-hint' }, tieText(t, f, seatName(getSeat(s, f.nomineeId)), f.blockId ? seatName(getSeat(s, f.blockId)) : null)) : null,
+    h('span', { class: 'center-stat st-nom-status', id: 'st-nom-status' }, f.live ? (f.open ? (f.clock ? '' : '🗳 ' + t('votingOpen')) : '🔒 ' + t('voteClosedShort')) : t('lastNomination')));
+}
+
+// Viser og låste plasser i grimen din mens klokka går (bare transform/klasser, ingen ny tegning)
+let stClockRaf = 0;
+function stClockLoop() {
+  cancelAnimationFrame(stClockRaf);
+  const step = () => {
+    const v = live.vote;
+    const el = document.querySelector('.grim-pane .grim');
+    if (!v || !v.clock || !el) { stClockRaf = 0; return; }
+    const info = clockInfo(v, live.offset);
+    const seats = [...el.querySelectorAll('.grim-slot')].map((x) => x.dataset.seat);
+    const order = v.clock.order;
+    const tt = Math.max(0, Math.min(order.length - 1, info.t));
+    const k = Math.floor(tt);
+    const hand = el.querySelector('.st-hand');
+    if (hand) hand.style.transform = `rotate(${((360 / seats.length) * (seats.indexOf(order[k]) + (tt - k))).toFixed(2)}deg)`;
+    order.forEach((id, j) => {
+      const tok = el.querySelector(`.grim-slot[data-seat="${id}"] .token`);
+      if (tok) { tok.classList.toggle('st-locked', info.t >= j); tok.classList.toggle('st-current', info.current === id); }
+    });
+    const stEl = document.getElementById('st-nom-status');
+    if (stEl) stEl.textContent = !v.open ? '🔒 ' + t('voteClosedShort') : info.countdown > 0 ? `🕐 ${info.countdown}` : info.done ? '🔒 ' + t('voteClosedShort') : '🕐 ' + t('clockRunning');
+    if (!info.done || v.open) stClockRaf = requestAnimationFrame(step);
+  };
+  stClockRaf = requestAnimationFrame(step);
+}
+
 function grimView(s, activeIds) {
   const alive = aliveSeats(s).length;
   const blockId = s.phase.type === 'day' && !s.executions.some((e) => e.day === s.phase.number) ? (onTheBlock(s).nomination || {}).nomineeId : null;
+  const f = focusNomination(s);
+  if (f && f.clock) queueMicrotask(stClockLoop);
   return grimCircle({
+    overlay: f ? nomOverlay(s, f) : null,
     seats: s.seats,
     cls: s.phase.type,
     token: (seat, i) => roleToken({
@@ -331,6 +402,9 @@ function grimView(s, activeIds) {
       active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)) || !!(app.nomMode && app.nomMode.from === seat.id),
       hand: store.game.live && live.hands.includes(seat.id) ? live.hands.indexOf(seat.id) + 1 : null,
       block: blockId === seat.id,
+      voted: !!(f && f.voters.includes(seat.id)),
+      nomTag: f && seat.id === f.nominatorId ? { text: t('nominatorTag'), cls: 'nominator' } : f && seat.id === f.nomineeId ? { text: t('nomineeTag'), cls: 'nominee' } : null,
+      weight: f && f.weights && f.weights[seat.id] ? f.weights[seat.id] : null,
       alignment: seat.alignment,
       reminders: [
         ...seat.reminders,
@@ -344,7 +418,7 @@ function grimView(s, activeIds) {
     center: s.phase.type === 'ended' ? h('div', { class: 'center-text' },
       h('span', { class: 'display center-phase' }, t('revealTitle')),
       h('span', { class: 'center-stat' }, t('revealedOf', { a: (s.revealed || []).length, n: s.seats.length })),
-      s.announced ? h('span', { class: 'center-stat strong' }, s.announced === 'good' ? t('goodWins') : t('evilWins')) : h('span', { class: 'center-stat muted' }, t('notAnnounced'))) : h('div', { class: 'center-text' },
+      s.announced ? h('span', { class: 'center-stat strong' }, s.announced === 'good' ? t('goodWins') : t('evilWins')) : h('span', { class: 'center-stat muted' }, t('notAnnounced'))) : f ? nomCenter(s, f) : h('div', { class: 'center-text' },
       h('span', { class: 'display center-phase' }, phaseLabel(s)),
       h('span', { class: 'center-stat' }, t('aliveOf', { a: alive, n: s.seats.length })),
       h('span', { class: 'center-stat muted' }, t('votesNeeded', { n: voteThreshold(s) })),
