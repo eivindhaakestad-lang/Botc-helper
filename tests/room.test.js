@@ -331,3 +331,19 @@ test('rom: drømmemestere avsløres steg for steg og nullstilles ved faseskifte'
   await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'setup', number: 0 } }, roleCards: {} });
   assert.equal(screen.last('public').dreamReveal, 0);
 });
+
+test('rom: roller som vekkes får sjeldnere falske vekkinger', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  await say(room, st, { t: 'sync', public: { ...PUB, decoys: true, phase: { type: 'night', number: 1 } }, roleCards: { s2: { character: 'Empath', team: 'townsfolk', wakes: true, text: '' }, s3: { character: 'Saint', team: 'outsider', wakes: false, text: '' } } });
+  const ps = {};
+  for (const id of ['s1', 's2', 's3']) { ps[id] = await connect(room, 'player'); await say(room, ps[id], { t: 'claim', seatId: id }); }
+  const orig = Math.random;
+  Math.random = () => 0.2; // over 0.12, under 0.35
+  await say(room, st, { t: 'card', seatId: 's1', card: { id: 'x', kind: 'info', text: 'hei' } });
+  Math.random = orig;
+  assert.equal(ps.s2.last('decoy'), undefined, 'Empath (vekkes) får ikke');
+  assert.ok(ps.s3.last('decoy'), 'Saint (vekkes ikke) får');
+});

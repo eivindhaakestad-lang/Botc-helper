@@ -145,7 +145,12 @@ function onMessage(m) {
     case 'card': {
       const i = P.inbox.findIndex((c) => c.id === m.card.id);
       if (i >= 0) P.inbox[i] = m.card; else P.inbox.push(m.card);
-      if (m.card.status === 'new' && !P.overlay.some((c) => c.id === m.card.id)) { P.overlay.push(m.card); P.shown[m.card.id] = false; }
+      if (m.card.status === 'new' && !P.overlay.some((c) => c.id === m.card.id)) {
+        // Et ekte kort fra Storytelleren fjerner eventuelle tomme «falske» meldinger først.
+        P.overlay = P.overlay.filter((c) => !c.decoy);
+        P.overlay.push(m.card);
+        P.shown[m.card.id] = false;
+      }
       else if (m.card.status !== 'new') P.overlay = P.overlay.filter((c) => c.id !== m.card.id);
       break;
     }
@@ -160,7 +165,7 @@ function onMessage(m) {
       break;
     }
     case 'decoy':
-      if (isNight() && P.me && !deepInDream()) P.overlay.push({ id: m.id, decoy: true });
+      if (isNight() && P.me && !deepInDream()) pushDecoy(m.id);
       break;
     case 'board':
       P.board = m;
@@ -196,19 +201,32 @@ function deepInDream() {
   return !!(P.view === 'dream' && P.dream && P.dream.state === 'running' && P.dream.score > 10);
 }
 
+// Tom «falsk» melding: forsvinner av seg selv etter 10 sekunder.
+function pushDecoy(id) {
+  P.overlay.push({ id, decoy: true });
+  setTimeout(() => {
+    if (!P.overlay.some((c) => c.id === id)) return;
+    P.overlay = P.overlay.filter((c) => c.id !== id);
+    syncPause();
+    render();
+  }, 10000);
+}
+
 function planDecoys(night) {
   clearDecoys();
   if (!P.pub || P.pub.decoys === false || !P.me) return;
   const key = `botc-decoy-${P.code}-${night}`;
   let done = 0;
   try { done = Number(localStorage.getItem(key) || 0); } catch { /* */ }
-  const want = 1 + (Math.random() < 0.5 ? 1 : 0);
+  // Roller som vekkes av Storytelleren får sjeldnere tomme meldinger (0–1), andre 1–2.
+  const wakes = !!(P.roleCard && P.roleCard.wakes);
+  const want = wakes ? (Math.random() < 0.4 ? 1 : 0) : 1 + (Math.random() < 0.5 ? 1 : 0);
   const times = [25000 + Math.random() * 70000, 110000 + Math.random() * 120000].slice(0, want);
   times.slice(done).forEach((ms) => {
     P.decoyTimers.push(setTimeout(function fire() {
       if (!isNight() || !P.me) return;
       if (P.overlay.length) { P.decoyTimers.push(setTimeout(fire, 6000)); return; }
-      if (!deepInDream()) P.overlay.push({ id: 'decoy-local-' + Date.now(), decoy: true });
+      if (!deepInDream()) pushDecoy('decoy-local-' + Date.now());
       try { localStorage.setItem(key, String(++done)); } catch { /* */ }
       syncPause();
       render();

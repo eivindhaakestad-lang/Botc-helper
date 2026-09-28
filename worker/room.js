@@ -311,14 +311,17 @@ export class Room {
   // ——— meldinger ———
   // Falske vekkinger: når noen får et kort om natten, får tilfeldige andre et likt kort
   // som bare sier «ingenting skjer». Da kan ikke sidemannen se hvem som faktisk ble vekket.
-  maybeDecoys(exceptSeat) {
+  async maybeDecoys(exceptSeat) {
     const p = this.room.public;
     if (p.phase.type !== 'night' || p.decoys === false) return;
     const now = Date.now();
     this.decoyAt = this.decoyAt || {};
     for (const seat of p.seats) {
       if (seat.id === exceptSeat || !(this.room.claims[seat.id] || []).length) continue;
-      if (now - (this.decoyAt[seat.id] || 0) < 45000 || Math.random() > 0.35) continue;
+      // Roller som vekkes av Storytelleren får sjeldnere tomme meldinger
+      const card = (await this.seat(seat.id)).roleCard;
+      const chance = card && card.wakes ? 0.12 : 0.35;
+      if (now - (this.decoyAt[seat.id] || 0) < 45000 || Math.random() > chance) continue;
       this.decoyAt[seat.id] = now;
       for (const ws of this.playersOf(seat.id)) send(ws, { t: 'decoy', id: 'decoy-' + now + '-' + seat.id });
     }
@@ -364,7 +367,7 @@ export class Room {
         for (const [seatId, card] of Object.entries(msg.roleCards || {})) {
           if (!r.public.seats.some((x) => x.id === seatId)) continue;
           const seat = await this.seat(seatId);
-          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), icon: str(card.icon, 16), text: str(card.text, 2000) } : null;
+          const next = card ? { character: str(card.character, 40), team: str(card.team, 12), icon: str(card.icon, 16), wakes: !!card.wakes, text: str(card.text, 2000) } : null;
           if (JSON.stringify(seat.roleCard) !== JSON.stringify(next)) {
             seat.roleCard = next;
             await this.saveSeat(seatId);
@@ -388,7 +391,7 @@ export class Room {
         const targets = this.playersOf(seatId);
         for (const p of targets) send(p, { t: 'card', card });
         send(ws, { t: 'cardOk', cardId: card.id, seatId, delivered: targets.length });
-        this.maybeDecoys(seatId);
+        await this.maybeDecoys(seatId);
         break;
       }
       case 'lock':

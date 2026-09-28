@@ -86,6 +86,8 @@ export function roleCardsFor(s) {
       character: info.name,
       team: info.team,
       icon: info.icon,
+      // Vekkes rollen av Storytelleren om natten? (brukes til å gi færre tomme «falske» meldinger)
+      wakes: info.def ? !!(info.def.first || info.def.other) || info.team === 'minion' || info.team === 'demon' : true,
       text: msg(s.lang, s.style, 'roleCard', { char: info.name, team, summary: summary(shownId, s.lang, info) }),
     };
   }
