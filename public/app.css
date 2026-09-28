@@ -1102,7 +1102,9 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .recap-icon { width: 1.5em; text-align: center; flex: none; }
 .recap-grim .recap-chapter { font-size: clamp(1.4rem, 7cqw, 4rem); line-height: 1.05; animation: title-in 0.7s ease both; }
 .recap-center-line { display: block; margin-top: 0.4em; font-size: clamp(0.9rem, 3cqw, 1.7rem); font-weight: 700; animation: title-in 0.6s ease both; }
-.recap-token .token-char { font-size: calc(var(--tok) * 0.32); }
+.recap-token:not(.revealed) .token-char { font-size: calc(var(--tok) * 0.32); }
+.recap-token.revealed .token-disc { box-shadow: 0 0 0 2px var(--tc), 0 0 26px color-mix(in srgb, var(--tc) 45%, transparent); }
+.recap-token.flip-in .token-disc { animation: flip-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .recap-token { position: relative; }
 .recap-marks { position: absolute; z-index: 3; right: calc(50% - var(--tok) / 2 - 12px); top: -10px; font-size: max(1rem, calc(var(--tok) * 0.3)); line-height: 1; padding: 3px 5px; border-radius: 999px; background: var(--bg-2); box-shadow: 0 2px 8px rgb(0 0 0 / 0.4); white-space: nowrap; }
 .recap-token.marked .token-disc { border-color: var(--brass-2); }

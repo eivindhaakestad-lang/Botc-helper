@@ -7,7 +7,15 @@ function markedSeats(it) {
   return it.kind === 'shotHit' || it.kind === 'shotMiss' ? it.seatIds.slice(-1) : it.seatIds;
 }
 
-export function recapCircle({ seats, recap, size = 130 }) {
+const flipped = new Set();
+function charClass(name) {
+  if (name.length > 12) return ' xlong';
+  return Math.max(...name.split(' ').map((w) => w.length)) > 8 ? ' long' : '';
+}
+
+// reveal: rollene Storytelleren har avslørt (samme liste som grim reveal) – vises også under gjennomgangen
+export function recapCircle({ seats, recap, size = 130, reveal = [] }) {
+  const rev = Object.fromEntries((reveal || []).map((r) => [r.seatId, r]));
   const n = Math.max(1, seats.length);
   const tok = Math.min(26, (257 / n) * 0.7).toFixed(2);
   const dead = new Set(recap.dead || []);
@@ -25,12 +33,19 @@ export function recapCircle({ seats, recap, size = 130 }) {
       const m = marks[seat.id] || [];
       const isNew = newest && markedSeats(newest).includes(seat.id);
       return h('div', { class: 'grim-slot', style: `left:${(50 + 40 * Math.cos(a)).toFixed(2)}%;top:${(50 + 40 * Math.sin(a)).toFixed(2)}%` },
-        h('div', { class: 'token recap-token' + (dead.has(seat.id) ? ' dead' : '') + (m.length ? ' marked' : '') + (isNew ? ' recap-new kind-' + newest.kind : '') },
+        (() => {
+          const r = rev[seat.id];
+          const fresh = r && !flipped.has(seat.id);
+          if (r) flipped.add(seat.id); else flipped.delete(seat.id);
+          return h('div', { class: 'token recap-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : '') + (dead.has(seat.id) ? ' dead' : '') + (m.length ? ' marked' : '') + (isNew ? ' recap-new kind-' + newest.kind : '') },
           h('span', { class: 'token-disc' },
-            h('span', { class: 'token-char' }, seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
+            r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
+            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : h('span', { class: 'token-char' }, seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
+            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
             dead.has(seat.id) ? h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†') : null),
           m.length ? h('span', { class: 'recap-marks', 'aria-hidden': 'true' }, [...new Set(m.map((x) => x.icon))].join('')) : null,
-          h('span', { class: 'token-label' }, seat.names.join(' + '))));
+          h('span', { class: 'token-label' }, seat.names.join(' + ')));
+        })());
     }));
 }
 

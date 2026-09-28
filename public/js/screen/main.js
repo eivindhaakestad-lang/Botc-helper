@@ -106,7 +106,7 @@ function render() {
   }
   if (ph.type === 'ended' && p.recap) {
     root.replaceChildren(h('div', { class: 'screen screen-recap' },
-      h('section', { class: 'screen-grim' }, recapCircle({ seats: p.seats, recap: p.recap, size: 130 })),
+      h('section', { class: 'screen-grim' }, recapCircle({ seats: p.seats, recap: p.recap, size: 130, reveal: p.reveal || [] })),
       h('aside', { class: 'screen-side' },
         recapList(p.recap, { title: '📜 ' + T('recap') }),
         h('div', { class: 'row gap screen-tools' }, musicButton(), soundButton()))));

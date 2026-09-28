@@ -757,7 +757,7 @@ function dayView() {
 function revealView() {
   if (P.pub.recap) {
     return h('div', { class: 'play-reveal play-recap' },
-      recapCircle({ seats: P.pub.seats, recap: P.pub.recap, size: 90 }),
+      recapCircle({ seats: P.pub.seats, recap: P.pub.recap, size: 90, reveal: P.pub.reveal || [] }),
       recapList(P.pub.recap, { title: '📜 ' + T('recap') }));
   }
   return h('div', { class: 'play-reveal' },
