@@ -78,7 +78,7 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
       return h('div', { class: 'grim-slot', 'data-seat': seat.id, style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
         h('div', { class: `token vc-token ${role}${voted ? ' voted' : ''}${seat.alive ? '' : ' dead'}${cant ? ' cant' : ''}${me === seat.id ? ' me' : ''}` },
           h('span', { class: 'token-disc' },
-            h('span', { class: 'token-char' }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
+            h('span', { class: 'token-char', 'data-plain': seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('') }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
             seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
             vote.blockId === seat.id ? h('span', { class: 'block-badge' }, '💀') : null),
           h('span', { class: 'token-label' }, seat.names.join(' + ')),
@@ -89,30 +89,73 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
 
 // Oppdaterer viser, låste plasser og status uten å tegne alt på nytt.
 // Returnerer info som brukes til lyder.
+// Elementene i sirkelen hentes én gang og caches (tick kjører hver skjermoppdatering).
+const cache = new WeakMap();
+function refs(el) {
+  let c = cache.get(el);
+  if (!c) {
+    const slots = [...el.querySelectorAll('.grim-slot')];
+    c = {
+      seats: slots.map((x) => x.dataset.seat),
+      tokens: new Map(slots.map((x) => [x.dataset.seat, x.querySelector('.vc-token')])),
+      hand: el.querySelector('.vc-hand-wrap'),
+      status: el.querySelector('.vc-status'),
+      count: el.querySelector('.vc-count'),
+      step: null, cur: undefined, statusText: null,
+    };
+    cache.set(el, c);
+  }
+  return c;
+}
+
 export function tickVoteCircle(root, vote, offset, text) {
   const el = root && root.querySelector(`.vote-grim[data-vote="${vote.id}"]`);
   const info = clockInfo(vote, offset);
   if (!el || !info) return info;
-  const seats = [...el.querySelectorAll('.grim-slot')].map((x) => x.dataset.seat);
-  const n = seats.length;
+  const c = refs(el);
+  const n = c.seats.length;
   const order = vote.clock.order;
   const tt = Math.max(0, Math.min(order.length - 1, info.t));
   const k = Math.floor(tt);
-  const from = seats.indexOf(order[k]);
-  const angle = (360 / n) * (from + (tt - k));
-  const hand = el.querySelector('.vc-hand-wrap');
-  if (hand) hand.style.transform = `rotate(${angle}deg)`;
-  order.forEach((id, j) => {
-    const tok = el.querySelector(`.grim-slot[data-seat="${id}"] .vc-token`);
-    if (!tok) return;
-    tok.classList.toggle('locked', info.t >= j);
-    tok.classList.toggle('current', info.current === id);
-  });
-  const st = el.querySelector('.vc-status');
-  if (st) {
-    st.textContent = !vote.open ? text.closed : info.countdown > 0 ? `${text.startsIn} ${info.countdown}` : info.done ? text.closed : '';
+  const from = c.seats.indexOf(order[k]);
+  // Bare transform endres hver frame – ingen layout, bare kompositt
+  if (c.hand) c.hand.style.transform = `rotate(${((360 / n) * (from + (tt - k))).toFixed(2)}deg)`;
+  const step = info.t < 0 ? -1 : Math.min(order.length, Math.floor(info.t) + 1);
+  if (step !== c.step || info.current !== c.cur) {
+    c.step = step;
+    c.cur = info.current;
+    order.forEach((id, j) => {
+      const tok = c.tokens.get(id);
+      if (!tok) return;
+      tok.classList.toggle('locked', info.t >= j);
+      tok.classList.toggle('current', info.current === id);
+    });
   }
+  const txt = !vote.open ? text.closed : info.countdown > 0 ? `${text.startsIn} ${info.countdown}` : info.done ? text.closed : '';
+  if (c.status && txt !== c.statusText) { c.status.textContent = txt; c.statusText = txt; }
   return info;
+}
+
+// Oppdater bare stemmene i en eksisterende sirkel (i stedet for å tegne alt på nytt)
+export function patchVoteCircle(root, vote) {
+  const el = root && root.querySelector(`.vote-grim[data-vote="${vote.id}"]`);
+  if (!el) return false;
+  const c = refs(el);
+  for (const [id, tok] of c.tokens) {
+    if (!tok) continue;
+    const voted = vote.voters.includes(id);
+    if (tok.classList.contains('voted') === voted) continue;
+    tok.classList.toggle('voted', voted);
+    const ch = tok.querySelector('.token-char');
+    if (ch) ch.textContent = voted ? '✋' : tok.classList.contains('nominee') ? '⚖️' : (ch.dataset.plain || ch.textContent);
+  }
+  if (c.count) {
+    const total = voteTotal(vote);
+    c.count.firstChild.textContent = String(total);
+    c.count.classList.toggle('enough', total >= vote.need);
+    c.count.classList.toggle('tie', total < vote.need && !!vote.tieAt && total === vote.tieAt);
+  }
+  return true;
 }
 
 // «4 = uavgjort med Markus (ingen dør) · 5 = Frida på blokka»

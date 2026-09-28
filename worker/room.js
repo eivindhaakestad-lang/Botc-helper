@@ -52,6 +52,7 @@ function cleanPublic(p) {
       roles: p.script.roles.slice(0, 60).map((r) => ({ id: str(r.id, 40), name: str(r.name, 40), team: str(r.team, 12), icon: str(r.icon, 16), text: str(r.text, 500) })),
     } : null,
     dawnPending: !!p.dawnPending,
+    nomProps: p.nomProps !== false,
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
@@ -276,8 +277,17 @@ export class Room {
     return [...new Set((Array.isArray(list) ? list : []).map((x) => str(x, 80)).filter((x) => ok.has(x)))];
   }
   broadcastHands() {
+    // Rydd forslag for elever som ikke lenger står i køen
+    const props = this.room.proposals || {};
+    for (const id of Object.keys(props)) if (!(this.room.hands || []).includes(id)) delete props[id];
+    this.room.proposals = props;
     this.broadcastPublic();
-    this.toSt({ t: 'hands', hands: this.room.hands || [] });
+    this.toSt({ t: 'hands', hands: this.room.hands || [], proposals: props });
+    // Eleven ser sitt eget forslag
+    for (const ws of this.sockets('player')) {
+      const a = ws.deserializeAttachment() || {};
+      if (a.seatId) send(ws, { t: 'myProposal', nomineeId: props[a.seatId] || null });
+    }
   }
   broadcastPublic() {
     const m = this.publicMsg();
@@ -301,7 +311,7 @@ export class Room {
     }
     const chats = {};
     for (const key of this.room.chatKeys || []) chats[key] = await this.chat(key);
-    return { t: 'hello', chats, room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
+    return { t: 'hello', chats, proposals: this.room.proposals || {}, room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
   }
   async youMsg(seatId, tok) {
     const seat = await this.seat(seatId);
@@ -360,7 +370,7 @@ export class Room {
         const before = r.public.phase;
         r.public = pub;
         const phaseChanged = before.type !== pub.phase.type || before.number !== pub.phase.number;
-        if (phaseChanged && (r.hands || []).length) { r.hands = []; this.toSt({ t: 'hands', hands: [] }); }
+        if (phaseChanged && ((r.hands || []).length || Object.keys(r.proposals || {}).length)) { r.hands = []; r.proposals = {}; this.toSt({ t: 'hands', hands: [], proposals: {} }); }
         if (phaseChanged && r.vote) { r.vote = null; this.toSt({ t: 'vote', vote: null, now: Date.now() }); }
         if (phaseChanged) { r.timer = null; r.dreamReveal = 0; }
         await this.saveRoom();
@@ -597,6 +607,25 @@ export class Room {
         const hands = (r.hands || []).filter((x) => x !== seatId);
         if (msg.up && this.handsAllowed()) hands.push(seatId);
         r.hands = hands;
+        await this.saveRoom();
+        this.broadcastHands();
+        break;
+      }
+      case 'nomPropose': {
+        // Eleven foreslår en nominasjon: havner i håndsopprekningskøen med forslaget, Storytelleren godkjenner.
+        const seatId = meta.seatId;
+        if (!seatId) return;
+        const p = r.public;
+        r.proposals = r.proposals || {};
+        const nominee = msg.nomineeId ? str(msg.nomineeId, 80) : null;
+        if (!nominee) {
+          delete r.proposals[seatId];
+        } else {
+          const me = p.seats.find((x) => x.id === seatId);
+          if (p.phase.type !== 'day' || p.nomProps === false || !me || !me.alive || !p.seats.some((x) => x.id === nominee)) { send(ws, { t: 'error', code: 'nomprop' }); return; }
+          r.proposals[seatId] = nominee;
+          r.hands = [...(r.hands || []).filter((x) => x !== seatId), seatId];
+        }
         await this.saveRoom();
         this.broadcastHands();
         break;

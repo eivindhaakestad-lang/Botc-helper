@@ -80,6 +80,7 @@ export const sfx = {
   whoosh() { noise(0.55, { gain: 0.35, freq: 1800, q: 0.9 }); tone(1200, 0.5, { type: 'triangle', gain: 0.05, slideTo: 300 }); },
   thunk() { tone(160, 0.18, { gain: 0.3, slideTo: 80 }); noise(0.12, { gain: 0.3, freq: 700, q: 1.5 }); tone(95, 0.9, { gain: 0.12, delay: 0.25, slideTo: 70 }); },
   hit() { noise(0.1, { gain: 0.45, freq: 2600, q: 2 }); tone(70, 2.6, { gain: 0.5, slideTo: 30, release: 2.6, delay: 0.05 }); noise(1.6, { gain: 0.25, freq: 220, q: 0.5, type: 'lowpass', delay: 0.05 }); bellAt(330, 0.7, 0.18, 3.2); },
+  death() { tone(196, 1.4, { type: 'triangle', gain: 0.22, slideTo: 82, release: 1.4 }); noise(0.9, { gain: 0.22, freq: 180, q: 0.6, type: 'lowpass' }); bellAt(110, 0.35, 0.2, 3.4); },
   reveal() { tone(220, 0.6, { type: 'sine', gain: 0.2, slideTo: 660 }); bellAt(1320, 0.45, 0.07, 1.4); },
 };
 

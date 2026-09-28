@@ -72,6 +72,12 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Rolleikoner:** Appen bruker egne enkle ikoner (emoji). Importerer du rolletekster med bildelenker, vises bildene i grimen din.
 
+**Elevenes valg:** Nattvalg (Poisoner, Monk, Fortune Teller, Imp osv.) gjøres ved å trykke på spillere i en sirkel, som i grimen.
+
+**Nominasjonsforslag:** Om dagen har elevene **⚖️ Foreslå nominasjon** ved siden av «Rekk opp hånden». De velger hvem i sirkelen, og forslaget havner i håndsopprekningskøen din («Markus ⚖️→ Nora»). **✓ Godkjenn** oppretter nominasjonen og åpner avstemningen på storskjermen. Døde og elever som allerede har nominert i dag, kan ikke foreslå. Slås av under **⋯ Spill** hvis det blir for mange forslag.
+
+**Dødsanimasjon:** Hver gang en spiller dør og det vises for byen (henrettelse, kunngjort natt, eksil, Slayer osv.), rister tokenet på storskjermen, en hodeskalle stiger opp og korset faller på plass, med dyp klokkelyd.
+
 **Timer og lyd:** Timeren i Dag-fanen vises stort på storskjermen og hos elevene. De siste 10 sekundene blir den rød. Storskjermen har lyder laget i nettleseren: gong når natten kommer, morgenklang om dagen, klubbeslag ved ny avstemning, tikking når viseren går, bjelle når tiden er ute og mer. Trykk **🔇 Slå på lyd** på storskjermen én gang (nettlesere krever et klikk). Elevene har lyd av som standard.
 
 **Daggry:** Dødsfall om natten (for eksempel Demonens drap) vises ikke på storskjermen eller hos elevene mens det er natt. Når du starter dagen, ser de at det er dag, men ikke hvem som døde («Byen våkner …»). Du ser hvem som døde, og trykker **📣 Kunngjør natten** (eller Enter) når du er klar. Da dukker dødsfallene og morgenmeldingen opp, og storskjermen spiller en lyd.

@@ -297,6 +297,9 @@ function gameMenu() {
       h('div', { class: 'stack tight' }, h('span', { class: 'label' }, t('messageStyle')),
         segmented({ value: s.style, options: [{ value: 'short', label: t('styleShort') }, { value: 'flavor', label: t('styleFlavor') }], onChange: (v) => { dispatch({ type: 'SETTINGS', style: v }); } })),
       h('p', { class: 'muted small' }, t('langAppliesNew')),
+      store.game.live ? h('div', { class: 'stack tight' },
+        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: (store.game.live.settings || {}).nomProps !== false, onchange: (e) => { setLiveSetting('nomProps', e.target.checked); render(); } }), t('nomPropsOn')),
+        h('p', { class: 'muted small' }, t('nomPropsHelp'))) : null,
       h('hr'),
       h('span', { class: 'label' }, 'Travellers'),
       h('p', { class: 'muted small' }, t('travellerHelp')),
@@ -1031,9 +1034,21 @@ function handsBar(s) {
   if (!store.game.live || !live.hands.length) return null;
   return h('div', { class: 'hands-bar' },
     h('span', { class: 'label' }, '✋ ' + t('handsQueue')),
-    h('ol', { class: 'hands-list' }, live.hands.map((id, i) => h('li', null,
-      h('button', { class: 'hand-chip' + (i === 0 ? ' first' : ''), onclick: () => lowerHand(id), title: t('handDone') },
-        h('span', { class: 'hand-n' }, String(i + 1)), seatName(getSeat(s, id)), h('span', { class: 'hand-x', 'aria-hidden': 'true' }, '✓'))))),
+    h('ol', { class: 'hands-list' }, live.hands.map((id, i) => {
+      const prop = live.proposals[id];
+      const nominee = prop && getSeat(s, prop);
+      if (nominee) {
+        // Nominasjonsforslag fra eleven: godkjenn = nominasjonen opprettes og avstemningen åpnes
+        return h('li', null, h('span', { class: 'hand-chip proposal' + (i === 0 ? ' first' : '') },
+          h('span', { class: 'hand-n' }, String(i + 1)),
+          `${seatName(getSeat(s, id))} ⚖️→ ${seatName(nominee)}`,
+          h('button', { class: 'btn small primary', disabled: s.phase.type !== 'day', onclick: () => { lowerHand(id); createNomination(store.state(), id, prop); } }, '✓ ' + t('approve')),
+          h('button', { class: 'btn small ghost', onclick: () => lowerHand(id), title: t('reject') }, '✕')));
+      }
+      return h('li', null,
+        h('button', { class: 'hand-chip' + (i === 0 ? ' first' : ''), onclick: () => lowerHand(id), title: t('handDone') },
+          h('span', { class: 'hand-n' }, String(i + 1)), seatName(getSeat(s, id)), h('span', { class: 'hand-x', 'aria-hidden': 'true' }, '✓')));
+    })),
     h('button', { class: 'btn small ghost', onclick: clearHands }, t('clearHands')),
     h('span', { class: 'muted small' }, t('handsKey')));
 }

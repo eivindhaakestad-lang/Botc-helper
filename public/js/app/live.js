@@ -19,6 +19,7 @@ export const live = {
   online: {},
   board: null,
   hands: [],
+  proposals: {}, // seatId → nomineeId (nominasjonsforslag fra elever)
   vote: null,
   chats: {}, // trådnøkkel → meldinger
   offset: 0, // servertid − lokal tid
@@ -81,6 +82,7 @@ function onMessage(m) {
       live.claimed = m.claimed || {};
       live.online = m.online || {};
       live.hands = m.hands || [];
+      live.proposals = m.proposals || {};
       live.vote = m.vote || null;
       live.chats = m.chats || {};
       scheduleAutoFinish();
@@ -129,6 +131,7 @@ function onMessage(m) {
       break;
     case 'hands':
       live.hands = m.hands || [];
+      live.proposals = m.proposals || {};
       render();
       break;
     case 'vote':

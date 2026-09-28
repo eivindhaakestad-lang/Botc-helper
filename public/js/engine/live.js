@@ -6,7 +6,7 @@ import { seatName, actingId } from './state.js';
 import { msg, summary, TEAM_LABEL } from './text.js';
 import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
 
-export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false } = {}) {
+export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false, nomProps = true } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
   const ended = s.phase.type === 'ended';
   const out = {
@@ -22,7 +22,7 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     }),
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
     dawnPending: false,
-    dream, decoys, chat,
+    dream, decoys, chat, nomProps: nomProps !== false,
     // Scriptet er offentlig: alle roller med beskrivelse, sortert etter team.
     script: {
       name: s.script.name || '',

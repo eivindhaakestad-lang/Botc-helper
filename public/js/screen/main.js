@@ -5,7 +5,7 @@ import { h } from '../app/dom.js';
 import { LiveClient, joinUrl, qrSvg } from '../live/client.js';
 import { revealCircle } from '../live/reveal.js';
 import { podium } from '../live/podium.js';
-import { voteCircle, tickVoteCircle, tieLine } from '../live/voteclock.js';
+import { voteCircle, tickVoteCircle, tieLine, patchVoteCircle } from '../live/voteclock.js';
 import { sfx, enableSound, disableSound, soundEnabled, playMusic, stopMusic } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 
@@ -14,7 +14,7 @@ const TXT = {
   en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block' },
 };
 
-const S = { pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
+const S = { dying: new Map(), deadSeen: null, pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
 const vtext = () => ({ nominator: T('nominator'), nominee: T('nominee'), startsIn: T('startsIn'), handAt: T('handAt'), closed: T('closed'), voteNow: '🗳 ' + T('voteNow'), tieLine: (v, nm) => tieLine(v, nm, T) });
 const nameOf = (id) => { const x = S.pub && S.pub.seats.find((y) => y.id === id); return x ? x.names.join(' + ') : '?'; };
 const T = (k) => (TXT[S.pub && S.pub.lang === 'en' ? 'en' : 'no'][k]);
@@ -43,6 +43,22 @@ function shotLayer(p, n) {
     landed ? h('span', { class: 'shot-impact ' + (a.shot.hit ? 'hit' : 'miss') }, a.shot.hit ? '💥' : '💨') : null);
 }
 
+// ——— dødsanimasjon: hver gang en spiller vises som død for første gang ———
+const DEATH_MS = 2600;
+function detectDeaths(p) {
+  const dead = new Set(p.seats.filter((x) => !x.alive).map((x) => x.id));
+  if (!S.deadSeen) { S.deadSeen = dead; return; }
+  const fresh = [...dead].filter((id) => !S.deadSeen.has(id));
+  for (const id of [...S.deadSeen]) if (!dead.has(id)) S.deadSeen.delete(id);
+  if (!fresh.length) return;
+  const now = Date.now();
+  for (const id of fresh) { S.deadSeen.add(id); S.dying.set(id, now + DEATH_MS); }
+  // Slayer/Gunslinger-skuddet har allerede sin egen lyd
+  const shotTarget = S.shotAnim && S.shotAnim.shot.hit ? S.shotAnim.shot.to : null;
+  if (fresh.some((id) => id !== shotTarget)) sfx.death();
+  setTimeout(() => { const t = Date.now(); for (const [id, until] of S.dying) if (until <= t) S.dying.delete(id); render(); }, DEATH_MS + 50);
+}
+
 function seatToken(seat, i, n) {
   const a = (-90 + (360 / n) * i) * (Math.PI / 180);
   const left = 50 + 40 * Math.cos(a);
@@ -57,14 +73,16 @@ function seatToken(seat, i, n) {
   const d = S.pub.day;
   const block = !!(d && d.block && !d.executed && d.block.nomineeId === seat.id);
   const sa = S.shotAnim;
+  const dying = S.dying.has(seat.id) ? ' dying' : '';
   const shotCls = sa ? (sa.shot.from === seat.id ? ' shooter' : sa.shot.to === seat.id ? (Date.now() - sa.start >= SHOT_FLY ? (sa.shot.hit ? ' shot-hit' : ' shot-miss') : ' shot-target') : '') : '';
   return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls },
+    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls + dying },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
         h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
         seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
         handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null,
+        dying ? h('span', { class: 'death-skull', 'aria-hidden': 'true' }, '💀') : null,
         block ? h('span', { class: 'block-badge' }, '💀') : null),
       h('span', { class: 'token-label' }, seat.names.join(' + '),
         seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○')),
@@ -91,6 +109,8 @@ function render() {
       h('button', { class: 'btn ghost small fs-btn', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen'))));
     return;
   }
+  // Dødsanimasjonen vises på den vanlige grimen (ikke mens avstemningssirkelen står)
+  if (!(S.vote && ph.type === 'day')) detectDeaths(p);
   const alive = p.seats.filter((x) => x.alive).length;
   const n = Math.max(1, p.seats.length);
   const joinedAll = p.seats.length > 0 && p.seats.every((x) => (S.claimed[x.id] || 0) > 0);
@@ -165,7 +185,7 @@ function timerCard() {
   return h('div', { class: 'timer-card' + (left <= 10 ? ' urgent' : '') + (left === 0 ? ' up' : '') },
     h('span', { class: 'label' }, '⏳ ' + (S.timer.label || T('timer'))),
     h('span', { class: 'display timer-big', id: 'screen-timer' }, left === 0 ? T('timeUp') : fmt(left)),
-    h('div', { class: 'timer-bar' }, h('span', { id: 'screen-timer-bar', style: `width:${(100 * left * 1000 / Math.max(1, S.timer.durationMs)).toFixed(1)}%` })));
+    h('div', { class: 'timer-bar' }, h('span', { id: 'screen-timer-bar', style: `transform:scaleX(${Math.max(0, Math.min(1, (left * 1000) / Math.max(1, S.timer.durationMs))).toFixed(3)})` })));
 }
 
 // ——— animasjon og lyd (kjører hele tiden, tegner ikke alt på nytt) ———
@@ -189,16 +209,17 @@ function tick(fromRender = false) {
       if (info.done && !snd.done) { snd.done = true; sfx.bell(); }
     }
   }
-  // Timer
+  // Timer (oppdateres bare når sekundet endrer seg; linja går med transform)
   const left = timerLeft();
   const el = document.getElementById('screen-timer');
   if (left !== null) {
-    if (el) {
+    if (el && (fromRender || snd.timerShown !== left)) {
+      snd.timerShown = left;
       el.textContent = left === 0 ? T('timeUp') : fmt(left);
       const card = el.closest('.timer-card');
       if (card) { card.classList.toggle('urgent', left <= 10); card.classList.toggle('up', left === 0); }
       const bar = document.getElementById('screen-timer-bar');
-      if (bar) bar.style.width = `${(100 * left * 1000 / Math.max(1, S.timer.durationMs)).toFixed(1)}%`;
+      if (bar) bar.style.transform = `scaleX(${Math.max(0, Math.min(1, (left * 1000) / Math.max(1, S.timer.durationMs))).toFixed(3)})`;
     }
     if (!fromRender && snd.timerSec !== left) {
       const endKey = S.timer.endsAt;
@@ -208,7 +229,9 @@ function tick(fromRender = false) {
     }
   } else snd.timerSec = null;
 }
-setInterval(() => tick(false), 60);
+// Én animasjonsløkke synkronisert med skjermen (jevnere enn setInterval, og pauser når fanen er skjult)
+function frame() { tick(false); requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
 
 // Lyder når noe skjer i spillet
 function soundsFor(prev, m) {
@@ -220,7 +243,7 @@ function soundsFor(prev, m) {
   }
   if (a.dawnPending && !b.dawnPending && b.phase.type === 'day') {
     const died = b.seats.some((x) => !x.alive && (a.seats.find((y) => y.id === x.id) || {}).alive);
-    if (died) sfx.boom(); else sfx.bell();
+    if (!died) sfx.bell(); // dødsfall får egen lyd og animasjon
   }
   const pv = prev.vote; const nv = m.vote;
   if (nv && nv.open && (!pv || pv.id !== nv.id || !pv.open)) sfx.gavel();
@@ -228,8 +251,6 @@ function soundsFor(prev, m) {
   if ((m.hands || []).length > (prev.hands || []).length) sfx.pop();
   const ba = a.day && a.day.block && a.day.block.nomineeId; const bb = b.day && b.day.block && b.day.block.nomineeId;
   if (bb && bb !== ba) sfx.lock();
-  const ea = a.day && a.day.executed; const eb = b.day && b.day.executed;
-  if (eb && eb !== ea && eb !== 'none') sfx.boom();
   if (b.winner && b.winner !== a.winner) sfx.fanfare();
   const ra = (a.reveal || []).filter((x) => x.shown || x.character).length;
   const rb = (b.reveal || []).filter((x) => x.shown || x.character).length;
@@ -280,6 +301,17 @@ if (!code) {
     onStatus: (st) => { S.status = st; },
     onMessage: (m) => {
       if (m.t === 'public') {
+        // Bare nye stemmer i en pågående avstemning? Da oppdateres sirkelen direkte uten å tegne alt på nytt.
+        const prev = lastPublic;
+        const onlyVotes = prev && m.vote && prev.vote && prev.vote.id === m.vote.id && prev.vote.open === m.vote.open
+          && JSON.stringify(prev.vote.clock || null) === JSON.stringify(m.vote.clock || null)
+          && JSON.stringify([prev.public, prev.hands, prev.timer, prev.room, prev.claimed, prev.dreamReveal]) === JSON.stringify([m.public, m.hands, m.timer, m.room, m.claimed, m.dreamReveal]);
+        if (onlyVotes && patchVoteCircle(document.getElementById('screen'), m.vote)) {
+          soundsFor(prev, m);
+          lastPublic = m;
+          S.vote = m.vote;
+          return;
+        }
         soundsFor(lastPublic, m);
         detectShots(m, !lastPublic);
         lastPublic = m;

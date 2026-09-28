@@ -347,3 +347,28 @@ test('rom: roller som vekkes får sjeldnere falske vekkinger', async () => {
   assert.equal(ps.s2.last('decoy'), undefined, 'Empath (vekkes) får ikke');
   assert.ok(ps.s3.last('decoy'), 'Saint (vekkes ikke) får');
 });
+
+test('rom: nominasjonsforslag havner i håndskøen og kan slås av', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const seats = PUB.seats.map((x) => (x.id === 's3' ? { ...x, alive: false } : x));
+  await say(room, st, { t: 'sync', public: { ...PUB, seats, phase: { type: 'day', number: 1 } }, roleCards: {} });
+  const ps = {};
+  for (const id of ['s1', 's2', 's3']) { ps[id] = await connect(room, 'player'); await say(room, ps[id], { t: 'claim', seatId: id }); }
+  await say(room, ps.s1, { t: 'nomPropose', nomineeId: 's2' });
+  assert.deepEqual(st.last('hands').hands, ['s1']);
+  assert.deepEqual(st.last('hands').proposals, { s1: 's2' });
+  assert.equal(ps.s1.last('myProposal').nomineeId, 's2');
+  await say(room, ps.s3, { t: 'nomPropose', nomineeId: 's1' });
+  assert.equal(ps.s3.last('error').code, 'nomprop', 'døde kan ikke nominere');
+  // Storytelleren godkjenner/fjerner fra køen → forslaget forsvinner
+  await say(room, st, { t: 'hand', seatId: 's1' });
+  assert.deepEqual(st.last('hands').proposals, {});
+  assert.equal(ps.s1.last('myProposal').nomineeId, null);
+  // Slått av
+  await say(room, st, { t: 'sync', public: { ...PUB, seats, nomProps: false, phase: { type: 'day', number: 1 } }, roleCards: {} });
+  await say(room, ps.s2, { t: 'nomPropose', nomineeId: 's1' });
+  assert.equal(ps.s2.last('error').code, 'nomprop');
+});

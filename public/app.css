@@ -746,9 +746,10 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 /* ——— avstemningsklokka ——— */
 .vote-grim .vc-arrow { position: absolute; inset: 0; color: var(--brass-2); pointer-events: none; }
 .vote-grim .vc-arrow svg { width: 100%; height: 100%; overflow: visible; }
+.vote-grim .vc-arrow { will-change: transform; }
 .vote-grim .vc-arrow line { stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-dasharray: 3 2; animation: vc-dash 0.8s linear infinite; filter: drop-shadow(0 0 1.5px rgb(0 0 0 / 0.5)); }
 @keyframes vc-dash { to { stroke-dashoffset: -5; } }
-.vc-hand-wrap { position: absolute; inset: 0; pointer-events: none; }
+.vc-hand-wrap { position: absolute; inset: 0; pointer-events: none; will-change: transform; transform: translateZ(0); }
 .vc-hand {
   position: absolute; left: 50%; top: 11%; height: 26%; width: max(5px, 1.3cqw); transform: translateX(-50%);
   border-radius: 999px; background: linear-gradient(0deg, transparent, var(--brass) 35%, var(--brass-2));
@@ -766,8 +767,14 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .vc-token .token-char { font-size: calc(var(--tok) * 0.32); }
 .vc-token .token-disc { transition: transform 0.18s, box-shadow 0.18s, opacity 0.3s; }
 .vc-token.nominator .token-disc { border-color: var(--brass-2); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brass-2) 55%, transparent), 0 0 26px color-mix(in srgb, var(--brass-2) 45%, transparent); }
-.vc-token.nominee .token-disc { border-color: var(--demon); box-shadow: 0 0 0 5px color-mix(in srgb, var(--demon) 55%, transparent), 0 0 34px color-mix(in srgb, var(--demon) 55%, transparent); animation: vc-throb 1.4s ease-in-out infinite; }
-@keyframes vc-throb { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--demon) 25%, transparent), 0 0 44px color-mix(in srgb, var(--demon) 65%, transparent); } }
+.vc-token.nominee .token-disc, .token.on-block .token-disc { border-color: var(--demon); box-shadow: 0 0 0 5px color-mix(in srgb, var(--demon) 55%, transparent); isolation: isolate; }
+/* Pulserende glød som eget lag: bare opacity/transform animeres (billig for svake PC-er og projektor-PC) */
+.vc-token.nominee .token-disc::before, .token.on-block .token-disc::before {
+  content: ''; position: absolute; inset: -14px; border-radius: 50%; pointer-events: none; z-index: -1;
+  background: radial-gradient(circle, transparent 52%, color-mix(in srgb, var(--demon) 70%, transparent) 60%, transparent 72%);
+  animation: glow-pulse 1.5s ease-in-out infinite; will-change: opacity, transform;
+}
+@keyframes glow-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.95); } 50% { opacity: 1; transform: scale(1.08); } }
 .vc-role { margin-top: 2px; padding: 1px 8px; border-radius: 999px; font-size: clamp(0.62rem, calc(var(--tok) * 0.14), 0.95rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
 .vc-role.nominator { background: var(--brass-2); color: var(--brass-ink); }
 .vc-role.nominee { background: var(--demon); color: #fff; }
@@ -791,7 +798,7 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .timer-big { font-size: clamp(3rem, 7vw, 7rem); line-height: 1; font-variant-numeric: tabular-nums; }
 .small-timer .timer-big { font-size: var(--f-3xl); }
 .timer-bar { width: 100%; height: 8px; border-radius: 999px; background: var(--bg-3); overflow: hidden; }
-.timer-bar span { display: block; height: 100%; background: var(--brass); transition: width 0.25s linear; }
+.timer-bar span { display: block; height: 100%; width: 100%; background: var(--brass); transform-origin: left center; transition: transform 0.9s linear; will-change: transform; }
 .timer-card.urgent { border-color: var(--danger); }
 .timer-card.urgent .timer-big { color: var(--danger); animation: pulse 1s ease-in-out infinite; }
 .timer-card.urgent .timer-bar span { background: var(--danger); }
@@ -837,7 +844,6 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .public-more { align-self: flex-start; }
 
 /* ——— på blokka ——— */
-.token.on-block .token-disc { border-color: var(--demon); box-shadow: 0 0 0 5px color-mix(in srgb, var(--demon) 50%, transparent), 0 0 34px color-mix(in srgb, var(--demon) 60%, transparent); animation: vc-throb 1.6s ease-in-out infinite; }
 .block-badge { position: absolute; left: -10px; bottom: -8px; font-size: max(1rem, calc(var(--tok) * 0.34)); line-height: 1; filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.6)); animation: skull-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1.4) both; }
 @keyframes skull-in { from { transform: scale(0) rotate(-30deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .block-label { margin-top: 2px; }
@@ -953,3 +959,37 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .place-2 .podium-block { height: 86px; background: linear-gradient(180deg, #d9d4e2, #9a93a8); color: #1c1826; }
 .place-3 .podium-block { height: 62px; background: linear-gradient(180deg, #d99a63, #9a6234); color: #22190a; }
 .podium-col:not(.shown) .podium-block { filter: grayscale(0.8) brightness(0.6); }
+
+/* ——— velg i sirkel (elevens nattvalg og nominasjonsforslag) ——— */
+.wake-card:has(.pick-grim) { width: min(640px, 100%); }
+.pick-grim { max-width: 560px; }
+.pick-token { cursor: pointer; }
+.pick-token .token-disc { transition: transform 0.12s, border-color 0.12s, background-color 0.12s; }
+.pick-token:hover:not(:disabled) .token-disc { transform: scale(1.06); border-color: var(--brass-2); }
+.pick-token.on .token-disc { border-color: var(--brass-2); background: radial-gradient(circle at 35% 30%, #6b5320, #3a2c10 70%); transform: scale(1.1); }
+.pick-token.on .token-char { color: var(--brass-2); font-size: calc(var(--tok) * 0.4); }
+.pick-token:disabled { cursor: not-allowed; opacity: 0.4; }
+.pick-token.me .token-label { color: var(--brass-2); }
+.pick-count { font-size: clamp(1.2rem, 6cqw, 2.4rem); }
+
+/* ——— dødsanimasjon på storskjermen (kun transform/opacity/filter – billig å tegne) ——— */
+.screen-token.dying .token-disc { animation: death-shake 0.9s ease-in-out both, death-fade 1.6s 0.9s ease-in both; }
+.screen-token.dying .token-disc::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; background: radial-gradient(circle, rgb(224 83 91 / 0.75), rgb(224 83 91 / 0) 70%); animation: death-flash 1.2s ease-out both; pointer-events: none; }
+.screen-token.dying .token-shroud { animation: shroud-drop 0.7s 1s cubic-bezier(0.2, 0.7, 0.2, 1.3) both; }
+.death-skull { position: absolute; left: 50%; top: -18%; font-size: calc(var(--tok) * 0.7); transform: translateX(-50%); animation: skull-rise 2.4s ease-out both; pointer-events: none; }
+@keyframes death-shake { 0%, 100% { transform: none; } 15% { transform: scale(1.15) rotate(-6deg); } 30% { transform: scale(1.15) rotate(6deg); } 45% { transform: scale(1.1) rotate(-4deg); } 60% { transform: scale(1.05) rotate(3deg); } }
+@keyframes death-fade { from { filter: none; } to { filter: grayscale(0.85) brightness(0.62); } }
+@keyframes death-flash { 0% { opacity: 0; transform: scale(0.6); } 25% { opacity: 1; transform: scale(1.25); } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes shroud-drop { from { opacity: 0; transform: translateY(-40%) scale(1.6); } to { opacity: 1; transform: none; } }
+@keyframes skull-rise { 0% { opacity: 0; transform: translate(-50%, 30%) scale(0.4); } 20% { opacity: 1; transform: translate(-50%, 0) scale(1.1); } 70% { opacity: 1; transform: translate(-50%, -20%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); } }
+.town li.dying { animation: town-death 2s ease-out; }
+@keyframes town-death { 0% { background: color-mix(in srgb, var(--danger) 45%, transparent); } 100% { background: var(--bg); } }
+@media (prefers-reduced-motion: reduce) { .screen-token.dying .token-disc, .death-skull, .screen-token.dying .token-shroud { animation-duration: 0.01s; } }
+.hand-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.hand-row .hand-btn { flex: 1 1 200px; }
+.nom-prop-btn { border-color: var(--demon); }
+.hand-chip.proposal { display: inline-flex; align-items: center; gap: 6px; border-color: var(--demon); cursor: default; }
+
+/* Isoler grim-sirklene så endringer der ikke tvinger omtegning av resten av siden */
+.grim { contain: layout style; }
+.pick-token .token-char { font-size: calc(var(--tok) * 0.32); }
