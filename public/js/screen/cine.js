@@ -70,3 +70,32 @@ export function playPhaseCine(type, number, label) {
   setTimeout(() => el.classList.add('out'), total - 900);
   setTimeout(() => { el.remove(); if (active === el) active = null; }, total);
 }
+
+// ——— Grim reveal: grimoiren slås opp med lyn, lysstråler og gnister ———
+export const REVEAL_CINE_MS = 5600;
+export function playRevealCine(title, sub) {
+  if (active) { active.remove(); active = null; }
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const el = document.createElement('div');
+  el.className = 'cine cine-reveal' + (reduced ? ' reduced' : '');
+  el.setAttribute('aria-hidden', 'true');
+  let sparks = '';
+  for (let i = 0; i < 36; i++) {
+    const x = (Math.sin(i * 12.9898) * 43758.5453) % 1;
+    sparks += `<span class="spark" style="--x:${(Math.abs(x) * 100).toFixed(1)}%;--d:${(1.4 + (i % 9) * 0.22).toFixed(2)}s;--s:${(0.6 + (i % 5) * 0.25).toFixed(2)}"></span>`;
+  }
+  el.innerHTML = '<div class="rv-flash"></div><div class="rv-rays"></div>'
+    + '<div class="rv-book"><div class="rv-page rv-left"></div><div class="rv-page rv-right"></div><div class="rv-glow"></div></div>'
+    + `<div class="rv-sparks">${sparks}</div><div class="rv-title display"></div><div class="rv-sub"></div>`;
+  el.querySelector('.rv-title').textContent = title;
+  el.querySelector('.rv-sub').textContent = sub || '';
+  document.body.appendChild(el);
+  active = el;
+  sfx.boom();
+  setTimeout(() => sfx.gong(), 700);
+  setTimeout(() => sfx.reveal(), 1500);
+  setTimeout(() => sfx.toll(3), 2300);
+  const total = reduced ? 2500 : REVEAL_CINE_MS;
+  setTimeout(() => el.classList.add('out'), total - 900);
+  setTimeout(() => { el.remove(); if (active === el) active = null; }, total);
+}

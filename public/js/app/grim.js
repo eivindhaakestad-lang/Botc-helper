@@ -21,13 +21,13 @@ export function grimCircle({ seats, token, center, cls = '', overlay = null }) {
 }
 
 // Et rolle-token (sirkel) med navn under.
-export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null, hand = null, block = false, voted = false, nomTag = null, weight = null }) {
+export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null, hand = null, block = false, voted = false, nomTag = null, weight = null, extraCls = '', skull = false }) {
   const info = characterId ? charInfo(characterId) : null;
   const team = info ? info.team : 'none';
   const flipped = info && alignment && ((alignment === 'evil') !== (team === 'minion' || team === 'demon'));
   const tag = onClick ? 'button' : 'div';
   return h(tag, {
-    class: `token ${info ? teamClass(team) : 'team-none'}${dead ? ' dead' : ''}${active ? ' active' : ''}${flipped ? ' flipped' : ''}${block ? ' on-block' : ''}${voted ? ' st-voted' : ''}`,
+    class: `token ${info ? teamClass(team) : 'team-none'}${dead ? ' dead' : ''}${active ? ' active' : ''}${flipped ? ' flipped' : ''}${block ? ' on-block' : ''}${voted ? ' st-voted' : ''}${extraCls ? ' ' + extraCls : ''}`,
     onclick: onClick || undefined, type: onClick ? 'button' : undefined,
     'aria-label': [label, info ? info.name : '', dead ? '†' : ''].filter(Boolean).join(', '),
   },
@@ -41,6 +41,7 @@ export function roleToken({ characterId, shownId, label, sub, dead, active, onCl
     block ? h('span', { class: 'block-badge', 'aria-label': 'On the block' }, '💀') : null,
     voted ? h('span', { class: 'vote-badge', 'aria-label': 'Voted' }, '✋') : null),
   nomTag ? h('span', { class: 'vc-role ' + nomTag.cls }, nomTag.text) : null,
+  skull ? h('span', { class: 'rv-skull', title: '†' }, '💀') : null,
   weight ? h('span', { class: 'vc-weight' + (weight < 0 ? ' neg' : '') }, weight < 0 ? String(weight) : '×' + weight) : null,
   h('span', { class: 'token-label' }, label,
     ghost !== null ? h('span', { class: 'ghost-vote' + (ghost ? ' has' : ''), title: ghost ? 'Ghost vote' : '' }, ghost ? '●' : '○') : null),

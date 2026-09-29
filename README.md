@@ -100,6 +100,8 @@ Kopier-knappene virker fortsatt for elever uten PC.
 
 **Tips på rollekortet:** Når eleven holder inne for å se rollen, vises også et kort tips om hvordan rollen spilles (Trouble Brewing og Travellers, norsk og engelsk). Tipsene er skrevet for appen og er ikke offisielle tekster. En Drunk får tipset til rollen den tror den har.
 
+**Grim reveal-intro:** Når spillet avsluttes, slås en grimoire opp på storskjermen og hos elevene med lyn, lysstråler, gnister og klokkeslag. Deretter deles de skjulte tokenene ut én og én rundt sirkelen. I din egen grim ser du tydelig hva som er avslørt: grønn ring og «👁 avslørt», mens skjulte er dempet og stiplet (samme i tabellen). Døde spillere får en 💀 øverst på ringen i stedet for å bli grå, så rollen synes godt når den avsløres.
+
 **Slik gikk det egentlig:** Når spillet er slutt, ligger en gjennomgang under grim reveal. Den går natt for natt og dag for dag gjennom hvem som ble forgiftet, beskyttet, drept av demonen eller henrettet, hvem som overlevde et angrep, og hvem som fikk feil informasjon. Den sier aldri hvem som gjorde det: demonen og minionene avsløres ikke. Du styrer hvert steg selv med Neste/Tilbake (eller piltastene), kan hoppe til neste kapittel og kan når som helst avslutte. Før eller underveis kan du skjule punkter (avkrysning) eller skrive dem om (✎). Storskjermen viser sirkelen med merker på dem det gjelder, og elevene ser det samme på sin skjerm. Vil du avsløre mer, trykker du på en spiller i grimen din som vanlig: rollen snus da også under gjennomgangen.
 
 **Snarveier i spillet:** Enter = fullfør steg · C = kopier melding · ← → = forrige/neste steg · Ctrl+Z / Ctrl+Y = angre/gjør om · N = notat · F = fokusmodus · G = skjul/vis roller (når elever kommer bort til deg)

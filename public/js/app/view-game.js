@@ -326,6 +326,8 @@ function focusNomination(s) {
     const v = live.vote;
     return { ...v, weights: v.weights || W, live: true };
   }
+  // Live: «Ferdig – fjern fra skjermen» fjerner nominasjonen fra din grim også
+  if (liveOpen()) return null;
   if (s.executions.some((e) => e.day === s.phase.number)) return null;
   const nom = nominationsToday(s).slice(-1)[0];
   if (!nom) return null;
@@ -399,8 +401,10 @@ function grimView(s, activeIds) {
       shownId: seat.shownCharacterId && seat.shownCharacterId !== seat.characterId ? seat.shownCharacterId : null,
       label: seatName(seat),
       index: i,
-      dead: !seat.alive,
-      ghost: seat.alive ? null : seat.ghostVote,
+      // Under grim reveal: hodeskalle i stedet for grå token, så rollen synes
+      dead: !seat.alive && s.phase.type !== 'ended',
+      skull: !seat.alive && s.phase.type === 'ended',
+      ghost: seat.alive || s.phase.type === 'ended' ? null : seat.ghostVote,
       active: activeIds.includes(seat.id) || (s.phase.type === 'ended' && (s.revealed || []).includes(seat.id)) || !!(app.nomMode && app.nomMode.from === seat.id),
       hand: store.game.live && live.hands.includes(seat.id) ? live.hands.indexOf(seat.id) + 1 : null,
       block: blockId === seat.id,
@@ -412,7 +416,8 @@ function grimView(s, activeIds) {
         ...seat.reminders,
         ...(compromised(s, seat).poisoned && !seat.reminders.some((r) => r.kind === 'poisoned') ? [{ kind: 'poisoned', label: 'Poisoned' }] : []),
       ],
-      sub: s.phase.type === 'ended' ? ((s.revealed || []).includes(seat.id) ? '👁 ' + t('revealedShort') : t('hiddenShort')) : null,
+      sub: s.phase.type === 'ended' ? ((s.revealed || []).includes(seat.id) ? '👁 ' + t('revealedShort') : '🙈 ' + t('hiddenShort')) : null,
+      extraCls: s.phase.type === 'ended' ? ((s.revealed || []).includes(seat.id) ? 'st-revealed' : 'st-hidden') : '',
       onClick: s.phase.type === 'ended'
         ? () => ((s.revealed || []).includes(seat.id) ? hideSeats(s, [seat.id]) : revealSeats(s, [seat.id]))
         : () => { if (!app.nomMode) openModal(() => seatModal(seat.id)); },
@@ -1095,7 +1100,7 @@ function endMain(s) {
       dreamChampions(),
       h('div', { class: 'table-wrap' }, h('table', { class: 'table' },
         h('thead', null, h('tr', null, h('th', null, '#'), h('th', null, t('player')), h('th', null, t('character')), h('th', null, t('team')), h('th', null, ''), h('th', { class: 'right' }, ''))),
-        h('tbody', null, s.seats.map((x, i) => h('tr', { class: x.alive ? '' : 'is-dead' },
+        h('tbody', null, s.seats.map((x, i) => h('tr', { class: (x.alive ? '' : 'is-dead') + (rev.has(x.id) ? ' is-revealed' : ' is-hidden') },
           h('td', { class: 'num' }, String(i + 1)),
           h('td', { class: 'strong' }, seatName(x)),
           h('td', null, charInfo(x.characterId).name, x.shownCharacterId && x.shownCharacterId !== x.characterId ? h('span', { class: 'muted small' }, ` (${charInfo(x.shownCharacterId).name})`) : null),

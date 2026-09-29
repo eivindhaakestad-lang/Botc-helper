@@ -37,12 +37,12 @@ export function recapCircle({ seats, recap, size = 130, reveal = [] }) {
           const r = rev[seat.id];
           const fresh = r && !flipped.has(seat.id);
           if (r) flipped.add(seat.id); else flipped.delete(seat.id);
-          return h('div', { class: 'token recap-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : '') + (dead.has(seat.id) ? ' dead' : '') + (m.length ? ' marked' : '') + (isNew ? ' recap-new kind-' + newest.kind : '') },
+          return h('div', { class: 'token recap-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : '') + (dead.has(seat.id) ? ' rv-dead' : '') + (m.length ? ' marked' : '') + (isNew ? ' recap-new kind-' + newest.kind : '') },
           h('span', { class: 'token-disc' },
             r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
             r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : h('span', { class: 'token-char' }, seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
-            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
-            dead.has(seat.id) ? h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†') : null),
+            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null),
+          dead.has(seat.id) ? h('span', { class: 'rv-skull', title: '†' }, '💀') : null,
           m.length ? h('span', { class: 'recap-marks', 'aria-hidden': 'true' }, [...new Set(m.map((x) => x.icon))].join('')) : null,
           h('span', { class: 'token-label' }, seat.names.join(' + ')));
         })());

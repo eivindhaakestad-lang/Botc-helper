@@ -31,13 +31,13 @@ export function revealCircle({ seats, reveal = [], winner = null, text, size = 1
       const r = map[seat.id];
       const fresh = r && !seen.has(seat.id);
       if (r) seen.add(seat.id); else seen.delete(seat.id);
-      return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-        h('div', { class: 'token reveal-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : ' face-down') + (seat.alive ? '' : ' dead') + (me === seat.id ? ' me' : '') },
+      return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%;--i:${i}` },
+        h('div', { class: 'token reveal-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : ' face-down') + (seat.alive ? '' : ' rv-dead') + (me === seat.id ? ' me' : '') },
           h('span', { class: 'token-disc' },
             r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
             r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : h('span', { class: 'token-back', 'aria-hidden': 'true' }, '✦'),
-            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
-            seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
+            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null),
+          seat.alive ? null : h('span', { class: 'rv-skull', title: '†' }, '💀'),
           h('span', { class: 'token-label' }, seat.names.join(' + '))));
     }));
 }
