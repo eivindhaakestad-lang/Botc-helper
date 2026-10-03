@@ -1211,3 +1211,16 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 .rv-skull { position: absolute; left: 50%; top: -0.55em; transform: translateX(-50%); z-index: 3; line-height: 1;
   font-size: max(1rem, calc(var(--tok) * 0.3)); padding: 2px; border-radius: 50%; background: var(--bg-2); box-shadow: 0 0 0 2px var(--demon), 0 2px 8px rgb(0 0 0 / 0.5); }
 .rv-dead .token-label { opacity: 0.85; }
+
+/* ——— blod rundt elevskjermen når eleven er død ——— */
+.blood-frame { position: fixed; inset: 0; z-index: 35; pointer-events: none; }
+.blood-top { position: absolute; left: 0; top: 0; width: 100%; height: clamp(80px, 13vh, 140px); filter: drop-shadow(0 3px 3px rgb(60 0 0 / 0.5));
+  animation: blood-run 3.2s cubic-bezier(0.3, 0.6, 0.3, 1) both; }
+@keyframes blood-run { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+.blood-vignette { position: absolute; inset: 0; box-shadow: inset 0 0 70px 18px rgb(130 0 10 / 0.55), inset 0 0 18px 4px rgb(90 0 6 / 0.7);
+  background: linear-gradient(0deg, rgb(110 0 10 / 0.35), transparent 9%), linear-gradient(90deg, rgb(110 0 10 / 0.25), transparent 4%, transparent 96%, rgb(110 0 10 / 0.25));
+  animation: blood-fade 1.6s ease both; }
+@keyframes blood-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .blood-top, .blood-vignette { animation: none; } }
+/* Blodet renner fram under topplinja, så romkoden fortsatt synes */
+body:has(#blood-frame) .play-top { z-index: 36; }

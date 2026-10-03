@@ -96,6 +96,8 @@ Kopier-knappene virker fortsatt for elever uten PC.
 
 **Balanse (bare for deg):** Under dag- og nattpanelet ligger en liten balansemåler: en linje fra «Gode» til «Onde» og en kort vurdering. Trykk for å se detaljene: hvor mange gode og onde som lever, hvor mye av informasjonen til de gode som var riktig, om demonen er nominert, hvem som er forgiftet og omtrent hvor mange dager det er til finalen. Det er en tommelfingerregel og skjules når du trykker G.
 
+**Død spiller:** Når en elev er død (henrettet, drept om natten, skutt – uansett årsak), renner det blod ned fra toppen av elevens egen skjerm, og kantene får et mørkerødt skjær. Det kommer først når døden er kunngjort, så nattens dødsfall avsløres ikke før morgenen.
+
 **Min grim for elevene:** Under «Byen» har elevene knappen 🎭 Min grim. Den viser en sirkel som i den offisielle appen. Eleven trykker på en spiller og velger en rolle-token, markerer 😇/😈/❓ og skriver et kort notat. Alt lagres bare på elevens egen PC.
 
 **Tips på rollekortet:** Når eleven holder inne for å se rollen, vises også et kort tips om hvordan rollen spilles (Trouble Brewing og Travellers, norsk og engelsk). Tipsene er skrevet for appen og er ikke offisielle tekster. En Drunk får tipset til rollen den tror den har.

@@ -843,8 +843,50 @@ function soundToggle() {
   return h('button', { class: 'btn small ghost sound-btn', title: T('sound'), 'aria-pressed': on ? 'true' : 'false', onclick: () => { if (on) disableSound(); else { enableSound(); sfx.pop(); } render(); } }, on ? '🔊' : '🔇');
 }
 
+// ——— Blod rundt skjermen når eleven selv er død (uansett årsak) ———
+let bloodSvg = null;
+function bloodDrips() {
+  if (bloodSvg) return bloodSvg;
+  let seed = 11;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const base = 14;
+  let d = `M0 0 H1000 V${base}`;
+  let bulbs = '';
+  let x = 1000;
+  while (x > 0) {
+    const gap = 18 + rnd() * 60;
+    const w = 8 + rnd() * 16;
+    const L = rnd() < 0.35 ? 26 + rnd() * 36 : 4 + rnd() * 14;
+    const wave = base + (rnd() - 0.5) * 6;
+    d += ` Q${(x - gap / 2).toFixed(1)} ${(wave + 4).toFixed(1)} ${(x - gap).toFixed(1)} ${base}`;
+    x -= gap;
+    if (x - w <= 0) break;
+    d += ` C${(x - w * 0.15).toFixed(1)} ${base} ${(x - w * 0.3).toFixed(1)} ${(base + L).toFixed(1)} ${(x - w / 2).toFixed(1)} ${(base + L).toFixed(1)}`;
+    d += ` C${(x - w * 0.7).toFixed(1)} ${(base + L).toFixed(1)} ${(x - w * 0.85).toFixed(1)} ${base} ${(x - w).toFixed(1)} ${base}`;
+    if (L > 26) bulbs += `<ellipse cx="${(x - w / 2).toFixed(1)}" cy="${(base + L).toFixed(1)}" rx="${(w * 0.42).toFixed(1)}" ry="${(w * 0.5).toFixed(1)}"/>`;
+    x -= w;
+  }
+  d += ' V0 Z';
+  bloodSvg = `<svg class="blood-top" viewBox="0 0 1000 130" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="bl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a0208"/><stop offset="0.5" stop-color="#8e0a16"/><stop offset="1" stop-color="#b3141f"/></linearGradient></defs><g fill="url(#bl)"><path d="${d}"/>${bulbs}</g></svg>`;
+  return bloodSvg;
+}
+function syncBlood() {
+  const me = P.pub && P.me && P.pub.seats.find((x) => x.id === P.me.seatId);
+  const dead = !!(me && !me.alive && P.pub.phase.type !== 'ended');
+  let el = document.getElementById('blood-frame');
+  if (!dead) { if (el) el.remove(); return; }
+  if (el) return;
+  el = document.createElement('div');
+  el.id = 'blood-frame';
+  el.className = 'blood-frame';
+  el.setAttribute('aria-hidden', 'true');
+  el.innerHTML = bloodDrips() + '<div class="blood-vignette"></div>';
+  document.body.appendChild(el);
+}
+
 function render() {
   const root = document.getElementById('play');
+  syncBlood();
   applyTheme(P.pub && P.me ? (P.pub.recap ? (P.pub.recap.type === 'night' ? 'night' : 'day') : P.pub.phase.type) : 'none');
   let main;
   if (!P.code) main = codeEntry();
