@@ -9,11 +9,12 @@ import { voteCircle, tickVoteCircle, tieLine, patchVoteCircle } from '../live/vo
 import { sfx, enableSound, disableSound, soundEnabled, playMusic, stopMusic } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
-import { playPhaseCine, playRevealCine, REVEAL_CINE_MS, syncNightWeather } from './cine.js';
+import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
+import { syncWeather } from './weather.js';
 
 const TXT = {
-  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOn: 'Regn på', weatherOff: 'Slå på regn', weatherHelp: 'Skyer og regn om natten' },
-  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOn: 'Rain on', weatherOff: 'Turn on rain', weatherHelp: 'Clouds and rain at night' },
+  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.' },
+  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOff: 'Disable weather', settings: 'Settings', gearHelp: 'The gear hides when the mouse is still. Sound and fullscreen must be turned on here on this PC.' },
 };
 
 const S = { dying: new Map(), deadSeen: null, pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
@@ -100,7 +101,8 @@ function render() {
   const ph = p.phase;
   applyTheme(ph.type === 'ended' && p.recap ? (p.recap.type === 'night' ? 'night' : 'day') : ph.type);
   syncMusic();
-  syncNightWeather(ph.type === 'night' && weatherOn());
+  syncWeather(p.recap ? null : ph, p.weather !== false && weatherOn(), code);
+  syncGear();
   if (S.shotAnim && Date.now() - S.shotAnim.start < SHOT_FLY + 400) {
     // Målet lever til pila treffer, og kunngjøringen venter.
     p = { ...p, announcement: '', seats: p.seats.map((x) => (x.id === S.shotAnim.shot.to ? { ...x, alive: true } : x)) };
@@ -109,8 +111,7 @@ function render() {
     root.replaceChildren(h('div', { class: 'screen screen-recap' },
       h('section', { class: 'screen-grim' }, recapCircle({ seats: p.seats, recap: p.recap, size: 130, reveal: p.reveal || [] })),
       h('aside', { class: 'screen-side' },
-        recapList(p.recap, { title: '📜 ' + T('recap') }),
-        h('div', { class: 'row gap screen-tools' }, musicButton(), soundButton()))));
+        recapList(p.recap, { title: '📜 ' + T('recap') }))));
     return;
   }
   if (ph.type === 'ended') {
@@ -118,8 +119,7 @@ function render() {
     const deal = dt < REVEAL_CINE_MS + 8000;
     root.replaceChildren(h('div', { class: 'screen screen-reveal' + (deal ? ' deal' : ''), style: deal ? `--deal0:${Math.round(REVEAL_CINE_MS - 700 - dt)}ms` : undefined },
       revealCircle({ seats: p.seats, reveal: p.reveal || [], winner: p.winner, size: 150, text: { title: T('reveal'), good: T('good'), evil: T('evil') } }),
-      podium({ board: S.board && S.board.board, step: S.dreamReveal, text: { title: T('champs'), points: T('points') } }),
-      h('button', { class: 'btn ghost small fs-btn', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen'))));
+      podium({ board: S.board && S.board.board, step: S.dreamReveal, text: { title: T('champs'), points: T('points') } })));
     return;
   }
   // Dødsanimasjonen vises på den vanlige grimen (ikke mens avstemningssirkelen står)
@@ -165,12 +165,7 @@ function render() {
           h('h3', { class: 'section-title' }, '🏃 ' + T('board')),
           S.board && S.board.board.length
             ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x) => h('li', null, h('span', { class: 'grow' }, x.name), h('span', { class: 'strong' }, String(x.score)))))
-            : h('p', { class: 'muted' }, T('noScores'))) : null,
-        h('div', { class: 'row gap screen-tools' },
-          ph.type === 'night' ? weatherButton() : null,
-          musicButton(),
-          soundButton(),
-          h('button', { class: 'btn ghost small', onclick: () => { try { document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen'))))));
+            : h('p', { class: 'muted' }, T('noScores'))) : null)));
   tick(true);
 }
 
@@ -197,26 +192,54 @@ function candle() {
     h('div', { class: 'candle-plate' }));
 }
 
+// ——— innstillinger (tannhjul): usynlig for elevene, dukker opp når musa beveges ———
+let gearOpen = false;
+let idleTimer = null;
+function markActive() {
+  document.body.classList.remove('idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { if (!gearOpen) document.body.classList.add('idle'); }, 3000);
+}
+['mousemove', 'mousedown', 'keydown', 'touchstart'].forEach((ev) => window.addEventListener(ev, markActive, { passive: true }));
+markActive();
+clearTimeout(idleTimer);
+idleTimer = setTimeout(() => { if (!gearOpen) document.body.classList.add('idle'); }, 10000); // synlig de første sekundene
+
+function gearPanel() {
+  const on = soundEnabled();
+  return h('div', { class: 'gear-panel', role: 'dialog', 'aria-label': T('settings') },
+    h('h3', { class: 'section-title' }, '⚙ ' + T('settings')),
+    h('button', { class: 'btn', onclick: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch { /* */ } } }, '⛶ ' + T('fullscreen')),
+    h('button', { class: 'btn' + (on ? '' : ' primary'), onclick: () => { if (on) disableSound(); else { enableSound(); sfx.pop(); } syncGear(true); } }, on ? '🔊 ' + T('soundOff') : '🔇 ' + T('soundOn')),
+    h('button', { class: 'btn', title: T('musicHelp'), onclick: () => { musicWanted = !musicWanted; syncMusic(); syncGear(true); } }, musicWanted ? '🎵 ' + T('musicOn') : '🎵 ' + T('musicOff')),
+    h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !weatherOn(), onchange: (e) => { try { localStorage.setItem('botc-screen-weather', e.target.checked ? 'off' : 'on'); } catch { /* */ } render(); syncGear(true); } }), T('weatherOff')),
+    h('p', { class: 'muted small' }, T('gearHelp')));
+}
+function syncGear(rebuild = false) {
+  let g = document.getElementById('screen-gear');
+  if (!g) {
+    g = h('div', { id: 'screen-gear', class: 'screen-gear' },
+      h('button', { class: 'gear-btn', 'aria-label': T('settings'), title: T('settings'), onclick: () => { gearOpen = !gearOpen; syncGear(true); markActive(); } }, '⚙'));
+    document.body.appendChild(g);
+    rebuild = true;
+  }
+  if (!rebuild) return;
+  const old = g.querySelector('.gear-panel');
+  if (old) old.remove();
+  g.classList.toggle('open', gearOpen);
+  if (gearOpen) g.appendChild(gearPanel());
+}
+document.addEventListener('click', (e) => { if (gearOpen && !e.target.closest('#screen-gear')) { gearOpen = false; syncGear(true); } });
+
 // Stemningsmusikk om natten – egen knapp, uavhengig av lydeffektene
 let musicWanted = false;
 function syncMusic() {
   if (musicWanted && S.pub && S.pub.phase.type === 'night') playMusic(); else stopMusic();
 }
-function musicButton() {
-  return h('button', { class: 'btn small sound-btn' + (musicWanted ? ' ghost' : ''), onclick: () => { musicWanted = !musicWanted; syncMusic(); render(); }, title: T('musicHelp') }, musicWanted ? '🎵 ' + T('musicOn') : '🎵 ' + T('musicOff'));
-}
 
 // Skyer og regn om natten – kan slås av hvis projektor-PC-en er treg (huskes på denne maskinen)
 function weatherOn() { try { return localStorage.getItem('botc-screen-weather') !== 'off'; } catch { return true; } }
-function weatherButton() {
-  const on = weatherOn();
-  return h('button', { class: 'btn small sound-btn' + (on ? ' ghost' : ''), title: T('weatherHelp'), onclick: () => { try { localStorage.setItem('botc-screen-weather', on ? 'off' : 'on'); } catch { /* */ } render(); } }, on ? '🌧 ' + T('weatherOn') : '🌧 ' + T('weatherOff'));
-}
 
-function soundButton() {
-  const on = soundEnabled();
-  return h('button', { class: 'btn small sound-btn' + (on ? ' ghost' : ' primary'), onclick: () => { if (on) disableSound(); else { enableSound(); sfx.pop(); } render(); } }, on ? '🔊 ' + T('soundOff') : '🔇 ' + T('soundOn'));
-}
 
 // ——— timer ———
 const fmt = (x) => `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}`;

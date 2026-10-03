@@ -53,6 +53,7 @@ function cleanPublic(p) {
     } : null,
     dawnPending: !!p.dawnPending,
     nomProps: p.nomProps !== false,
+    weather: p.weather !== false,
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
