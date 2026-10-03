@@ -1224,3 +1224,19 @@ html.theme-anim body *, html.theme-anim body *::before, html.theme-anim body *::
 @media (prefers-reduced-motion: reduce) { .blood-top, .blood-vignette { animation: none; } }
 /* Blodet renner fram under topplinja, så romkoden fortsatt synes */
 body:has(#blood-frame) .play-top { z-index: 36; }
+
+/* ——— nattvær på storskjermen: skyer og regn ——— */
+.night-weather { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; animation: blood-fade 2s ease both; }
+.night-weather.leaving { animation: cine-out 1.5s ease forwards; }
+.screen { position: relative; z-index: 1; }
+.cloud { position: absolute; left: 0; aspect-ratio: 3 / 1; opacity: var(--op); will-change: transform;
+  background:
+    radial-gradient(closest-side, rgb(120 130 165 / 0.9), transparent) 8% 60% / 34% 70% no-repeat,
+    radial-gradient(closest-side, rgb(130 140 175 / 0.95), transparent) 30% 40% / 40% 90% no-repeat,
+    radial-gradient(closest-side, rgb(110 120 155 / 0.9), transparent) 55% 55% / 42% 80% no-repeat,
+    radial-gradient(closest-side, rgb(125 135 170 / 0.85), transparent) 78% 45% / 36% 75% no-repeat,
+    radial-gradient(closest-side, rgb(100 110 145 / 0.8), transparent) 94% 62% / 26% 55% no-repeat;
+  animation: cloud-drift var(--dur) linear var(--delay) infinite; }
+@keyframes cloud-drift { from { transform: translateX(-70vw); } to { transform: translateX(110vw); } }
+.rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .cloud { animation: none; transform: translateX(20vw); } .rain-canvas { display: none; } }
