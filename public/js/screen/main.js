@@ -93,12 +93,12 @@ function seatToken(seat, i, n) {
   const look = seatLook(seat.id);
   const fx = dy && look ? look.deathfx || 'default' : null;
   const shotCls = sa ? (sa.shot.from === seat.id ? ' shooter' : sa.shot.to === seat.id ? (now - sa.start >= SHOT_FLY ? (sa.shot.hit ? ' shot-hit' : ' shot-miss') : ' shot-target') : '') : '';
-  // Sauen: sover om natten, skvetter når noen dør, svetter når den er nominert, løfter hoven når den stemmer, spøkelse når den er død
+  // Sauen: sover om natten, skvetter når noen dør, svetter når den er nominert, spøkelse når den er død (✋/⚖️ som merke oppå)
   let sheep = null;
   if (look) {
     sheep = dy
       ? [seatSheep(seat.id, 'token-sheep fx-target'), seatSheep(seat.id, 'token-sheep fx-ghost', { ghost: true }), seatFrame(seat.id), fx !== 'default' ? deathFxEl(fx) : null]
-      : sheepDisc(seat, { night: S.pub.phase.type === 'night', mood: seat.alive && now < (S.surpriseUntil || 0) ? 'surprised' : nominee ? 'nervous' : '', hoof: voted });
+      : [sheepDisc(seat, { night: S.pub.phase.type === 'night', mood: seat.alive && now < (S.surpriseUntil || 0) ? 'surprised' : nominee ? 'nervous' : '' }), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : nominee ? '⚖️' : '')];
   }
   return h('div', { class: 'grim-slot', 'data-seat': seat.id, style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
     h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + (look ? ' has-sheep' : '') + shotCls + dying + (fx ? ' fx-' + fx : ''), style: dy ? `--dt:${Math.min(0, dy.start - now)}ms` : undefined },

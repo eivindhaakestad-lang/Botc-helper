@@ -145,6 +145,14 @@ export const wallet = {
     if (add) { d.coins += add; d.earned += add; write(d); }
     return { before, after: d.coins, add };
   },
+  // Juksekoden (se main.js): gir mynter uten taket på 5000 som vanlig opptjening har
+  grant(n) {
+    const add = Math.max(0, Math.floor(Number(n) || 0));
+    const d = read();
+    const before = d.coins;
+    if (add) { d.coins += add; d.earned += add; write(d); }
+    return { before, after: d.coins, add };
+  },
   // Bonus én gang per spill (romkode) og type
   reward(code, kind, n) {
     const d = read();

@@ -1300,7 +1300,6 @@ body.idle { cursor: none; }
 .vc-mark:empty { display: none; }
 .trav-badge { position: absolute; left: -8%; top: -6%; font-size: max(0.9rem, calc(var(--tok) * 0.26)); line-height: 1; z-index: 3; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.6)); }
 .pick-check { position: absolute; right: -8%; top: -8%; width: 38%; height: 38%; border-radius: 50%; background: var(--brass-2); color: var(--brass-ink); display: grid; place-items: center; font-weight: 900; font-size: max(0.9rem, calc(var(--tok) * 0.24)); z-index: 3; box-shadow: 0 2px 6px rgb(0 0 0 / 0.4); }
-.token.dead .token-sheep { opacity: 0.9; }
 .podium-sheep { width: 72px; height: 72px; margin: 0 auto -4px; display: block; filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.4)); }
 .place-1 .podium-sheep { width: 96px; height: 96px; }
 
@@ -1411,16 +1410,19 @@ body.idle { cursor: none; }
 .grim .vc-role, .grim .vc-weight, .grim .trav-tag { position: relative; z-index: 6; }
 
 /* ——— spøkelsessauer (døde) og lykta for ghost vote ——— */
-.token.dead .token-disc:has(> .token-sheep) { filter: none; border-style: dashed; border-color: color-mix(in srgb, #9fd3ff 55%, var(--line-2)); background: radial-gradient(circle at 40% 30%, #34405f, #151b2e 72%); }
-.token-sheep.ghost { opacity: 0.8; filter: saturate(0.45) brightness(1.12) drop-shadow(0 0 5px rgb(170 220 255 / 0.85)); animation: ghost-float 3.4s ease-in-out infinite; }
+.token.dead .token-disc:has(> .token-sheep) { filter: none; border-style: dashed; border-color: rgb(159 211 255 / 0.4); box-shadow: none; background: radial-gradient(circle at 40% 30%, rgb(52 64 95 / 0.6), rgb(21 27 46 / 0.6) 72%); }
+/* Døde sauer er nesten usynlige: bare et blekt, blåhvitt omriss som svever */
+.token-sheep.ghost { opacity: 0.3; filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6) brightness(1.1) drop-shadow(0 0 3px rgb(150 200 255 / 0.5)); animation: ghost-float 3.4s ease-in-out infinite; }
+.token.dead .sheep-frame { opacity: 0.22; filter: grayscale(1); }
 @keyframes ghost-float { 0%, 100% { transform: var(--base) translateY(2%); } 50% { transform: var(--base) translateY(-7%); } }
-.mini-sheep.ghost { opacity: 0.75; filter: saturate(0.45) brightness(1.1) drop-shadow(0 0 3px rgb(170 220 255 / 0.9)); }
+.mini-sheep.ghost { opacity: 0.35; filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6) brightness(1.1); }
 .ghost-lantern { position: absolute; left: -17%; bottom: -12%; width: 34%; height: 47%; z-index: 4; pointer-events: none; transform-origin: 50% 4%; }
 .ghost-lantern img { width: 100%; height: 100%; display: block; }
 .ghost-lantern.lit { filter: drop-shadow(0 0 6px rgb(255 200 80 / 0.95)); animation: lantern-sway 3s ease-in-out infinite; }
 .ghost-lantern.out { opacity: 0.85; filter: grayscale(0.4); }
 @keyframes lantern-sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
-.token.dead.voted .token-sheep.ghost { opacity: 1; filter: drop-shadow(0 0 6px rgb(255 255 255 / 0.85)); }
+/* Et spøkelse som bruker ghost vote-en synes litt bedre mens det stemmer, men er fortsatt et spøkelse */
+.token.dead.voted .token-sheep.ghost { opacity: 0.7; filter: grayscale(0.5) brightness(1.2) drop-shadow(0 0 6px rgb(255 255 255 / 0.9)); }
 
 /* ——— sauenes humør: sover, skvetter, svetter, løfter hoven ——— */
 .token-sheep.mood-sleep { transform-origin: 50% 85%; animation: sheep-breathe 3.6s ease-in-out infinite; }
@@ -1429,13 +1431,10 @@ body.idle { cursor: none; }
 @keyframes sheep-startle { 0% { transform: var(--base); } 35% { transform: var(--base) translateY(-15%) scale(1.12); } 70% { transform: var(--base) translateY(2%) scale(0.97); } 100% { transform: var(--base); } }
 .token-sheep.mood-nervous { animation: sheep-tremble 0.28s linear infinite; }
 @keyframes sheep-tremble { 0%, 100% { transform: var(--base); } 25% { transform: var(--base) translateX(-2.4%) rotate(-1.6deg); } 75% { transform: var(--base) translateX(2.4%) rotate(1.6deg); } }
-.token-sheep.hoof { animation: hoof-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.6) both; }
-.token-sheep.mood-nervous.hoof { animation: hoof-pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1.6) both, sheep-tremble 0.28s 0.5s linear infinite; }
-@keyframes hoof-pop { 0% { transform: var(--base) scale(0.86); } 55% { transform: var(--base) translateY(-9%) scale(1.14); } 100% { transform: var(--base); } }
-/* Stemmer: grønn, lysende sirkel rundt sauen som løfter hoven */
+/* Stemmer: grønn, lysende sirkel og en stor ✋ som spretter fram */
 .vc-token.voted.has-sheep .token-disc { border-color: #5ef08e; background: radial-gradient(circle at 35% 30%, #2f9a5f, #12452a 72%); box-shadow: 0 0 0 5px rgb(94 240 142 / 0.55), 0 0 32px rgb(94 240 142 / 0.6); }
 .vc-token.voted.has-sheep .token-label { box-shadow: 0 0 0 2px #5ef08e, 0 2px 6px rgb(0 0 0 / 0.45); }
-@media (prefers-reduced-motion: reduce) { .token-sheep.ghost, .token-sheep.mood-sleep, .token-sheep.mood-nervous, .token-sheep.hoof, .token-sheep.mood-surprised, .ghost-lantern.lit { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .token-sheep.ghost, .token-sheep.mood-sleep, .token-sheep.mood-nervous, .token-sheep.mood-surprised, .ghost-lantern.lit { animation: none; } }
 
 /* ——— grim reveal: vinnerne hopper og jubler, taperne henger med hodet en stund ——— */
 .token.cheer .token-disc { animation: cheer-jump 0.95s ease-in-out infinite; animation-delay: calc(var(--i, 0) * -0.17s); box-shadow: 0 0 0 3px var(--brass-2), 0 0 26px color-mix(in srgb, var(--brass-2) 60%, transparent); }
@@ -1450,7 +1449,7 @@ body.idle { cursor: none; }
 /* ——— dødsanimasjoner (storskjermen og forhåndsvisning i Saueboden) ——— */
 .grim-slot:has(.dying) { z-index: 12; }
 .dying .fx-ghost { opacity: 0; animation: fx-ghost-in 3.2s var(--dt, 0ms) ease both !important; }
-@keyframes fx-ghost-in { 0%, 68% { opacity: 0; transform: var(--base) translateY(10%) scale(0.75); } 100% { opacity: 0.8; transform: var(--base); } }
+@keyframes fx-ghost-in { 0%, 68% { opacity: 0; transform: var(--base) translateY(10%) scale(0.75); } 100% { opacity: 0.3; transform: var(--base); } }
 .screen-token.dying .token-disc:has(> .fx-target) { animation: death-shake 0.9s var(--dt, 0ms) ease-in-out both; }
 .screen-token.dying:not(.fx-default) .token-disc:has(> .fx-target) { animation: none; }
 .screen-token.dying:not(.fx-default) .token-disc::after { display: none; }
@@ -1536,10 +1535,9 @@ body.idle { cursor: none; }
 .sell-btn { border-color: var(--warn); }
 .sell-btn.confirm { background: var(--warn); color: #1d1300; font-weight: 800; }
 .shop-cat-help { margin: -4px 0 0; }
-/* Hoven i været: grønt merke nede til høyre (der ✋ sto), vinker fram og tilbake */
-.hoof-badge { position: absolute; right: -15%; bottom: -10%; width: 46%; height: 46%; z-index: 5; pointer-events: none; filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.5)); animation: badge-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.6) both; }
-.hoof-badge img { width: 100%; height: 100%; display: block; transform-origin: 40% 85%; animation: hoof-wave 0.8s ease-in-out infinite; }
-@keyframes badge-pop { from { transform: scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
-@keyframes hoof-wave { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
-@media (prefers-reduced-motion: reduce) { .hoof-badge, .hoof-badge img { animation: none; } }
-.my-sheep-img.ghost { opacity: 0.8; filter: saturate(0.45) brightness(1.12) drop-shadow(0 0 5px rgb(170 220 255 / 0.85)); }
+/* Hånda når en elev med sau stemmer: større og spretter fram */
+.vc-token.has-sheep .vc-mark, .screen-token.has-sheep .vc-mark { font-size: max(1.2rem, calc(var(--tok) * 0.4)); right: -14%; bottom: -10%; z-index: 5; filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.9)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.6)); }
+.vc-token.voted .vc-mark { animation: mark-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.6) both; }
+@keyframes mark-pop { from { transform: scale(0.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .vc-token.voted .vc-mark { animation: none; } }
+.my-sheep-img.ghost { opacity: 0.35; filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6) brightness(1.1) drop-shadow(0 0 3px rgb(150 200 255 / 0.5)); }

@@ -444,14 +444,12 @@ test('sauekatalogen: ukjente ting renses bort, og alle tegninger lager gyldig SV
       }
     }
   }
-  // Tilstandene grimen gir sauen (sover, spøkelse, hov opp osv.) med alle ting på
+  // Tilstandene grimen gir sauen (sover, spøkelse, jubel osv.) med alle ting på
   const full = { color: 'galaxy', face: 'laser', hair: 'mohawk', hat: 'viking', shoes: 'skates', cape: 'vampire', wings: 'dragon', trail: 'fire', pet: 'owl', border: 'fire', deathfx: 'ufo' };
   for (const mood of ['', 'sleep', 'surprised', 'nervous', 'cheer', 'sad']) {
     for (const ghost of [false, true]) {
-      for (const hoof of [false, true]) {
-        const svg = sheepSvg(full, { mood, ghost, hoof });
-        assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !/undefined|NaN/.test(svg), `${mood}/${ghost}/${hoof}`);
-      }
+      const svg = sheepSvg(full, { mood, ghost });
+      assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !/undefined|NaN/.test(svg), `${mood}/${ghost}`);
     }
   }
 });

@@ -22,7 +22,9 @@ export function swatchBg(c) {
   return c.wool;
 }
 
-const coinTxt = (n) => `🪙 ${n}`;
+// Mynter med mellomrom som tusenskille (100 000)
+export const fmtCoins = (n) => (Math.floor(Number(n) || 0)).toLocaleString('nb-NO');
+const coinTxt = (n) => `🪙 ${fmtCoins(n)}`;
 
 // ——— lag sauen din ———
 function creatorStep(ctx, d) {
@@ -133,7 +135,7 @@ function priceTag(T, cat, it, owns, on) {
   if (on) return h('span', { class: 'shop-item-price on' }, '✓ ' + T('wearing'));
   if (owns) return h('span', { class: 'shop-item-price owned' }, it.price ? T('owned') : T('free'));
   const price = wallet.priceOf(cat, it.id);
-  return h('span', { class: 'shop-item-price' }, price < it.price ? h('span', { class: 'old-price' }, String(it.price)) : null, coinTxt(price));
+  return h('span', { class: 'shop-item-price' }, price < it.price ? h('span', { class: 'old-price' }, fmtCoins(it.price)) : null, coinTxt(price));
 }
 
 // Bildet av en ting i rutenettet (sauen med tingen på; rammer i en sirkel; dødsanimasjoner med et ikon)
@@ -245,7 +247,7 @@ function confetti(fromEl) {
 
 export function setChip(v) {
   const el = document.querySelector('#wallet-chip .wallet-num');
-  if (el) el.textContent = String(v);
+  if (el) el.textContent = fmtCoins(v);
 }
 
 // Poengene «renner» inn i lommeboka: +23 🪙 og mynter som flyr til mynt-telleren øverst.
@@ -264,7 +266,7 @@ export function coinBurst(res, fromEl, label = '') {
   document.body.appendChild(layer);
   const big = document.createElement('div');
   big.className = 'coin-fx-big';
-  big.innerHTML = `<span>+${add} 🪙</span>${label ? `<small>${label.replace(/[<>&]/g, '')}</small>` : ''}`;
+  big.innerHTML = `<span>+${fmtCoins(add)} 🪙</span>${label ? `<small>${label.replace(/[<>&]/g, '')}</small>` : ''}`;
   big.style.left = cx + 'px';
   big.style.top = cy + 'px';
   layer.appendChild(big);

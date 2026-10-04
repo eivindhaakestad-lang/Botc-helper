@@ -8,7 +8,7 @@
 //
 // Sauen kan også ha en tilstand som grimen bestemmer (ikke noe eleven velger):
 //   mood: 'sleep' (natt), 'surprised' (noen døde), 'nervous' (nominert), 'cheer' (vant), 'sad' (tapte)
-//   ghost: død (spøkelseshale i stedet for bein), hoof: løfter hoven (stemmer)
+//   ghost: død (spøkelseshale i stedet for bein)
 
 import { h } from '../app/dom.js';
 
@@ -532,8 +532,8 @@ function wingsBack(wg) {
   return `<g transform="translate(42 92)"><g>${flap(0)}${shape}</g></g><g transform="translate(78 92) scale(-1 1)"><g>${flap(0)}${shape}</g></g>`;
 }
 
-// ——— løftet hov (stemmer) – og begge hover i været når laget vinner ———
-// Tegnes foran hodet med hvit kant, så den synes godt på storskjermen.
+// ——— begge hovene i været når laget vinner (grim reveal) ———
+// Tegnes foran hodet med hvit kant, så de synes godt på storskjermen.
 function raisedLeg(c, sh, mirror = false, delay = 0) {
   const hoofCol = sh && sh.canvas ? sh.canvas.c : INK;
   const band = sh && sh.canvas ? sh.canvas.s : null;
@@ -613,11 +613,11 @@ function svgDoc(vb, defs, body) {
 
 // view: 'head' = hele sauen forfra (hode, kropp, sko, kjæledyr, spor) – brukes i sirkler og butikk
 //       'body' = løpende sau fra siden uten bein (drømmespillet tegner beina, kappa og vingene selv)
-// mood/ghost/hoof: tilstanden grimen gir sauen (se toppen av fila)
-export function sheepSvg(lookIn, { view = 'head', champion = false, mood = '', ghost = false, hoof = false } = {}) {
+// mood/ghost: tilstanden grimen gir sauen (se toppen av fila)
+export function sheepSvg(lookIn, { view = 'head', champion = false, mood = '', ghost = false } = {}) {
   const look = normLook(lookIn);
   const c = item('color', look.color);
-  const st = { mood, ghost, hoof };
+  const st = { mood, ghost };
   const cp = look.cape ? item('cape', look.cape) : null;
   const wg = look.wings ? item('wings', look.wings) : null;
   const defs = woolDefs(c) + GOLD_DEF + (c.price ? SWEEP_DEF : '') + (c.glow ? GLOW_DEF : '') + capeDefs(cp) + (wg ? WING_DEFS : '');
@@ -637,8 +637,8 @@ export function sheepSvg(lookIn, { view = 'head', champion = false, mood = '', g
     + bodyAndLegs(look, c, st)
     + headParts(look, c, champion, st)
     + (pt ? `<g transform="translate(74 70) scale(0.48)">${pt.draw()}</g>` : '')
-    // Hoven (eller begge når laget vinner) tegnes helt øverst så den aldri forsvinner bak noe
-    + (mood === 'cheer' ? raisedLeg(c, sh, true, 0.37) + raisedLeg(c, sh, false, 0) : hoof ? raisedLeg(c, sh) : '');
+    // Jubel: begge hovene i været, tegnet helt øverst så de aldri forsvinner bak noe
+    + (mood === 'cheer' ? raisedLeg(c, sh, true, 0.37) + raisedLeg(c, sh, false, 0) : '');
   const body = (tr ? trailDecor(tr) : '') + (ghost ? `<g transform="translate(0 -6)">${sheep}</g>` : sheep);
   return svgDoc('0 0 120 120', defs, body);
 }
@@ -689,7 +689,7 @@ export function svgUrl(svg) {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 export function sheepUrl(look, opts = {}) {
-  const key = [opts.view || 'head', opts.champion ? 1 : 0, opts.mood || '', opts.ghost ? 1 : 0, opts.hoof ? 1 : 0, JSON.stringify(normLook(look))].join('|');
+  const key = [opts.view || 'head', opts.champion ? 1 : 0, opts.mood || '', opts.ghost ? 1 : 0, JSON.stringify(normLook(look))].join('|');
   let u = urlCache.get(key);
   if (!u) {
     u = svgUrl(sheepSvg(look, opts));
@@ -707,22 +707,10 @@ export function capeSideUrl(id) { return cachedUrl('capeside|' + id, () => capeS
 export function wingSideUrl(id) { return cachedUrl('wingside|' + id, () => wingSideSvg(id)); }
 export function lanternUrl(lit) { return cachedUrl('lantern|' + (lit ? 1 : 0), () => lanternSvg(lit)); }
 
-// st: { mood, ghost, hoof } – tilstanden grimen gir sauen. Klassene brukes til bevegelse i CSS.
-export function sheepImg(look, { view = 'head', champion = false, cls = 'sheep-img', title = '', mood = '', ghost = false, hoof = false } = {}) {
-  const extra = (mood ? ' mood-' + mood : '') + (ghost ? ' ghost' : '') + (hoof ? ' hoof' : '');
-  return h('img', { class: cls + extra, src: sheepUrl(look, { view, champion, mood, ghost, hoof }), alt: '', title: title || undefined, draggable: 'false', decoding: 'async' });
-}
-
-// Merke for «stemmer»: en hov i været i en grønn sirkel (der det før sto ✋)
-function hoofBadgeSvg() {
-  return svgDoc('0 0 44 44', '', '<circle cx="22" cy="22" r="19.6" fill="#22b35e" stroke="#fff" stroke-width="2.8"/>'
-    + '<path d="M19.6 37 L14.4 35.4 L22.6 13.6 L27.4 15.2 Z" fill="#f4dccd" stroke="#2b2533" stroke-width="1.4" stroke-linejoin="round"/>'
-    + '<g fill="#efece6" stroke="#2b2533" stroke-width="1.3"><circle cx="16" cy="34" r="5.4"/><circle cx="18" cy="28.6" r="4.6"/></g><circle cx="17" cy="31.4" r="4" fill="#efece6"/>'
-    + '<g transform="translate(25.6 12.4) rotate(18)"><path d="M-6.4 2.4 L-6.4 -3.8 Q-6.4 -8 -2.2 -8 L2.2 -8 Q6.4 -8 6.4 -3.8 L6.4 2.4 Z" fill="#2b2533" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M0 -7.4 L0 -1.6" stroke="#fff" stroke-width="1.2" opacity="0.8"/></g>'
-    + '<path d="M33 6.4 q4 4 2.8 9.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M33.6 18.4 q3 1 4.4 4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>');
-}
-export function hoofBadge() {
-  return h('span', { class: 'hoof-badge', 'aria-hidden': 'true' }, h('img', { src: cachedUrl('hoofbadge', hoofBadgeSvg), alt: '', draggable: 'false' }));
+// st: { mood, ghost } – tilstanden grimen gir sauen. Klassene brukes til bevegelse i CSS.
+export function sheepImg(look, { view = 'head', champion = false, cls = 'sheep-img', title = '', mood = '', ghost = false } = {}) {
+  const extra = (mood ? ' mood-' + mood : '') + (ghost ? ' ghost' : '');
+  return h('img', { class: cls + extra, src: sheepUrl(look, { view, champion, mood, ghost }), alt: '', title: title || undefined, draggable: 'false', decoding: 'async' });
 }
 
 // Lykta ved siden av et spøkelse (tent = har ghost vote igjen)
@@ -739,7 +727,7 @@ export function setChampionFromBoard(board) {
 }
 export function championSeat() { return reg.champion; }
 export function seatLook(id) { return reg.looks[id] || null; }
-// Sauen til en plass, eller null hvis eleven ikke har laget sau ennå. st = { mood, ghost, hoof }
+// Sauen til en plass, eller null hvis eleven ikke har laget sau ennå. st = { mood, ghost }
 export function seatSheep(id, cls = 'token-sheep', st = {}) {
   const l = reg.looks[id];
   if (!l) return null;
@@ -751,11 +739,11 @@ export function seatSheepUrl(id, st = {}) {
 }
 // Innholdet i en sirkel med sau: sauen, rammen og (for døde) lykta. Null hvis plassen ikke har sau.
 // night: sauene sover (spøkelser sover ikke). lantern: vis lykta (der ghost vote betyr noe).
-export function sheepDisc(seat, { night = false, mood = '', hoof = false, lantern = true, cls = 'token-sheep' } = {}) {
+export function sheepDisc(seat, { night = false, mood = '', lantern = true, cls = 'token-sheep' } = {}) {
   if (!reg.looks[seat.id]) return null;
   const ghost = seat.alive === false;
   const m = mood || (night && !ghost ? 'sleep' : '');
-  return [seatSheep(seat.id, cls, { mood: m, ghost, hoof }), seatFrame(seat.id), ghost && lantern ? ghostLantern(!!seat.ghostVote) : null, hoof ? hoofBadge() : null];
+  return [seatSheep(seat.id, cls, { mood: m, ghost }), seatFrame(seat.id), ghost && lantern ? ghostLantern(!!seat.ghostVote) : null];
 }
 
 export function frameUrl(id) {

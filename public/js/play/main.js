@@ -14,7 +14,7 @@ import { recapCircle, recapList } from '../live/recapview.js';
 import { playRevealCine, REVEAL_CINE_MS } from '../screen/cine.js';
 import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, sheepDisc, sheepImg, frameEl } from '../live/sheep.js';
 import { wallet } from './wallet.js';
-import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe } from './wardrobe.js';
+import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe, fmtCoins } from './wardrobe.js';
 
 const TXT = {
   no: {
@@ -41,7 +41,7 @@ const TXT = {
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
     newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.', recap: 'Slik gikk det egentlig', tip: 'Tips:', myGrim: 'Min grim', whoWas: 'Hvem var hvem?', makeSheep: 'Lag sauen din', editSheep: 'Endre sauen', makeSheepHelp: 'Bytt ansikt med pilene og velg farge under. Sauen din vises i sirkelen for alle.', prevFace: 'Forrige ansikt', nextFace: 'Neste ansikt', face: 'Ansikt', color: 'Farge', random: 'Tilfeldig', done: 'Ferdig', moreInShop: 'Flere farger, ansikter, hatter, sko, spor og kjæledyr finner du i Saueboden.', shop: 'Saueboden', shopClosedDay: 'Saueboden er stengt på dagen – nå er det tid for å diskutere! Den åpner igjen når natten kommer.', yourCoins: 'Dine mynter', shopHelp: 'Trykk på en ting for å prøve den på sauen din. Mynter tjener du i drømmespillet: ett hinder = én mynt.', takeOff: 'Ta av', wearing: 'På', wear: 'Ta på', missing: 'Mangler {n}', buyFor: 'Kjøp – {n}', owned: 'Eid', free: 'Gratis', tampered: 'Lommeboka ble endret utenfor spillet, så myntene ble nullstilt.', mySheep: 'Sauen din', youLead: '👑 Du leder drømmetoppen – du har mesterkrona!', shopClosedShort: 'Saueboden åpner i natt', bonusJoin: 'Takk for at du var med!', bonusWin: 'Laget ditt vant!', shRound: 'Drømmerunden din', shopClosing: 'Saueboden stenger – nå er det dag!', coinsWord: 'mynter', backHome: 'Tilbake', close: 'Lukk', myGrimHelp: 'Trykk på en spiller for å notere', markGood: 'God', markEvil: 'Ond', markUnsure: 'Usikker',
-    pu_magnet: '🧲 Magnet! Myntene flyr til deg i 15 sekunder', newRecord: '🎆 NY REKORD! 🎆', recordShort: 'Ny rekord!', coinsHud: 'Mynter', dealTitle: 'Dagens tilbud', dealSee: 'Se tilbudet', dealBought: 'Kjøpt – nytt tilbud i morgen', dealHelp: 'Ett nytt tilbud hver dag', sell: 'Bytt inn', sellFor: 'Bytt inn (+{n})', sellSure: 'Sikker? Trykk igjen (+{n})', sold: 'Byttet inn! +{n} mynter', fxTry: '▶ Se igjen', fxHelp: 'Slik dør sauen din på storskjermen.',
+    pu_magnet: '🧲 Magnet! Myntene flyr til deg i 15 sekunder', newRecord: '🎆 NY REKORD! 🎆', recordShort: 'Ny rekord!', coinsHud: 'Mynter', dealTitle: 'Dagens tilbud', dealSee: 'Se tilbudet', dealBought: 'Kjøpt – nytt tilbud i morgen', dealHelp: 'Ett nytt tilbud hver dag', sell: 'Bytt inn', sellFor: 'Bytt inn (+{n})', sellSure: 'Sikker? Trykk igjen (+{n})', sold: 'Byttet inn! +{n} mynter', fxTry: '▶ Se igjen', fxHelp: 'Slik dør sauen din på storskjermen.', cheatOk: 'Juksekode!',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -67,7 +67,7 @@ const TXT = {
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
     newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.', recap: 'What really happened', tip: 'Tip:', myGrim: 'My grim', whoWas: 'Who was who?', makeSheep: 'Make your sheep', editSheep: 'Change sheep', makeSheepHelp: 'Switch faces with the arrows and pick a colour below. Your sheep is shown in the circle for everyone.', prevFace: 'Previous face', nextFace: 'Next face', face: 'Face', color: 'Colour', random: 'Random', done: 'Done', moreInShop: 'More colours, faces, hats, shoes, trails and pets in the Sheep Shop.', shop: 'Sheep Shop', shopClosedDay: 'The Sheep Shop is closed during the day – time to discuss! It opens again when night falls.', yourCoins: 'Your coins', shopHelp: 'Tap something to try it on your sheep. You earn coins in the dream game: one obstacle = one coin.', takeOff: 'Take off', wearing: 'On', wear: 'Wear', missing: 'Need {n} more', buyFor: 'Buy – {n}', owned: 'Owned', free: 'Free', tampered: 'Your wallet was changed outside the game, so your coins were reset.', mySheep: 'Your sheep', youLead: '👑 You lead the dream board – you wear the champion crown!', shopClosedShort: 'The Sheep Shop opens tonight', bonusJoin: 'Thanks for playing!', bonusWin: 'Your team won!', shRound: 'Your dream run', shopClosing: 'The Sheep Shop closes – it is daytime!', coinsWord: 'coins', backHome: 'Back', close: 'Close', myGrimHelp: 'Tap a player to take notes', markGood: 'Good', markEvil: 'Evil', markUnsure: 'Unsure',
-    pu_magnet: '🧲 Magnet! Coins fly to you for 15 seconds', newRecord: '🎆 NEW RECORD! 🎆', recordShort: 'New record!', coinsHud: 'Coins', dealTitle: 'Deal of the day', dealSee: 'See the deal', dealBought: 'Bought – new deal tomorrow', dealHelp: 'A new deal every day', sell: 'Trade in', sellFor: 'Trade in (+{n})', sellSure: 'Sure? Tap again (+{n})', sold: 'Traded in! +{n} coins', fxTry: '▶ Watch again', fxHelp: 'This is how your sheep dies on the big screen.',
+    pu_magnet: '🧲 Magnet! Coins fly to you for 15 seconds', newRecord: '🎆 NEW RECORD! 🎆', recordShort: 'New record!', coinsHud: 'Coins', dealTitle: 'Deal of the day', dealSee: 'See the deal', dealBought: 'Bought – new deal tomorrow', dealHelp: 'A new deal every day', sell: 'Trade in', sellFor: 'Trade in (+{n})', sellSure: 'Sure? Tap again (+{n})', sold: 'Traded in! +{n} coins', fxTry: '▶ Watch again', fxHelp: 'This is how your sheep dies on the big screen.', cheatOk: 'Cheat code!',
   },
 };
 
@@ -286,7 +286,7 @@ function payEndBonuses() {
   if (Array.isArray(P.pub.winners) && P.pub.winners.includes(P.me.seatId)) queueBurst(wallet.reward(P.code, 'win', 100), T('bonusWin'));
 }
 function walletChip() {
-  return h('button', { id: 'wallet-chip', class: 'wallet-chip', title: T('shop'), 'aria-label': `${wallet.coins} ${T('coinsWord')}`, onclick: openShop }, '🪙 ', h('span', { class: 'wallet-num' }, String(wallet.coins)));
+  return h('button', { id: 'wallet-chip', class: 'wallet-chip', title: T('shop'), 'aria-label': `${fmtCoins(wallet.coins)} ${T('coinsWord')}`, onclick: openShop }, '🪙 ', h('span', { class: 'wallet-num' }, fmtCoins(wallet.coins)));
 }
 function mySheepRow() {
   const open = shopOpen();
@@ -298,7 +298,7 @@ function mySheepRow() {
     h('div', { class: 'stack tight grow' },
       h('strong', null, T('mySheep')),
       champ ? h('span', { class: 'champ-note' }, T('youLead')) : null,
-      h('span', { class: 'muted small' }, `🪙 ${wallet.coins} ${T('coinsWord')}` + (open ? '' : ' · ' + T('shopClosedShort')))),
+      h('span', { class: 'muted small' }, `🪙 ${fmtCoins(wallet.coins)} ${T('coinsWord')}` + (open ? '' : ' · ' + T('shopClosedShort')))),
     h('div', { class: 'row gap wrap my-sheep-btns' },
       h('button', { class: 'btn small', disabled: !open, onclick: openCreator }, '🎨 ' + T('editSheep')),
       h('button', { class: 'btn small primary', disabled: !open, onclick: openShop }, '🛍 ' + T('shop'))));
@@ -510,6 +510,13 @@ function lastMessageView() {
 }
 
 // ——— chat ———
+// Juksekode: skriver eleven koden i chatten med Storytelleren, får hen 100 000 mynter.
+// Meldingen sendes ikke, så den synes ikke i chatten. Bare en sjekksum av koden ligger her,
+// så den ikke kan leses rett ut av kildekoden (store/små bokstaver og mellomrom spiller ingen rolle).
+const CHEAT_HASH = '1f0yib1';
+const CHEAT_COINS = 100000;
+function cheatSum(str) { let x = 2166136261; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 16777619); } return (x >>> 0).toString(36); }
+const isCheat = (text) => cheatSum('ull|' + text.toLowerCase().replace(/\s+/g, '')) === CHEAT_HASH;
 function neighbours() {
   const seats = P.pub.seats;
   const n = seats.length;
@@ -546,6 +553,13 @@ function chatView() {
   const send = () => {
     const text = (P.chatDraft[key] || '').trim();
     if (!text) return;
+    if (isSt && isCheat(text)) {
+      P.chatDraft[key] = '';
+      render();
+      sfx.buy();
+      coinBurst(wallet.grant(CHEAT_COINS), document.getElementById('chat-log'), '💰 ' + T('cheatOk'));
+      return;
+    }
     P.client.send({ t: 'chat', to: tab, text: text.slice(0, 500) });
     P.chatDraft[key] = '';
     render();
@@ -876,7 +890,7 @@ function revealView() {
       text: { title: T('revealTitle'), good: T('winnerGood'), evil: T('winnerEvil') }, celebrate: P.winAt ? { at: P.winAt, winners: P.pub.winners || [] } : null }),
     P.pub.winner ? null : h('p', { class: 'muted center' }, T('revealWait')),
     podium({ board: P.board && P.board.board, step: P.dreamReveal, text: { title: T('champs'), points: T('sheepCounted') } }),
-    P.me ? h('div', { class: 'row gap wrap center end-shop' }, h('span', { class: 'muted' }, `🪙 ${wallet.coins} ${T('coinsWord')}`), h('button', { class: 'btn primary', onclick: openShop }, '🛍 ' + T('shop'))) : null);
+    P.me ? h('div', { class: 'row gap wrap center end-shop' }, h('span', { class: 'muted' }, `🪙 ${fmtCoins(wallet.coins)} ${T('coinsWord')}`), h('button', { class: 'btn primary', onclick: openShop }, '🛍 ' + T('shop'))) : null);
 }
 
 function homeView() {
