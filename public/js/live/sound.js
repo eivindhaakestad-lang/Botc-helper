@@ -87,7 +87,61 @@ export const sfx = {
   hit() { noise(0.1, { gain: 0.45, freq: 2600, q: 2 }); tone(70, 2.6, { gain: 0.5, slideTo: 30, release: 2.6, delay: 0.05 }); noise(1.6, { gain: 0.25, freq: 220, q: 0.5, type: 'lowpass', delay: 0.05 }); bellAt(330, 0.7, 0.18, 3.2); },
   death() { tone(196, 1.4, { type: 'triangle', gain: 0.22, slideTo: 82, release: 1.4 }); noise(0.9, { gain: 0.22, freq: 180, q: 0.6, type: 'lowpass' }); bellAt(110, 0.35, 0.2, 3.4); },
   reveal() { tone(220, 0.6, { type: 'sine', gain: 0.2, slideTo: 660 }); bellAt(1320, 0.45, 0.07, 1.4); },
+  // Sau som breker: sagtann med vibrato og «bæ-æ-æ»-skjelving
+  baa(pitch = 1, delay = 0) { warble({ freq: 300 * pitch, to: 270 * pitch, dur: 0.62, vib: 7, vibDepth: 18 * pitch, trem: 22, tremDepth: 0.75, gain: 0.16, filter: 1100, q: 2.2, delay }); },
+  // Dødsanimasjoner på storskjermen
+  poof() { noise(0.4, { gain: 0.32, freq: 700, q: 0.6 }); tone(280, 0.2, { gain: 0.14, slideTo: 1100 }); },
+  zap() { noise(0.09, { gain: 0.5, freq: 3400, q: 1.4 }); noise(0.3, { gain: 0.32, freq: 1800, q: 0.8, delay: 0.05 }); tone(62, 2.4, { gain: 0.45, slideTo: 28, release: 2.4, delay: 0.08 }); noise(1.8, { gain: 0.2, freq: 160, q: 0.4, type: 'lowpass', delay: 0.12 }); },
+  ufo() { warble({ freq: 520, to: 980, dur: 1.9, vib: 9, vibDepth: 70, gain: 0.07, type: 'sine', filter: 3000, q: 0.5 }); warble({ freq: 980, to: 1500, dur: 0.6, vib: 14, vibDepth: 90, gain: 0.05, type: 'triangle', filter: 4000, q: 0.5, delay: 1.9 }); },
+  vortex() { tone(420, 1.8, { type: 'sawtooth', gain: 0.05, slideTo: 38 }); noise(1.8, { gain: 0.22, freq: 420, q: 0.7 }); tone(55, 2, { gain: 0.25, release: 2, delay: 0.3 }); },
+  rustle() { noise(0.9, { gain: 0.22, freq: 2600, q: 0.5 }); noise(0.9, { gain: 0.16, freq: 1400, q: 0.6, delay: 0.5 }); },
+  confetti() { [0, 0.06, 0.12].forEach((d, i) => tone(600 + i * 250, 0.12, { gain: 0.12, delay: d, slideTo: 1400 })); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.25, { type: 'triangle', gain: 0.08, delay: 0.25 + i * 0.08 })); },
+  // Fyrverkeri (ny rekord i drømmespillet)
+  firework(delay = 0) { tone(500, 0.5, { type: 'sine', gain: 0.05, slideTo: 1800, delay }); noise(0.5, { gain: 0.3, freq: 1500, q: 0.6, delay: delay + 0.5 }); noise(0.9, { gain: 0.12, freq: 4000, q: 2, delay: delay + 0.6 }); },
+  magnet() { tone(180, 0.35, { type: 'square', gain: 0.05, slideTo: 720 }); tone(720, 0.3, { type: 'sine', gain: 0.08, delay: 0.3 }); },
 };
+
+// Tone med vibrato (tonehøyde) og skjelving (styrke) – brukes til brekende sau og UFO
+function warble({ freq, to = freq, dur, vib = 6, vibDepth = 10, trem = 0, tremDepth = 0, gain = 0.15, type = 'sawtooth', filter = 1200, q = 1, delay = 0 }) {
+  if (!soundEnabled()) return;
+  const t0 = ctx.currentTime + delay;
+  const o = ctx.createOscillator();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  o.frequency.linearRampToValueAtTime(to, t0 + dur);
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = vib;
+  const lg = ctx.createGain();
+  lg.gain.value = vibDepth;
+  lfo.connect(lg).connect(o.frequency);
+  const f = ctx.createBiquadFilter();
+  f.type = 'bandpass';
+  f.frequency.value = filter;
+  f.Q.value = q;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain, t0 + 0.04);
+  g.gain.setValueAtTime(gain, t0 + dur * 0.7);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  const nodes = [o, lfo];
+  let out = g;
+  if (trem) {
+    // Skjelving: en ekstra forsterker som moduleres opp og ned
+    const tg = ctx.createGain();
+    tg.gain.value = 1 - tremDepth / 2;
+    const tl = ctx.createOscillator();
+    tl.frequency.value = trem;
+    const td = ctx.createGain();
+    td.gain.value = tremDepth / 2;
+    tl.connect(td).connect(tg.gain);
+    g.connect(tg);
+    out = tg;
+    nodes.push(tl);
+  }
+  o.connect(f).connect(g);
+  out.connect(master);
+  nodes.forEach((n) => { n.start(t0); n.stop(t0 + dur + 0.05); });
+}
 
 
 // ——— Stemningsmusikk: dyster, generativ nattmusikk (egen av/på, uavhengig av lydeffektene) ———

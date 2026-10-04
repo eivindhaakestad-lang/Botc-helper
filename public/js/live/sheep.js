@@ -1,9 +1,14 @@
-// Elevenes sauer: katalog (farger, ansikter, hatter, sko, spor, kjæledyr) og tegning som SVG.
+// Elevenes sauer: katalog (farger, ansikter, frisyrer, hatter, sko, kapper, vinger, spor, kjæledyr,
+// rammer og dødsanimasjoner) og tegning som SVG.
 // Samme tegning brukes i «lag sauen din», butikken, grimen (alle sirkler) og drømmespillet.
 // Alt er egne, enkle tegninger – ingen bilder lastes fra nettet.
 //
-// Et utseende («look») er bare ID-er: { color, face, hat, shoes, trail, pet }.
+// Et utseende («look») er bare ID-er: { color, face, hair, hat, shoes, cape, wings, trail, pet, border, deathfx }.
 // Mesterkrona (den som leder drømmetoppen) er ikke noe man kjøper – den legges på når man leder.
+//
+// Sauen kan også ha en tilstand som grimen bestemmer (ikke noe eleven velger):
+//   mood: 'sleep' (natt), 'surprised' (noen døde), 'nervous' (nominert), 'cheer' (vant), 'sad' (tapte)
+//   ghost: død (spøkelseshale i stedet for bein), hoof: løfter hoven (stemmer)
 
 import { h } from '../app/dom.js';
 
@@ -213,28 +218,81 @@ export const BORDERS = [
   frameDef('galaxy', N('Galaksevirvel', 'Galaxy swirl'), 4200, true),
 ];
 
+// ——— ullfrisyrer: endrer formen på ulla på hodet ———
+const hairDef = (id, name, price) => ({ id, name, price });
+export const HAIRS = [
+  hairDef('bun', N('Topp-dott', 'Top knot'), 400),
+  hairDef('afro', N('Afro', 'Afro'), 500),
+  hairDef('pigtails', N('Musefletter', 'Pigtails'), 650),
+  hairDef('curls', N('Superkrøller', 'Super curls'), 750),
+  hairDef('mohawk', N('Hanekam', 'Mohawk'), 950),
+  hairDef('spikes', N('Piggsveis', 'Spiky hair'), 1150),
+];
+
+// ——— kapper: henger bak sauen (flagrer i drømmespillet) ———
+const capeDef = (id, name, price, a, b, fx = {}) => ({ id, name, price, a, b, ...fx });
+export const CAPES = [
+  capeDef('hero', N('Superheltkappe', 'Superhero cape'), 600, '#e0312f', '#9e1b1b'),
+  capeDef('vampire', N('Vampyrkappe', 'Vampire cape'), 1100, '#1d1724', '#0d0a12', { lining: '#c0182b', collar: true }),
+  capeDef('star', N('Stjernekappe', 'Star cape'), 1600, '#3b3f9e', '#151744', { stars: true }),
+  capeDef('royal', N('Kongekappe', 'Royal cape'), 2200, '#7a35b8', '#45196e', { trim: true }),
+  capeDef('fire', N('Ildkappe', 'Fire cape'), 2800, '#ff8a1f', '#c2260f', { flames: true }),
+];
+
+// ——— vinger: sitter på ryggen og slår med vingene ———
+const wingDef = (id, name, price, rate) => ({ id, name, price, rate });
+export const WINGS = [
+  wingDef('bat', N('Flaggermusvinger', 'Bat wings'), 1200, 0.45),
+  wingDef('angel', N('Englevinger', 'Angel wings'), 1500, 1.1),
+  wingDef('butterfly', N('Sommerfuglvinger', 'Butterfly wings'), 1900, 0.75),
+  wingDef('fairy', N('Feevinger', 'Fairy wings'), 2400, 0.32),
+  wingDef('dragon', N('Drakevinger', 'Dragon wings'), 3200, 1.3),
+];
+
+// ——— dødsanimasjoner: hvordan sauen dør på storskjermen (tegnes i deathfx.js) ———
+const fxDef = (id, name, price, icon) => ({ id, name, price, icon });
+export const DEATHFX = [
+  fxDef('puff', N('Ullpuff', 'Wool puff'), 500, '💨'),
+  fxDef('leaves', N('Løvvirvel', 'Leaf swirl'), 800, '🍂'),
+  fxDef('confetti', N('Konfettikanon', 'Confetti cannon'), 1100, '🎉'),
+  fxDef('lightning', N('Lynnedslag', 'Lightning strike'), 1600, '⚡'),
+  fxDef('ufo', N('UFO-bortføring', 'UFO abduction'), 2500, '🛸'),
+  fxDef('vortex', N('Sort hull', 'Black hole'), 3500, '🌀'),
+];
+
 export const CATS = [
   { key: 'color', icon: '🎨', name: N('Farger', 'Colors'), list: COLORS },
   { key: 'face', icon: '😀', name: N('Ansikter', 'Faces'), list: FACES },
+  { key: 'hair', icon: '💇', name: N('Frisyrer', 'Hairstyles'), list: HAIRS },
   { key: 'hat', icon: '🎩', name: N('Hatter', 'Hats'), list: HATS },
   { key: 'shoes', icon: '👟', name: N('Sko', 'Shoes'), list: SHOES },
+  { key: 'cape', icon: '🦸', name: N('Kapper', 'Capes'), list: CAPES },
+  { key: 'wings', icon: '🦋', name: N('Vinger', 'Wings'), list: WINGS },
   { key: 'trail', icon: '✨', name: N('Spor', 'Trails'), list: TRAILS },
   { key: 'pet', icon: '🐾', name: N('Kjæledyr', 'Pets'), list: PETS },
   { key: 'border', icon: '⭕', name: N('Rammer', 'Frames'), list: BORDERS },
+  { key: 'deathfx', icon: '💥', name: N('Dødsanimasjon', 'Death effect'), list: DEATHFX },
 ];
 const BY = Object.fromEntries(CATS.map((c) => [c.key, Object.fromEntries(c.list.map((x) => [x.id, x]))]));
 export function item(cat, id) { return (BY[cat] || {})[id] || null; }
 export const FREE_COLORS = COLORS.filter((x) => !x.price).map((x) => x.id);
 export const FREE_FACES = FACES.filter((x) => !x.price).map((x) => x.id);
+export const LOOK_KEYS = CATS.map((c) => c.key);
+// Kategorier man kan «ta av» (farge og ansikt må man alltid ha)
+export const REMOVABLE = LOOK_KEYS.filter((k) => k !== 'color' && k !== 'face');
 
 // Bare kjente ID-er slipper gjennom (resten blir standard / ingenting)
 export function normLook(l) {
   const o = l && typeof l === 'object' ? l : {};
-  const pick = (cat, def) => (BY[cat][o[cat]] ? o[cat] : def);
-  return { color: pick('color', 'white'), face: pick('face', 'happy'), hat: pick('hat', ''), shoes: pick('shoes', ''), trail: pick('trail', ''), pet: pick('pet', ''), border: pick('border', '') };
+  const out = {};
+  for (const k of LOOK_KEYS) out[k] = BY[k][o[k]] ? o[k] : k === 'color' ? 'white' : k === 'face' ? 'happy' : '';
+  return out;
 }
 export function randomLook() {
-  return { color: FREE_COLORS[Math.floor(Math.random() * FREE_COLORS.length)], face: FREE_FACES[Math.floor(Math.random() * FREE_FACES.length)], hat: '', shoes: '', trail: '', pet: '', border: '' };
+  const out = normLook({});
+  out.color = FREE_COLORS[Math.floor(Math.random() * FREE_COLORS.length)];
+  out.face = FREE_FACES[Math.floor(Math.random() * FREE_FACES.length)];
+  return out;
 }
 
 // ——— tegning ———
@@ -318,27 +376,230 @@ function championCrown() {
     + '</g>';
 }
 
-// Selve hodet (ører, ull, ansikt, lugg, uttrykk og hatt) i koordinater 0–120
-function headParts(look, c, champion) {
-  const fc = item('face', look.face) || FACES[0];
-  const ht = look.hat ? item('hat', look.hat) : null;
-  const ear = (x, rot) => `<g transform="rotate(${rot} ${x} 57)"><ellipse cx="${x}" cy="57" rx="12.5" ry="6.4" fill="${c.face}" stroke="${c.shade}" stroke-width="1"/><ellipse cx="${x}" cy="57" rx="7.6" ry="3.2" fill="#f3a6b8" opacity="0.85"/></g>`;
-  const glow = c.glow ? ' filter="url(#glow)"' : '';
-  return ear(19, -22) + ear(101, 22)
-    + `<g${glow}>${cloud(c, 60, 48, 31, 29, 12, 12, 15)}</g>`
-    + (c.price ? sweep('sh', cloudShapes(60, 48, 31, 29, 12, 12, 15), 17, 6, 86, 84, 0) : '')
-    + woolFx(c, [20, 8, 80, 80])
-    + `<ellipse cx="60" cy="63" rx="23.6" ry="24.6" fill="${c.face}"/>`
-    + `<g fill="${c.wool}" stroke="${c.shade}" stroke-width="1.4"><circle cx="45.5" cy="40" r="8"/><circle cx="54.5" cy="36" r="8.4"/><circle cx="65" cy="36" r="8.4"/><circle cx="74" cy="40" r="8"/></g>`
-    // Ansiktsuttrykket tegnes litt større, så det synes også i små sirkler
-    + `<g transform="translate(60 63) scale(1.14) translate(-60 -62)"><ellipse cx="60" cy="67.4" rx="2.6" ry="1.8" fill="${INK}" opacity="0.75"/>${fc.draw(c)}</g>`
-    + (champion ? championCrown() : ht ? ht.draw(c) : '');
+// ——— tilstander: ansikt og små tegn over hodet ———
+// Ansiktene tegnes i samme koordinater som FACES (øyne på (51,58) og (69,58)).
+const MOOD_FACE = {
+  sleep: () => line('M46.5 58 Q51 62.6 55.5 58', 2.5) + line('M64.5 58 Q69 62.6 73.5 58', 2.5) + `<ellipse cx="60" cy="73.4" rx="2.4" ry="1.9" fill="${INK}"/>` + cheeks(0.5),
+  surprised: () => `<ellipse cx="51" cy="57.5" rx="5.4" ry="6.4" fill="#fff" stroke="${INK}" stroke-width="1.7"/><ellipse cx="69" cy="57.5" rx="5.4" ry="6.4" fill="#fff" stroke="${INK}" stroke-width="1.7"/><circle cx="51" cy="58.2" r="2.3" fill="${INK}"/><circle cx="69" cy="58.2" r="2.3" fill="${INK}"/>`
+    + line('M44.5 47.6 Q50 43.4 55.5 47', 2.3) + line('M64.5 47 Q70 43.4 75.5 47.6', 2.3) + `<ellipse cx="60" cy="74.2" rx="4.4" ry="5.6" fill="${INK}"/><ellipse cx="60" cy="76.6" rx="2.6" ry="1.8" fill="#f07a8f"/>`,
+  nervous: () => eye(51, 58.6, 3, 3.7) + eye(69, 58.6, 3, 3.7) + line('M45 52.6 Q49.5 49 55.4 50.6', 2.1) + line('M75 52.6 Q70.5 49 64.6 50.6', 2.1)
+    + line('M52 73.2 Q54.5 70.4 57 73.2 Q59.5 76 62 73.2 Q64.5 70.4 67 73.2 Q68.4 74.8 69 74.2', 2.1) + cheeks(0.35, '#9ad0ff'),
+  cheer: () => line('M45.6 60.4 Q51 53.2 56.4 60.4', 2.8) + line('M63.6 60.4 Q69 53.2 74.4 60.4', 2.8)
+    + `<path d="M49.4 67.6 Q60 87 70.6 67.6 Z" fill="${INK}"/><path d="M52 68.3 L68 68.3 L67 71.2 L53 71.2 Z" fill="#fff"/><ellipse cx="60" cy="79.6" rx="4.6" ry="2.7" fill="#f07a8f"/>` + cheeks(0.8),
+  sad: () => eye(51, 60) + eye(69, 60) + line('M45.4 54.4 Q50 51 55.6 52.6', 2.1) + line('M74.6 54.4 Q70 51 64.4 52.6', 2.1) + line('M53.4 76.4 Q60 70.6 66.6 76.4', 2.3),
+};
+const outlined = (d, w, c = '#fff') => `<path d="${d}" fill="none" stroke="${INK}" stroke-width="${f(w + 2.4)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+function zee(x, y, s, delay) {
+  const d = `M${x} ${y} h${s} l${-s} ${s} h${s}`;
+  return `<g opacity="0"><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="2.7s" begin="${delay}s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="-3 8;4 -6" dur="2.7s" begin="${delay}s" repeatCount="indefinite"/>${outlined(d, f(s * 0.24))}</g>`;
+}
+function sweatDrop(x, y, s, delay) {
+  return `<g><animateTransform attributeName="transform" type="translate" values="0 -2;0 13" dur="1.15s" begin="${delay}s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;1;0" keyTimes="0;0.65;1" dur="1.15s" begin="${delay}s" repeatCount="indefinite"/>`
+    + `<path d="M${x} ${f(y - s)} Q${f(x + s * 0.8)} ${f(y + s * 0.25)} ${x} ${f(y + s * 0.62)} Q${f(x - s * 0.8)} ${f(y + s * 0.25)} ${x} ${f(y - s)} Z" fill="#8fd8ff" stroke="#2d79b0" stroke-width="1"/><circle cx="${f(x - s * 0.22)}" cy="${f(y + s * 0.05)}" r="${f(s * 0.17)}" fill="#fff"/></g>`;
+}
+function moodProps(mood) {
+  if (mood === 'sleep') return zee(83, 33, 7, 0) + zee(93, 19, 9, 0.9) + zee(104, 3, 11, 1.8);
+  if (mood === 'nervous') return sweatDrop(86, 42, 6.4, 0) + sweatDrop(33, 47, 5, 0.55) + sweatDrop(80, 30, 4.4, 0.3);
+  if (mood === 'surprised') {
+    return '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2.5;0 0" dur="0.5s" repeatCount="indefinite"/>'
+      + `<path d="M97 3 L105 3 L102.6 21 L99.4 21 Z" fill="#ffd23f" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><circle cx="101" cy="27" r="3.2" fill="#ffd23f" stroke="${INK}" stroke-width="1.8"/></g>`
+      + [[88, 8, -30], [112, 12, 30], [114, 26, 75]].map(([x, y, r]) => `<path d="M${x} ${y} l0 -6" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" transform="rotate(${r} ${x} ${y})"/>`).join('');
+  }
+  if (mood === 'cheer') {
+    return [[12, 26, 5.4, 0], [108, 30, 5, 0.4], [18, 82, 4.4, 0.8], [104, 84, 4.6, 0.2], [60, 2, 4, 0.6]].map(([x, y, r, d]) => `<path d="${sparkle(x, y, r)}" fill="#ffe56b" stroke="#c98a00" stroke-width="0.6"><animate attributeName="opacity" values="0;1;0" dur="1.1s" begin="${d}s" repeatCount="indefinite"/></path>`).join('');
+  }
+  if (mood === 'sad') {
+    // En tåre som triller nedover kinnet
+    return '<g><animateTransform attributeName="transform" type="translate" values="0 0;-1 16" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.75;1" dur="1.6s" repeatCount="indefinite"/>'
+      + '<path d="M46 63 Q43.4 68.4 46 70.2 Q48.6 68.4 46 63 Z" fill="#7fc4ff" stroke="#2d79b0" stroke-width="0.8"/></g>';
+  }
+  return '';
 }
 
-function bodyAndLegs(look, c) {
+// ——— ullfrisyrer: formen på ulla på hodet (bak, sky, lugg og pynt foran) ———
+const curl = (x, y, r, col) => `<path d="M${f(x - r)} ${y} a${r} ${r} 0 1 1 ${r} ${r} a${f(r * 0.55)} ${f(r * 0.55)} 0 1 1 ${f(-r * 0.5)} ${f(-r * 0.6)}" fill="none" stroke="${col}" stroke-width="1.3" stroke-linecap="round"/>`;
+const bow = (x, y) => `<path d="M${x} ${y} l-6.4 -4.4 v8.8 Z M${x} ${y} l6.4 -4.4 v8.8 Z" fill="#ff5fa2" stroke="#b93676" stroke-width="0.9" stroke-linejoin="round"/><circle cx="${x}" cy="${y}" r="2.1" fill="#ff9cc9" stroke="#b93676" stroke-width="0.6"/>`;
+const circles = (pts, attrs) => `<g ${attrs}>${pts.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`;
+function hairWool(look, c) {
+  const W = c.wool;
+  const S = c.shade;
+  const fill = `fill="${W}" stroke="${S}" stroke-width="1.4"`;
+  const base = {
+    back: '', front: '', ears: [19, 101], area: [20, 8, 80, 80], sweepBox: [17, 6, 86, 84],
+    cloud: cloud(c, 60, 48, 31, 29, 12, 12, 15), clip: cloudShapes(60, 48, 31, 29, 12, 12, 15),
+    fringe: circles([[45.5, 40, 8], [54.5, 36, 8.4], [65, 36, 8.4], [74, 40, 8]], fill),
+  };
+  switch (look.hair) {
+    case 'afro': {
+      // Stor og rund: bredere enn hodet, med små krøller i ulla
+      const dots = [[22, 30], [30, 16], [44, 8], [76, 8], [90, 16], [98, 30], [16, 48], [104, 48], [20, 66], [100, 66]].map(([x, y]) => curl(x, y, 2.6, S)).join('');
+      return { ...base, ears: [10, 110], area: [10, 2, 100, 86], sweepBox: [6, 0, 108, 92],
+        cloud: cloud(c, 60, 45, 41, 32, 18, 12, 0), clip: cloudShapes(60, 45, 41, 32, 18, 12, 0), front: dots,
+        fringe: circles([[41, 41, 8.4], [50, 36, 9], [60, 34, 9.2], [70, 36, 9], [79, 41, 8.4]], fill) };
+    }
+    case 'mohawk': {
+      // Barbert på sidene, høy kam på toppen med fargede tupper
+      const crest = 'M45 40 L46.4 12 L52 24 L54.6 0.5 L60 17 L65.4 0.5 L68 24 L73.6 12 L75 40 Z';
+      const tips = 'M46 20.4 L46.4 12 L50.6 21 Z M53.6 10 L54.6 0.5 L57.6 11 Z M62.4 11 L65.4 0.5 L66.4 10 Z M69.4 21 L73.6 12 L74 20.4 Z';
+      return { ...base, back: `<path d="${crest}" fill="${W}" stroke="${S}" stroke-width="1.8" stroke-linejoin="round"/><path d="${tips}" fill="#ff3fa4" stroke="${S}" stroke-width="1" stroke-linejoin="round"/>`,
+        cloud: cloud(c, 60, 52, 26, 23, 12, 8.6, 15), clip: cloudShapes(60, 52, 26, 23, 12, 8.6, 15) + `<path d="${crest}"/>`, sweepBox: [24, 0, 72, 86], area: [26, 10, 68, 76],
+        fringe: circles([[49, 39, 6.6], [56, 36, 7], [64, 36, 7], [71, 39, 6.6]], fill) };
+    }
+    case 'curls': {
+      const fr = [[44, 40], [52, 35.6], [60, 34], [68, 35.6], [76, 40]];
+      return { ...base, cloud: cloud(c, 60, 47, 32, 30, 18, 9.5, 0), clip: cloudShapes(60, 47, 32, 30, 18, 9.5, 0),
+        front: [[30, 40], [36, 25], [47, 16], [60, 12.5], [73, 16], [84, 25], [90, 40], [26, 56], [94, 56]].map(([x, y]) => curl(x, y, 3.2, S)).join(''),
+        fringe: circles(fr.map(([x, y]) => [x, y, 6.7]), fill) + fr.map(([x, y]) => curl(x, y - 0.6, 2.5, S)).join('') };
+    }
+    case 'bun':
+      return { ...base, front: `<circle cx="60" cy="11.4" r="10.6" fill="${W}" stroke="${S}" stroke-width="1.6"/><path d="M53.4 9.6 Q60 4.4 66.6 9.6" fill="none" stroke="${S}" stroke-width="1.1" opacity="0.6"/><rect x="49" y="18.4" width="22" height="5.6" rx="2.8" fill="#ff5fa2" stroke="#b93676" stroke-width="0.9"/>` };
+    case 'pigtails':
+      return { ...base, front: circles([[14, 27, 9], [8, 38.6, 8], [11.6, 49, 6.6], [106, 27, 9], [112, 38.6, 8], [108.4, 49, 6.6]], `fill="${W}" stroke="${S}" stroke-width="1.5"`) + bow(24, 25) + bow(96, 25) };
+    case 'spikes': {
+      let sp = '';
+      for (const a of [192, 214, 236, 258, 282, 304, 326, 348]) {
+        const r = (d) => (d * Math.PI) / 180;
+        const tx = f(60 + 56 * Math.cos(r(a))); const ty = f(50 + 50 * Math.sin(r(a)));
+        const lx = f(60 + 27 * Math.cos(r(a - 13))); const ly = f(50 + 25 * Math.sin(r(a - 13)));
+        const rx = f(60 + 27 * Math.cos(r(a + 13))); const ry = f(50 + 25 * Math.sin(r(a + 13)));
+        sp += `<path d="M${lx} ${ly} L${tx} ${ty} L${rx} ${ry} Z"/>`;
+      }
+      return { ...base, back: `<g fill="${W}" stroke="${S}" stroke-width="1.6" stroke-linejoin="round">${sp}</g>` };
+    }
+    default:
+      return base;
+  }
+}
+
+// ——— kapper (forfra: kantene flagrer på hver side bak sauen) ———
+function capeDefs(cp) {
+  return cp ? `<linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cp.a}"/><stop offset="1" stop-color="${cp.b}"/></linearGradient>` : '';
+}
+function capeBack(cp) {
+  const p1 = 'M43 80 Q14 90 3 119 Q18 113 31.5 119 Q45.5 113 60 119 Q74.5 113 88.5 119 Q102 113 117 119 Q106 90 77 80 Z';
+  const p2 = 'M43 80 Q17 92 6 118 Q20.5 115.4 33 118 Q46.6 115.4 60 118 Q73.4 115.4 87 118 Q99.5 115.4 114 118 Q103 92 77 80 Z';
+  const edge1 = 'M3 119 Q18 113 31.5 119 Q45.5 113 60 119 Q74.5 113 88.5 119 Q102 113 117 119';
+  const edge2 = 'M6 118 Q20.5 115.4 33 118 Q46.6 115.4 60 118 Q73.4 115.4 87 118 Q99.5 115.4 114 118';
+  const wave = (a, b) => `<animate attributeName="d" values="${a};${b};${a}" dur="2.4s" repeatCount="indefinite"/>`;
+  let s = '';
+  if (cp.collar) {
+    // Høy, spiss krage som stikker opp bak hodet
+    s += `<path d="M42 86 L5 28 Q14 52 32 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 81 L11 37 Q18 54 32 64 Z" fill="${cp.lining}"/>`
+      + `<path d="M78 86 L115 28 Q106 52 88 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M80 81 L109 37 Q102 54 88 64 Z" fill="${cp.lining}"/>`;
+  }
+  s += `<path d="${p1}" fill="url(#cpg)" stroke="${cp.b}" stroke-width="1.3" stroke-linejoin="round">${wave(p1, p2)}</path>`;
+  if (cp.lining) s += `<path d="M45 86 L14 117 L106 117 L75 86 Z" fill="${cp.lining}" opacity="0.9"/>`;
+  if (cp.id === 'hero') s += line('M28 98 Q22 108 16 117', 1.6, '#ff7a6b') + line('M92 98 Q98 108 104 117', 1.6, '#ff7a6b');
+  if (cp.trim) {
+    s += `<path d="${edge1}" fill="none" stroke="#fffaf0" stroke-width="5.4" stroke-linecap="round">${wave(edge1, edge2)}</path>`
+      + [9, 21, 37, 83, 99, 111].map((x) => `<path d="M${x} 115.6 l1.1 2.6 l-2.2 0 Z" fill="#1a1420"/>`).join('');
+  }
+  if (cp.stars) {
+    s += [[11, 110, 2.6], [21, 100, 2], [27, 113, 1.6], [109, 110, 2.6], [99, 100, 2], [93, 113, 1.6], [16, 117, 1.4], [104, 117, 1.4]]
+      .map(([x, y, r], i) => `<path d="${sparkle(x, y, r * 1.6)}" fill="#fff6c2"><animate attributeName="opacity" values="1;0.25;1" dur="${1.4 + (i % 3) * 0.5}s" repeatCount="indefinite"/></path>`).join('');
+  }
+  if (cp.flames) {
+    s += [8, 19, 30, 90, 101, 112].map((x, i) => `<g opacity="0.95"><animate attributeName="opacity" values="1;0.45;1" dur="${0.5 + (i % 3) * 0.17}s" repeatCount="indefinite"/>${P.flame(x, 114, 6.5)}</g>`).join('');
+  }
+  return s;
+}
+
+// ——— vinger: én vinge i lokale koordinater (roten i 0,0, vingen peker opp og ut til venstre) ———
+const WING_SHAPE = {
+  bat: () => '<path d="M0 0 L-6 -38 L-45 -61 Q-39 -48 -45 -37 Q-35 -38 -33 -27 Q-25 -30 -21 -18 Q-12 -20 0 0 Z" fill="#40305a" stroke="#1f1530" stroke-width="1.7" stroke-linejoin="round"/>'
+    + line('M-6 -38 L-45 -37', 1.3, '#1f1530') + line('M-6 -38 L-33 -27', 1.3, '#1f1530') + line('M-6 -38 L-21 -18', 1.3, '#1f1530') + '<path d="M-6 -38 l-1 -7 l5 4 Z" fill="#1f1530"/>',
+  angel: () => '<path d="M0 0 Q-10 -46 -40 -69 Q-49 -53 -43 -43 Q-51 -35 -43 -27 Q-49 -17 -37 -11 Q-39 -2 -25 0 Q-12 4 0 0 Z" fill="#fdfbff" stroke="#b9b1d0" stroke-width="1.5" stroke-linejoin="round"/>'
+    + ['M-37 -60 Q-29 -50 -33 -41', 'M-40 -41 Q-30 -35 -34 -27', 'M-38 -25 Q-28 -19 -30 -11', 'M-31 -9 Q-21 -7 -19 0', 'M-22 -50 Q-16 -36 -18 -24'].map((d) => line(d, 1.2, '#cfc8e2')).join(''),
+  butterfly: () => '<path d="M0 0 Q-6 -52 -36 -63 Q-53 -61 -47 -41 Q-41 -20 -6 -6 Z" fill="url(#wgb)" stroke="#2a1840" stroke-width="2" stroke-linejoin="round"/>'
+    + '<path d="M0 0 Q-30 -4 -41 10 Q-42 27 -23 23 Q-8 19 0 2 Z" fill="url(#wgb2)" stroke="#2a1840" stroke-width="2" stroke-linejoin="round"/>'
+    + line('M-4 -6 Q-22 -30 -38 -52', 1.1, '#2a1840') + line('M-4 -4 Q-26 -20 -44 -38', 1.1, '#2a1840') + line('M-2 2 Q-18 8 -32 16', 1.1, '#2a1840')
+    + '<circle cx="-40" cy="-51" r="3.2" fill="#fff"/><circle cx="-31" cy="-58" r="2.1" fill="#fff"/><circle cx="-45" cy="-42" r="1.8" fill="#fff"/><circle cx="-30" cy="13" r="2.6" fill="#fff"/>',
+  fairy: () => '<path d="M0 0 Q-14 -58 -36 -71 Q-43 -61 -31 -37 Q-19 -14 0 0 Z" fill="#c8f4ff" fill-opacity="0.55" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>'
+    + '<path d="M0 0 Q-34 -12 -47 -2 Q-41 9 -25 7 Q-11 5 0 0 Z" fill="#ffd6fb" fill-opacity="0.55" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>'
+    + line('M-2 -4 Q-18 -32 -34 -64', 0.9, '#ffffff') + line('M-3 -1 Q-24 -4 -42 -1', 0.9, '#ffffff')
+    + [[-30, -52, 3, 0], [-20, -26, 2.4, 0.5], [-38, 2, 2.4, 0.9]].map(([x, y, r, d]) => `<path d="${sparkle(x, y, r)}" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="1.2s" begin="${d}s" repeatCount="indefinite"/></path>`).join(''),
+  dragon: () => '<path d="M0 0 L-4 -44 L-47 -67 L-40 -55 L-51 -47 L-38 -42 L-45 -30 L-30 -28 L-33 -15 L-18 -13 Z" fill="#2f9e6a" stroke="#14553a" stroke-width="1.8" stroke-linejoin="round"/>'
+    + '<path d="M-6 -38 L-38 -54 L-36 -44 L-30 -32 L-20 -18 Z" fill="#5fd39a" opacity="0.45"/>'
+    + line('M-4 -44 L-40 -55', 1.5, '#14553a') + line('M-4 -44 L-38 -42', 1.5, '#14553a') + line('M-4 -44 L-30 -28', 1.5, '#14553a') + line('M-4 -44 L-18 -13', 1.5, '#14553a')
+    + '<path d="M-4 -44 q-3 -7 3 -9 q-1 4 1 9 Z" fill="#f4e3b0" stroke="#14553a" stroke-width="0.8"/>'
+    + [-12, -22, -32].map((y) => `<path d="M-2 ${y} l5 -4 l-1 6 Z" fill="#f4e3b0" stroke="#14553a" stroke-width="0.6"/>`).join(''),
+};
+const WING_DEFS = '<linearGradient id="wgb" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#ffb02e"/><stop offset="0.5" stop-color="#ff5fb8"/><stop offset="1" stop-color="#7a5cff"/></linearGradient>'
+  + '<linearGradient id="wgb2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff5fb8"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>';
+function wingsBack(wg) {
+  const shape = WING_SHAPE[wg.id]();
+  const flap = (delay) => `<animateTransform attributeName="transform" type="rotate" values="12;-12;12" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="${wg.rate}s" begin="${delay}s" repeatCount="indefinite"/>`;
+  return `<g transform="translate(42 92)"><g>${flap(0)}${shape}</g></g><g transform="translate(78 92) scale(-1 1)"><g>${flap(0)}${shape}</g></g>`;
+}
+
+// ——— løftet hov (stemmer) – og begge hover i været når laget vinner ———
+// Tegnes foran hodet med hvit kant, så den synes godt på storskjermen.
+function raisedLeg(c, sh, mirror = false, delay = 0) {
+  const hoofCol = sh && sh.canvas ? sh.canvas.c : INK;
+  const band = sh && sh.canvas ? sh.canvas.s : null;
+  // Skulder (80,97) → hov (101,30). Beinet smalner mot hoven og har en ullerme nederst.
+  const leg = 'M86.1 98.9 L73.9 95.1 L96.6 28.6 L105.4 31.4 Z';
+  const g = '<g>'
+    + `<animateTransform attributeName="transform" type="rotate" values="-10 80 97;9 80 97;-10 80 97" keyTimes="0;0.5;1" calcMode="spline" keySplines="0.45 0 0.55 1;0.45 0 0.55 1" dur="0.8s" begin="${delay}s" repeatCount="indefinite"/>`
+    + '<circle cx="101" cy="25" r="16" fill="#fff6a8" opacity="0.6"><animate attributeName="r" values="13;21;13" dur="0.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.75;0.3;0.75" dur="0.8s" repeatCount="indefinite"/></circle>'
+    + `<path d="${leg}" fill="${c.face}" stroke="#fff" stroke-width="4.4" stroke-linejoin="round"/>`
+    + `<path d="${leg}" fill="${c.face}" stroke="${c.shade}" stroke-width="1.4" stroke-linejoin="round"/>`
+    + `<g fill="${c.wool}" stroke="#fff" stroke-width="3.4"><circle cx="81.6" cy="92" r="10.6"/><circle cx="85" cy="82" r="9.6"/><circle cx="88.2" cy="72.6" r="8.4"/></g>`
+    + `<g fill="${c.wool}" stroke="${c.shade}" stroke-width="1.3"><circle cx="81.6" cy="92" r="10.6"/><circle cx="85" cy="82" r="9.6"/><circle cx="88.2" cy="72.6" r="8.4"/></g>`
+    + `<circle cx="84" cy="86" r="8" fill="${c.wool}"/><circle cx="86.6" cy="77.4" r="6.6" fill="${c.wool}"/>`
+    + '<g transform="translate(101.6 27.4) rotate(17.4)">'
+    + `<path d="M-9.5 3.6 L-9.5 -5.6 Q-9.5 -11.8 -3.2 -11.8 L3.2 -11.8 Q9.5 -11.8 9.5 -5.6 L9.5 3.6 Z" fill="${hoofCol}" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/>`
+    + (band ? `<rect x="-9.5" y="-1.2" width="19" height="3" fill="${band}"/>` : '<path d="M0 -11 L0 -2.4" stroke="#fff" stroke-width="1.7" opacity="0.75"/>')
+    + '</g>'
+    + outlined('M112 12 q6 6 4.2 14.6', 2.2) + outlined('M90 8.6 q-6 3.6 -6.8 12.4', 2.2)
+    + '</g>';
+  return mirror ? `<g transform="translate(120 0) scale(-1 1)">${g}</g>` : g;
+}
+
+// ——— spøkelse: ulla ender i en bølgende hale i stedet for bein ———
+// (Spøkelset tegnes 6 enheter høyere enn en vanlig sau – det svever – så halen får plass nederst.)
+function ghostBody(c) {
+  const hem = 'M-27 -6 L-27 12 Q-22.5 21 -18 13.8 Q-13.5 21 -9 13.8 Q-4.5 21 0 13.8 Q4.5 21 9 13.8 Q13.5 21 18 13.8 Q22.5 21 27 12 L27 -6 Z';
+  let top = '';
+  for (let i = 0; i < 7; i++) {
+    const a = ((196 + (148 / 6) * i) * Math.PI) / 180;
+    top += `<circle cx="${f(60 + 26 * Math.cos(a))}" cy="${f(99 + 9 * Math.sin(a))}" r="10.5"/>`;
+  }
+  return `<g transform="translate(60 102)"><g><animateTransform attributeName="transform" type="skewX" values="-10;10;-10" dur="2.6s" repeatCount="indefinite"/><path d="${hem}" fill="${c.wool}" stroke="${c.shade}" stroke-width="1.6" stroke-linejoin="round"/></g></g>`
+    + `<g fill="${c.wool}" stroke="${c.shade}" stroke-width="1.6">${top}</g><ellipse cx="60" cy="100.5" rx="27.4" ry="7.4" fill="${c.wool}"/>`;
+}
+
+// Selve hodet (ører, ull, ansikt, lugg, uttrykk og hatt) i koordinater 0–120
+function headParts(look, c, champion, st = {}) {
+  const fc = item('face', look.face) || FACES[0];
+  const ht = look.hat ? item('hat', look.hat) : null;
+  const hw = hairWool(look, c);
+  const mood = st.mood && MOOD_FACE[st.mood] ? st.mood : '';
+  const droop = mood === 'sad' ? 44 : mood === 'sleep' ? 33 : mood === 'surprised' ? 2 : mood === 'cheer' ? 12 : 22;
+  const ear = (x, rot) => `<g transform="rotate(${rot} ${x} 57)"><ellipse cx="${x}" cy="57" rx="12.5" ry="6.4" fill="${c.face}" stroke="${c.shade}" stroke-width="1"/><ellipse cx="${x}" cy="57" rx="7.6" ry="3.2" fill="#f3a6b8" opacity="0.85"/></g>`;
+  const glow = c.glow ? ' filter="url(#glow)"' : '';
+  const [sx, sy, sw, sh] = hw.sweepBox;
+  return ear(hw.ears[0], -droop) + ear(hw.ears[1], droop)
+    + hw.back
+    + `<g${glow}>${hw.cloud}</g>`
+    + (c.price ? sweep('sh', hw.clip, sx, sy, sw, sh, 0) : '')
+    + woolFx(c, hw.area)
+    + hw.front
+    + `<ellipse cx="60" cy="63" rx="23.6" ry="24.6" fill="${c.face}"/>`
+    + hw.fringe
+    // Ansiktsuttrykket tegnes litt større, så det synes også i små sirkler
+    + `<g transform="translate(60 63) scale(1.14) translate(-60 -62)"><ellipse cx="60" cy="67.4" rx="2.6" ry="1.8" fill="${INK}" opacity="0.75"/>${mood ? MOOD_FACE[mood]() : fc.draw(c)}</g>`
+    + (champion ? championCrown() : ht ? ht.draw(c) : '')
+    + moodProps(mood);
+}
+
+function bodyAndLegs(look, c, st = {}) {
   const sh = look.shoes ? item('shoes', look.shoes) : null;
   const leg = (x) => `<rect x="${f(x - 4.3)}" y="102.5" width="8.6" height="13" rx="3.6" fill="${c.face}" stroke="${c.shade}" stroke-width="0.9"/>`;
   const hoof = (x) => `<rect x="${f(x - 5)}" y="111.4" width="10" height="6.4" rx="3" fill="${INK}"/>`;
+  if (st.ghost) {
+    return `<g${c.glow ? ' filter="url(#glow)"' : ''}>${ghostBody(c)}</g>` + woolFx(c, [30, 88, 60, 26]);
+  }
   return `<g${c.glow ? ' filter="url(#glow)"' : ''}>${cloud(c, 60, 101, 26, 11, 10, 11, 0)}</g>`
     + (c.price ? sweep('sb', cloudShapes(60, 101, 26, 11, 10, 11, 0), 23, 79, 74, 44, 0.5) : '')
     + woolFx(c, [30, 88, 60, 30])
@@ -351,26 +612,66 @@ function svgDoc(vb, defs, body) {
 }
 
 // view: 'head' = hele sauen forfra (hode, kropp, sko, kjæledyr, spor) – brukes i sirkler og butikk
-//       'body' = løpende sau fra siden uten bein (drømmespillet tegner beina selv)
-export function sheepSvg(lookIn, { view = 'head', champion = false } = {}) {
+//       'body' = løpende sau fra siden uten bein (drømmespillet tegner beina, kappa og vingene selv)
+// mood/ghost/hoof: tilstanden grimen gir sauen (se toppen av fila)
+export function sheepSvg(lookIn, { view = 'head', champion = false, mood = '', ghost = false, hoof = false } = {}) {
   const look = normLook(lookIn);
   const c = item('color', look.color);
-  const defs = woolDefs(c) + GOLD_DEF + (c.price ? SWEEP_DEF : '') + (c.glow ? GLOW_DEF : '');
+  const st = { mood, ghost, hoof };
+  const cp = look.cape ? item('cape', look.cape) : null;
+  const wg = look.wings ? item('wings', look.wings) : null;
+  const defs = woolDefs(c) + GOLD_DEF + (c.price ? SWEEP_DEF : '') + (c.glow ? GLOW_DEF : '') + capeDefs(cp) + (wg ? WING_DEFS : '');
   if (view === 'body') {
     const s = 0.76;
     const body = `<g${c.glow ? ' filter="url(#glow)"' : ''}><circle cx="27" cy="60" r="9" fill="${c.wool}" stroke="${c.shade}" stroke-width="1.6"/>${cloud(c, 66, 64, 32, 17, 12, 12, 0)}</g>`
       + (c.price ? sweep('sv', cloudShapes(66, 64, 32, 17, 12, 12, 0), 18, 35, 96, 60, 0.3) : '')
       + woolFx(c, [30, 44, 72, 40])
-      + `<g transform="translate(${f(118 - 60 * s)} ${f(42 - 55 * s)}) scale(${s})">${headParts(look, c, champion)}</g>`;
+      + `<g transform="translate(${f(118 - 60 * s)} ${f(42 - 55 * s)}) scale(${s})">${headParts(look, c, champion, st)}</g>`;
     return svgDoc('0 0 166 112', defs, body);
   }
   const tr = look.trail ? item('trail', look.trail) : null;
   const pt = look.pet ? item('pet', look.pet) : null;
-  const body = (tr ? trailDecor(tr) : '')
-    + bodyAndLegs(look, c)
-    + headParts(look, c, champion)
-    + (pt ? `<g transform="translate(74 70) scale(0.48)">${pt.draw()}</g>` : '');
+  const sh = look.shoes ? item('shoes', look.shoes) : null;
+  const sheep = (wg ? wingsBack(wg) : '')
+    + (cp ? capeBack(cp) : '')
+    + bodyAndLegs(look, c, st)
+    + headParts(look, c, champion, st)
+    + (pt ? `<g transform="translate(74 70) scale(0.48)">${pt.draw()}</g>` : '')
+    // Hoven (eller begge når laget vinner) tegnes helt øverst så den aldri forsvinner bak noe
+    + (mood === 'cheer' ? raisedLeg(c, sh, true, 0.37) + raisedLeg(c, sh, false, 0) : hoof ? raisedLeg(c, sh) : '');
+  const body = (tr ? trailDecor(tr) : '') + (ghost ? `<g transform="translate(0 -6)">${sheep}</g>` : sheep);
   return svgDoc('0 0 120 120', defs, body);
+}
+
+// Kappe og vinge sett fra siden (drømmespillet flagrer med dem selv)
+export function capeSideSvg(id) {
+  const cp = item('cape', id);
+  if (!cp) return '';
+  let s = `<path d="M77 3 Q50 -1 4 8 Q11 16 4 24 Q12 31 5 39 Q40 35 75 17 Z" fill="url(#cpg)" stroke="${cp.b}" stroke-width="1.4" stroke-linejoin="round"/>`;
+  if (cp.lining) s += `<path d="M74 6 Q48 4 12 11 Q40 20 72 14 Z" fill="${cp.lining}" opacity="0.9"/>`;
+  if (cp.trim) s += line('M4 8 Q11 16 4 24 Q12 31 5 39', 4.4, '#fffaf0');
+  if (cp.stars) s += [[20, 18], [36, 24], [50, 14], [28, 30], [62, 18]].map(([x, y]) => `<path d="${sparkle(x, y, 2.8)}" fill="#fff6c2"/>`).join('');
+  if (cp.flames) s += [[6, 10], [6, 24], [7, 36]].map(([x, y]) => P.flame(x, y, 5)).join('');
+  if (cp.collar) s += `<path d="M77 3 L66 -1 L70 9 Z" fill="${cp.lining}"/>`;
+  return svgDoc('0 -2 80 44', capeDefs(cp), s);
+}
+export function wingSideSvg(id) {
+  const wg = item('wings', id);
+  return wg ? svgDoc('-52 -74 58 102', WING_DEFS, WING_SHAPE[wg.id]()) : '';
+}
+
+// Lykt for døde: tent så lenge spøkelset har ghost vote igjen, slukket når den er brukt
+function lanternSvg(lit) {
+  const defs = lit ? '<radialGradient id="lg" cx="0.5" cy="0.55" r="0.6"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.45" stop-color="#ffd24d"/><stop offset="1" stop-color="#e87a12"/></radialGradient><radialGradient id="lh" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd76a" stop-opacity="0.85"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>' : '';
+  return svgDoc('0 0 40 56', defs,
+    (lit ? '<circle cx="20" cy="31" r="20" fill="url(#lh)"><animate attributeName="opacity" values="0.75;1;0.85;1;0.75" dur="1.8s" repeatCount="indefinite"/></circle>' : '')
+    + '<path d="M14 10 Q20 1 26 10" fill="none" stroke="#3a3326" stroke-width="2.6" stroke-linecap="round"/>'
+    + '<rect x="10.5" y="9" width="19" height="6.4" rx="2" fill="#6b5634" stroke="#2c2416" stroke-width="1.1"/>'
+    + `<path d="M12 15.4 L28 15.4 L30.4 42 L9.6 42 Z" fill="${lit ? 'url(#lg)' : '#2b3040'}" stroke="#2c2416" stroke-width="1.5"/>`
+    + (lit ? '<path d="M20 22 Q25.4 29.6 20 37 Q14.6 29.6 20 22 Z" fill="#fff"><animate attributeName="d" values="M20 22 Q25.4 29.6 20 37 Q14.6 29.6 20 22 Z;M20 19.6 Q24.6 29.6 20 37 Q15.4 29.6 20 19.6 Z;M20 22 Q25.4 29.6 20 37 Q14.6 29.6 20 22 Z" dur="0.9s" repeatCount="indefinite"/></path>'
+      : '<path d="M14 20 L17 18" stroke="#6b7590" stroke-width="1.4" stroke-linecap="round"/><path d="M20 37 Q18 33 20.4 30" fill="none" stroke="#4a5266" stroke-width="1.3" stroke-linecap="round"/>')
+    + '<path d="M20 15.4 L20 42 M11 28.6 L29 28.6" stroke="#2c2416" stroke-width="1.2" opacity="0.75"/>'
+    + '<rect x="8" y="42" width="24" height="6.4" rx="2" fill="#6b5634" stroke="#2c2416" stroke-width="1.1"/>');
 }
 
 export function petSvg(id) {
@@ -388,23 +689,45 @@ export function svgUrl(svg) {
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 export function sheepUrl(look, opts = {}) {
-  const key = (opts.view || 'head') + '|' + (opts.champion ? 1 : 0) + '|' + JSON.stringify(normLook(look));
+  const key = [opts.view || 'head', opts.champion ? 1 : 0, opts.mood || '', opts.ghost ? 1 : 0, opts.hoof ? 1 : 0, JSON.stringify(normLook(look))].join('|');
   let u = urlCache.get(key);
   if (!u) {
     u = svgUrl(sheepSvg(look, opts));
-    if (urlCache.size > 400) urlCache.clear();
+    if (urlCache.size > 600) urlCache.clear();
     urlCache.set(key, u);
   }
   return u;
 }
-export function petUrl(id) {
-  const key = 'pet|' + id;
-  if (!urlCache.has(key)) urlCache.set(key, svgUrl(petSvg(id)));
+function cachedUrl(key, make) {
+  if (!urlCache.has(key)) urlCache.set(key, svgUrl(make()));
   return urlCache.get(key);
 }
+export function petUrl(id) { return cachedUrl('pet|' + id, () => petSvg(id)); }
+export function capeSideUrl(id) { return cachedUrl('capeside|' + id, () => capeSideSvg(id)); }
+export function wingSideUrl(id) { return cachedUrl('wingside|' + id, () => wingSideSvg(id)); }
+export function lanternUrl(lit) { return cachedUrl('lantern|' + (lit ? 1 : 0), () => lanternSvg(lit)); }
 
-export function sheepImg(look, { view = 'head', champion = false, cls = 'sheep-img', title = '' } = {}) {
-  return h('img', { class: cls, src: sheepUrl(look, { view, champion }), alt: '', title: title || undefined, draggable: 'false', decoding: 'async' });
+// st: { mood, ghost, hoof } – tilstanden grimen gir sauen. Klassene brukes til bevegelse i CSS.
+export function sheepImg(look, { view = 'head', champion = false, cls = 'sheep-img', title = '', mood = '', ghost = false, hoof = false } = {}) {
+  const extra = (mood ? ' mood-' + mood : '') + (ghost ? ' ghost' : '') + (hoof ? ' hoof' : '');
+  return h('img', { class: cls + extra, src: sheepUrl(look, { view, champion, mood, ghost, hoof }), alt: '', title: title || undefined, draggable: 'false', decoding: 'async' });
+}
+
+// Merke for «stemmer»: en hov i været i en grønn sirkel (der det før sto ✋)
+function hoofBadgeSvg() {
+  return svgDoc('0 0 44 44', '', '<circle cx="22" cy="22" r="19.6" fill="#22b35e" stroke="#fff" stroke-width="2.8"/>'
+    + '<path d="M19.6 37 L14.4 35.4 L22.6 13.6 L27.4 15.2 Z" fill="#f4dccd" stroke="#2b2533" stroke-width="1.4" stroke-linejoin="round"/>'
+    + '<g fill="#efece6" stroke="#2b2533" stroke-width="1.3"><circle cx="16" cy="34" r="5.4"/><circle cx="18" cy="28.6" r="4.6"/></g><circle cx="17" cy="31.4" r="4" fill="#efece6"/>'
+    + '<g transform="translate(25.6 12.4) rotate(18)"><path d="M-6.4 2.4 L-6.4 -3.8 Q-6.4 -8 -2.2 -8 L2.2 -8 Q6.4 -8 6.4 -3.8 L6.4 2.4 Z" fill="#2b2533" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M0 -7.4 L0 -1.6" stroke="#fff" stroke-width="1.2" opacity="0.8"/></g>'
+    + '<path d="M33 6.4 q4 4 2.8 9.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M33.6 18.4 q3 1 4.4 4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>');
+}
+export function hoofBadge() {
+  return h('span', { class: 'hoof-badge', 'aria-hidden': 'true' }, h('img', { src: cachedUrl('hoofbadge', hoofBadgeSvg), alt: '', draggable: 'false' }));
+}
+
+// Lykta ved siden av et spøkelse (tent = har ghost vote igjen)
+export function ghostLantern(lit) {
+  return h('span', { class: 'ghost-lantern ' + (lit ? 'lit' : 'out'), 'aria-hidden': 'true' }, h('img', { src: lanternUrl(lit), alt: '', draggable: 'false' }));
 }
 
 // ——— hvem har hvilken sau (oppdateres fra rommet) ———
@@ -416,11 +739,23 @@ export function setChampionFromBoard(board) {
 }
 export function championSeat() { return reg.champion; }
 export function seatLook(id) { return reg.looks[id] || null; }
-// Sauen til en plass, eller null hvis eleven ikke har laget sau ennå
-export function seatSheep(id, cls = 'token-sheep') {
+// Sauen til en plass, eller null hvis eleven ikke har laget sau ennå. st = { mood, ghost, hoof }
+export function seatSheep(id, cls = 'token-sheep', st = {}) {
   const l = reg.looks[id];
   if (!l) return null;
-  return sheepImg(l, { champion: reg.champion === id, cls });
+  return sheepImg(l, { champion: reg.champion === id, cls, ...st });
+}
+export function seatSheepUrl(id, st = {}) {
+  const l = reg.looks[id];
+  return l ? sheepUrl(l, { champion: reg.champion === id, ...st }) : '';
+}
+// Innholdet i en sirkel med sau: sauen, rammen og (for døde) lykta. Null hvis plassen ikke har sau.
+// night: sauene sover (spøkelser sover ikke). lantern: vis lykta (der ghost vote betyr noe).
+export function sheepDisc(seat, { night = false, mood = '', hoof = false, lantern = true, cls = 'token-sheep' } = {}) {
+  if (!reg.looks[seat.id]) return null;
+  const ghost = seat.alive === false;
+  const m = mood || (night && !ghost ? 'sleep' : '');
+  return [seatSheep(seat.id, cls, { mood: m, ghost, hoof }), seatFrame(seat.id), ghost && lantern ? ghostLantern(!!seat.ghostVote) : null, hoof ? hoofBadge() : null];
 }
 
 export function frameUrl(id) {

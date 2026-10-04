@@ -2,7 +2,7 @@
 // Eleven må stemme før viseren når dem; da låses stemmen. Brukes av storskjerm og elevvisning.
 
 import { h } from '../app/dom.js';
-import { seatSheep, seatLook, seatFrame } from './sheep.js';
+import { seatLook, sheepDisc, seatSheepUrl, hoofBadge } from './sheep.js';
 
 // offset = servertid − lokal tid (ms)
 // Stemmetall med vekter (Bureaucrat ×3, Thief negativ)
@@ -80,10 +80,10 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
         h('div', { class: `token vc-token ${role}${voted ? ' voted' : ''}${seat.alive ? '' : ' dead'}${cant ? ' cant' : ''}${me === seat.id ? ' me' : ''}${seatLook(seat.id) ? ' has-sheep' : ''}` },
           h('span', { class: 'token-disc' },
             seatLook(seat.id)
-              // Med sau: bildet står fast, og ✋/⚖️ vises som et merke oppå
-              ? [seatSheep(seat.id), seatFrame(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : role === 'nominee' ? '⚖️' : '')]
+              // Med sau: sauen løfter hoven når den stemmer, svetter når den er nominert, og er et spøkelse med lykt når den er død
+              ? sheepDisc(seat, { mood: role === 'nominee' ? 'nervous' : '', hoof: voted })
               : h('span', { class: 'token-char', 'data-plain': seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('') }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
-            seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
+            seat.alive || seatLook(seat.id) ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
             vote.blockId === seat.id ? h('span', { class: 'block-badge' }, '💀') : null),
           h('span', { class: 'token-label' }, seat.names.join(' + ')),
           vote.weights && vote.weights[seat.id] ? h('span', { class: 'vc-weight' + (vote.weights[seat.id] < 0 ? ' neg' : '') }, vote.weights[seat.id] < 0 ? `${vote.weights[seat.id]}` : `×${vote.weights[seat.id]}`) : null,
@@ -150,8 +150,17 @@ export function patchVoteCircle(root, vote) {
     const voted = vote.voters.includes(id);
     if (tok.classList.contains('voted') === voted) continue;
     tok.classList.toggle('voted', voted);
-    const mark = tok.querySelector('.vc-mark');
-    if (mark) mark.textContent = voted ? '✋' : tok.classList.contains('nominee') ? '⚖️' : '';
+    // Sauen bytter til (eller fra) «hoven i været»
+    const img = tok.querySelector('.token-disc > .token-sheep');
+    if (img) {
+      const st = { mood: tok.classList.contains('nominee') ? 'nervous' : '', ghost: tok.classList.contains('dead'), hoof: voted };
+      const url = seatSheepUrl(id, st);
+      if (url) img.src = url;
+      img.classList.toggle('hoof', voted);
+      const badge = tok.querySelector('.hoof-badge');
+      if (voted && !badge) img.parentNode.append(hoofBadge());
+      else if (!voted && badge) badge.remove();
+    }
     const ch = tok.querySelector('.token-char');
     if (ch) ch.textContent = voted ? '✋' : tok.classList.contains('nominee') ? '⚖️' : (ch.dataset.plain || ch.textContent);
   }

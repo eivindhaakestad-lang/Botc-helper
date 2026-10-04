@@ -1342,7 +1342,7 @@ function livePanel(s) {
             h('a', { class: 'btn', href: screenUrl(l.code), target: '_blank', rel: 'noopener' }, '🖥 ' + t('openScreen'))),
           h('p', { class: 'muted small' }, t('screenHelp')))),
       h('div', { class: 'row gap wrap' },
-        h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !!locked, onchange: (e) => setLocked(e.target.checked) }), t('lockRoom')),
+        h('label', { class: 'check', title: t('lockRoomHelp') }, h('input', { type: 'checkbox', checked: !!locked, onchange: (e) => setLocked(e.target.checked) }), t('lockRoom') + ' 🐑'),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.dream !== false, onchange: (e) => setLiveSetting('dream', e.target.checked) }), t('dreamOn')),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.decoys !== false, onchange: (e) => setLiveSetting('decoys', e.target.checked) }), t('decoysOn')),
         h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: settings.weather === false, onchange: (e) => setLiveSetting('weather', !e.target.checked) }), t('weatherOff')),

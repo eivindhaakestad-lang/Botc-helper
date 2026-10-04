@@ -1,8 +1,9 @@
 // Velg spillere ved å trykke i en sirkel (som grimen), brukt av elevene til nattvalg og nominasjonsforslag.
 import { h } from '../app/dom.js';
-import { seatSheep, seatLook, seatFrame } from './sheep.js';
+import { seatLook, sheepDisc } from './sheep.js';
 
-export function pickCircle({ seats, selected = [], me = null, allowSelf = true, disabled = () => false, onToggle, center = null, size = 84 }) {
+// night: sauene sover (nattvalg). Døde vises som spøkelser med lykt (tent = har ghost vote).
+export function pickCircle({ seats, selected = [], me = null, allowSelf = true, disabled = () => false, onToggle, center = null, size = 84, night = false }) {
   const n = Math.max(1, seats.length);
   const tok = Math.min(26, (257 / n) * 0.7).toFixed(2);
   return h('div', { class: 'grim pick-grim', style: `--tok:min(${size}px, ${tok}cqw)` },
@@ -19,9 +20,9 @@ export function pickCircle({ seats, selected = [], me = null, allowSelf = true, 
           onclick: () => onToggle(x.id),
         },
         h('span', { class: 'token-disc' },
-          seatLook(x.id) ? [seatSheep(x.id), seatFrame(x.id)] : h('span', { class: 'token-char' }, on ? '✓' : x.traveller ? x.traveller.icon : x.names.map((s) => s[0]).join('')),
+          seatLook(x.id) ? sheepDisc(x, { night: night && !on }) : h('span', { class: 'token-char' }, on ? '✓' : x.traveller ? x.traveller.icon : x.names.map((s) => s[0]).join('')),
           on && seatLook(x.id) ? h('span', { class: 'pick-check', 'aria-hidden': 'true' }, '✓') : null,
-          x.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
+          x.alive || seatLook(x.id) ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
         h('span', { class: 'token-label' }, x.names.join(' + '))));
     }));
 }

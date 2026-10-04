@@ -2,15 +2,18 @@
 // ctx = { T, lang, render, sendLook, open, champion, done }
 
 import { h } from '../app/dom.js';
-import { CATS, COLORS, FACES, item, itemName, sheepImg, sheepUrl, randomLook, frameEl } from '../live/sheep.js';
+import { CATS, COLORS, FACES, REMOVABLE, item, itemName, sheepImg, sheepUrl, randomLook, frameEl } from '../live/sheep.js';
+import { deathFxEl } from '../live/deathfx.js';
 import { wallet } from './wallet.js';
 import { sfx } from '../live/sound.js';
 
 let draft = null; // sauen som lages (før «Ferdig»)
 let tab = 'color';
 let sel = null; // { cat, id } som prøves i butikken
+let sellArm = null; // ting som venter på «trykk igjen» for å byttes inn
+let fxRun = 0; // teller som starter dødsanimasjonen på nytt i forhåndsvisningen
 
-export function resetWardrobe() { draft = null; sel = null; }
+export function resetWardrobe() { draft = null; sel = null; sellArm = null; }
 
 export function swatchBg(c) {
   if (c.rainbow) return 'linear-gradient(135deg,#ff6b6b,#ffb84d,#ffe55c,#6ee08a,#63b3ff,#b07bff)';
@@ -76,30 +79,83 @@ function action(ctx, cat, id) {
   const owns = wallet.owns(cat, id);
   const look = wallet.look;
   const on = look[cat] === id;
-  const removable = ['hat', 'shoes', 'trail', 'pet', 'border'].includes(cat);
+  const removable = REMOVABLE.includes(cat);
   const { T } = ctx;
+  const btns = [];
   if (owns && on) {
-    return removable
+    btns.push(removable
       ? h('button', { class: 'btn big', onclick: () => { wallet.setLook({ [cat]: '' }); sel = null; ctx.sendLook(); sfx.pop(); ctx.render(); } }, '✕ ' + T('takeOff'))
-      : h('span', { class: 'pill ok' }, '✓ ' + T('wearing'));
+      : h('span', { class: 'pill ok' }, '✓ ' + T('wearing')));
+  } else if (owns) {
+    btns.push(h('button', { class: 'btn primary big', onclick: () => { wallet.setLook({ [cat]: id }); sel = null; ctx.sendLook(); sfx.pop(); ctx.render(); } }, '👕 ' + T('wear')));
+  } else {
+    const coins = wallet.coins;
+    const price = wallet.priceOf(cat, id);
+    if (coins < price) btns.push(h('button', { class: 'btn big', disabled: true }, T('missing', { n: coinTxt(price - coins) })));
+    else {
+      btns.push(h('button', {
+        class: 'btn primary big buy-btn',
+        onclick: (e) => {
+          const r = wallet.buy(cat, id);
+          if (!r.ok) return;
+          sel = null;
+          ctx.sendLook();
+          sfx.buy();
+          confetti(e.currentTarget);
+          ctx.render();
+        },
+      }, T('buyFor', { n: coinTxt(price) })));
+    }
   }
-  if (owns) {
-    return h('button', { class: 'btn primary big', onclick: () => { wallet.setLook({ [cat]: id }); sel = null; ctx.sendLook(); sfx.pop(); ctx.render(); } }, '👕 ' + T('wear'));
+  // Bytt inn for halve prisen (to trykk, så det ikke skjer ved et uhell)
+  if (owns && it.price) {
+    const value = wallet.sellValue(cat, id);
+    const armed = sellArm === cat + ':' + id;
+    btns.push(h('button', {
+      class: 'btn sell-btn' + (armed ? ' confirm' : ''),
+      onclick: (e) => {
+        if (!armed) { sellArm = cat + ':' + id; ctx.render(); return; }
+        const r = wallet.sell(cat, id);
+        sellArm = null;
+        if (!r.ok) return;
+        sel = null;
+        ctx.sendLook();
+        coinBurst({ before: wallet.coins - r.value, after: wallet.coins, add: r.value }, e.currentTarget, T('sold', { n: r.value }));
+        ctx.render();
+      },
+    }, '♻ ' + (armed ? T('sellSure', { n: coinTxt(value) }) : T('sellFor', { n: coinTxt(value) }))));
   }
-  const coins = wallet.coins;
-  if (coins < it.price) return h('button', { class: 'btn big', disabled: true }, T('missing', { n: coinTxt(it.price - coins) }));
-  return h('button', {
-    class: 'btn primary big buy-btn',
-    onclick: (e) => {
-      const r = wallet.buy(cat, id);
-      if (!r.ok) return;
-      sel = null;
-      ctx.sendLook();
-      sfx.buy();
-      confetti(e.currentTarget);
-      ctx.render();
-    },
-  }, T('buyFor', { n: coinTxt(it.price) }));
+  return btns;
+}
+
+// Pris-teksten på en ting (med gjennomstreket gammel pris når den er dagens tilbud)
+function priceTag(T, cat, it, owns, on) {
+  if (on) return h('span', { class: 'shop-item-price on' }, '✓ ' + T('wearing'));
+  if (owns) return h('span', { class: 'shop-item-price owned' }, it.price ? T('owned') : T('free'));
+  const price = wallet.priceOf(cat, it.id);
+  return h('span', { class: 'shop-item-price' }, price < it.price ? h('span', { class: 'old-price' }, String(it.price)) : null, coinTxt(price));
+}
+
+// Bildet av en ting i rutenettet (sauen med tingen på; rammer i en sirkel; dødsanimasjoner med et ikon)
+function itemPic(cat, it, tryLook) {
+  if (cat === 'border') return h('span', { class: 'shop-disc' }, h('img', { class: 'shop-disc-img', src: sheepUrl(tryLook), alt: '', decoding: 'async' }), frameEl(it.id));
+  if (cat === 'deathfx') return h('span', { class: 'shop-fx' }, h('img', { src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' }), h('span', { class: 'shop-fx-icon', 'aria-hidden': 'true' }, it.icon));
+  return h('img', { class: 'shop-item-img', src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' });
+}
+
+function dealCard(ctx) {
+  const { T, lang } = ctx;
+  const d = wallet.deal;
+  if (!d) return null;
+  const look = { ...wallet.look, [d.cat]: d.id };
+  return h('div', { class: 'shop-deal' },
+    h('span', { class: 'shop-deal-pic' }, h('img', { src: sheepUrl(look), alt: '', decoding: 'async' }), d.cat === 'border' ? frameEl(d.id) : null, d.cat === 'deathfx' ? h('span', { class: 'shop-fx-icon', 'aria-hidden': 'true' }, d.item.icon) : null),
+    h('div', { class: 'stack tight' },
+      h('span', { class: 'deal-title' }, '🔥 ' + T('dealTitle'), h('span', { class: 'deal-tag' }, '−30 %')),
+      h('strong', null, itemName(d.item, lang)),
+      d.owned ? h('span', { class: 'muted small' }, '✓ ' + T('dealBought'))
+        : h('span', null, h('span', { class: 'old-price' }, coinTxt(d.was)), h('strong', { class: 'shop-item-price' }, coinTxt(d.price)), h('span', { class: 'muted small' }, '  · ' + T('dealHelp')))),
+    d.owned ? null : h('button', { class: 'btn primary', onclick: () => { tab = d.cat; sel = { cat: d.cat, id: d.id }; sellArm = null; fxRun++; ctx.render(); } }, T('dealSee')));
 }
 
 export function shopView(ctx) {
@@ -114,36 +170,50 @@ export function shopView(ctx) {
       h('div', { class: 'row between' }, ctx.back(), h('span', { class: 'display' }, '🛍 ' + T('shop'))),
       h('div', { class: 'panel center shop-closed' }, h('p', { class: 'display' }, '🌙'), h('p', null, T('shopClosedDay'))));
   }
+  // Dødsanimasjon valgt: forhåndsvisningen spiller den av (sauen forsvinner og blir et spøkelse)
+  const fx = sel && sel.cat === 'deathfx' ? sel.id : null;
+  const previewPic = fx
+    ? h('div', { class: 'shop-preview-wrap dying fx-' + fx, key: 'fx' + fxRun },
+      sheepImg(preview, { cls: 'shop-preview fx-target', champion: ctx.champion }),
+      sheepImg(preview, { cls: 'shop-preview fx-ghost', champion: ctx.champion, ghost: true }),
+      preview.border ? frameEl(preview.border) : null,
+      deathFxEl(fx))
+    : h('div', { class: 'shop-preview-wrap' }, sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion }), preview.border ? frameEl(preview.border) : null);
   return h('div', { class: 'stack shop' },
     h('div', { class: 'row between' }, ctx.back(), h('span', { class: 'display' }, '🛍 ' + T('shop'))),
     h('div', { class: 'shop-head panel' },
-      h('div', { class: 'shop-preview-wrap' }, sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion }), preview.border ? frameEl(preview.border) : null),
+      previewPic,
       h('div', { class: 'stack tight grow' },
         h('span', { class: 'label' }, T('yourCoins')),
         h('span', { class: 'display shop-coins' }, coinTxt(coins)),
         selIt
-          ? [h('span', { class: 'strong' }, itemName(selIt, lang)), h('div', { class: 'row gap wrap' }, action(ctx, sel.cat, sel.id), h('button', { class: 'btn ghost', onclick: () => { sel = null; ctx.render(); } }, T('cancel')))]
+          ? [h('span', { class: 'strong' }, itemName(selIt, lang), wallet.isDeal(sel.cat, sel.id) && !wallet.owns(sel.cat, sel.id) ? h('span', { class: 'deal-tag' }, '−30 %') : null),
+            fx ? h('span', { class: 'muted small' }, T('fxHelp')) : null,
+            h('div', { class: 'row gap wrap' }, action(ctx, sel.cat, sel.id),
+              fx ? h('button', { class: 'btn ghost', onclick: () => { fxRun++; ctx.render(); } }, T('fxTry')) : null,
+              h('button', { class: 'btn ghost', onclick: () => { sel = null; sellArm = null; ctx.render(); } }, T('cancel')))]
           : h('span', { class: 'muted small' }, T('shopHelp')),
         wallet.tampered ? h('span', { class: 'warn-text small' }, T('tampered')) : null)),
+    dealCard(ctx),
     h('div', { class: 'tabs shop-tabs', role: 'tablist' }, CATS.map((c) => h('button', {
       role: 'tab', class: 'tab' + (c.key === cat.key ? ' active' : ''), 'aria-selected': c.key === cat.key ? 'true' : 'false',
-      onclick: () => { tab = c.key; ctx.render(); },
+      onclick: () => { tab = c.key; sellArm = null; ctx.render(); },
     }, `${c.icon} ${c.name[lang] || c.name.no}`))),
     h('div', { class: 'shop-grid' }, cat.list.map((it) => {
       const owns = wallet.owns(cat.key, it.id);
       const on = look[cat.key] === it.id;
       const isSel = sel && sel.cat === cat.key && sel.id === it.id;
+      const deal = !owns && wallet.isDeal(cat.key, it.id);
       const tryLook = { ...look, [cat.key]: it.id };
       return h('button', {
-        class: 'shop-item' + (isSel ? ' sel' : '') + (on ? ' on' : '') + (owns ? ' owned' : '') + (!owns && coins < it.price ? ' poor' : ''),
-        onclick: () => { sel = isSel ? null : { cat: cat.key, id: it.id }; ctx.render(); },
+        class: 'shop-item' + (isSel ? ' sel' : '') + (on ? ' on' : '') + (owns ? ' owned' : '') + (!owns && coins < wallet.priceOf(cat.key, it.id) ? ' poor' : '') + (deal ? ' deal' : ''),
+        onclick: () => { sel = isSel ? null : { cat: cat.key, id: it.id }; sellArm = null; fxRun++; ctx.render(); },
         'aria-pressed': isSel ? 'true' : 'false',
       },
-      cat.key === 'border'
-        ? h('span', { class: 'shop-disc' }, h('img', { class: 'shop-disc-img', src: sheepUrl(tryLook), alt: '', decoding: 'async' }), frameEl(it.id))
-        : h('img', { class: 'shop-item-img', src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' }),
+      deal ? h('span', { class: 'deal-ribbon' }, '−30 %') : null,
+      itemPic(cat.key, it, tryLook),
       h('span', { class: 'shop-item-name' }, itemName(it, lang)),
-      h('span', { class: 'shop-item-price' + (on ? ' on' : owns ? ' owned' : '') }, on ? '✓ ' + T('wearing') : owns ? (it.price ? T('owned') : T('free')) : coinTxt(it.price)));
+      priceTag(T, cat.key, it, owns, on));
     })));
 }
 

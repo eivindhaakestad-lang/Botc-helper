@@ -105,8 +105,24 @@ Kopier-knappene virker fortsatt for elever uten PC.
 - **Hvor mye tjener de?** Et hinder kommer ca. hvert 1,2–1,5 sekund. En runde på 30 sekunder gir ca. 20 mynter, ett minutt ca. 40. Med 15–20 minutter drømmespill per time blir det ca. 500–650 mynter i timen.
 - **Saueboden** (🛍) er åpen før spillet, om natten og etter spillet – stengt på dagen, så diskusjonen får full oppmerksomhet. Du kan stenge den helt i Live-panelet eller under ⋯ Spill. Elevene kan prøve alt på sauen sin før de kjøper.
 - **Priser:** de 12 basisfargene er enkle og dempede. Luksusfargene skinner (en glans glir over ulla) og mange er animert: sølv, rosegull, perlemor, neon, midnatt, lava, is, gull, holografisk, regnbue, galakse og diamant (400–4800). Kulere ansikter 200–2500 (solbriller, hjerteøyne, … laserblikk), hatter 100–1200, sko 100–1800, spor 300–3800 (bobler, løv, hjerter, noter, stjerner, ild, spøkelser, regnbue, mynter, stjernestøv), kjæledyr 600–4500 (kylling … minidrage) og **rammer** 250–4200 – en ring rundt sauen i grimen: treramme, sølv, blomster, hjerter, gull, neon, stjernebane, is, ild, demonring, lyn, regnbue og galaksevirvel. Noe kan kjøpes første time; de råeste tingene tar ca. 6–8 timer å spare til. En krone kan ikke kjøpes – den er forbeholdt drømmemesteren.
+- **Frisyrer** (400–1150) endrer formen på ulla: topp-dott, afro, musefletter, superkrøller, hanekam (barbert på sidene, rosa tupper) og piggsveis.
+- **Kapper** (600–2800) henger bak sauen og flagrer i drømmespillet: superhelt, vampyr (med høy krage), stjernekappe, kongekappe og ildkappe.
+- **Vinger** (1200–3200) slår med vingene både i grimen og i drømmespillet: flaggermus, engel, sommerfugl, fe og drage.
+- **Dødsanimasjoner** (500–3500) bestemmer hvordan sauen dør på storskjermen: ullpuff («POFF!»), løvvirvel, konfettikanon, lynnedslag, UFO-bortføring og sort hull. I Saueboden spilles animasjonen av når eleven prøver den. Uten kjøpt animasjon brukes den vanlige (risting, rødt glimt og hodeskalle).
+- **Dagens tilbud:** hver dag er én tilfeldig ting eleven ikke har 30 % billigere (vises øverst i Saueboden og med «−30 %» i rutenettet). Tilbudet er det samme hele dagen, også etter kjøp.
+- **Bytt inn:** en kjøpt ting kan byttes inn for halve (vanlige) prisen. Det krever to trykk, så det ikke skjer ved et uhell.
 - **Mesterkrona:** den som leder drømmetoppen akkurat nå, får en animert gullkrone med juveler og gnister i stedet for hatten. Den kan ikke kjøpes, og den går videre til nestemann som tar ledelsen.
-- **I drømmespillet** løper elevens egen sau med farge, ansikt, hatt, sko, spor bak seg og kjæledyret ved siden av.
+- **I drømmespillet** løper elevens egen sau med farge, ansikt, frisyre, hatt, sko, kappe, vinger, spor bak seg og kjæledyret ved siden av. Innimellom svever det **mynter** i lufta – på bakken, i en bue over gjerdet eller høyt oppe. De gir ekstra mynter (ca. 15–20 % mer i timen) men teller ikke på topplista. Den nye powerupen **🧲 magnet** trekker myntene til sauen i 15 sekunder. Slår eleven sin egen rekord, smeller det **fyrverkeri** med «NY REKORD!».
+
+**Sauene lever i grimen:** Sauene reagerer på det som skjer, i alle sirkler (storskjermen, stemmesirkelen, elevenes sirkler, grim reveal og gjennomgangen):
+- **Om natten sover de** (øynene lukket og «zzz»), og våkner når dagen kommer.
+- **Døde blir spøkelser:** gjennomsiktige, svevende, med bølgende spøkelseshale i stedet for bein. Ved siden av henger en **lykt** som lyser så lenge spøkelset har ghost vote igjen, og som slukkes når den er brukt. Eleven ser også sin egen sau som spøkelse.
+- **Den nominerte svetter** og ser nervøs ut i stemmesirkelen.
+- **Hoven i været:** når en elev stemmer, løfter sauen hoven (med hvit kant og glød), sirkelen blir lysende grønn, og et grønt hov-merke vinker der ✋ sto før. Angrer eleven, går hoven ned igjen.
+- **Alle ser overrasket ut** et øyeblikk når noen dør (store øyne og «!»).
+- **Grim reveal:** når du kunngjør vinneren, hopper vinnerlagets sauer og jubler med begge hovene i været mens det drysser konfetti over storskjermen. Taperlaget ser lei seg ut (med en tåre) en liten stund.
+- **Navneskilt:** navnet til hver elev står på et lite skilt som alltid ligger foran rammer, vinger og effekter, så det er lett å lese.
+- **Saueparade:** når du låser rommet (Live-panelet), marsjerer sauene inn fra venstre på storskjermen og hopper opp på plassen sin én og én – med bræk. Paraden kan også spilles av fra tannhjulet på storskjermen.
 - **Lagring:** mynter, kjøp og sau lagres bare på elevens egen PC (samme nettleser) og følger eleven fra spill til spill. Ingenting av dette lagres på nett utover at rommet vet hvilken sau som sitter på hvilken plass mens spillet pågår. En enkel sjekksum gjør at det ikke holder å endre tallet i nettleseren (da nullstilles myntene), men en elev med utviklerverktøy kan i prinsippet jukse.
 
 **Min grim for elevene:** Under «Byen» har elevene knappen 🎭 Min grim. Den viser en sirkel som i den offisielle appen. Eleven trykker på en spiller og velger en rolle-token, markerer 😇/😈/❓ og skriver et kort notat. Alt lagres bare på elevens egen PC.
@@ -154,9 +170,11 @@ public/                 alt som publiseres
     script.js           import av scripts og rolletekster
     text.js, sttext.js  meldinger til elever og Storyteller-tekster (NO/EN)
   js/app/               grensesnitt (vanilla JS)
-  js/live/              felles WebSocket-klient, QR og grim reveal
-  js/play/              elevvisning og drømmespillet
-  js/screen/            storskjerm (Town Square)
+  js/live/              felles WebSocket-klient, QR, grim reveal, lyder og sauene
+    sheep.js            sauekatalogen og tegningen (SVG): farger, ansikter, frisyrer, hatter, kapper, vinger, humør, spøkelser
+    deathfx.js          dødsanimasjonene (CSS-partikler)
+  js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js)
+  js/screen/            storskjerm (Town Square), overganger (cine.js), vær og saueparaden (parade.js)
   play.html, screen.html
 worker/                 Cloudflare Worker (index.js) og spillrommet (room.js, Durable Object)
 tests/                  motortester og romtester: node --test tests/*.test.js

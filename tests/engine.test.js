@@ -434,7 +434,7 @@ test('vinnerlaget publiseres først når vinneren er annonsert (for myntbonusen)
 test('sauekatalogen: ukjente ting renses bort, og alle tegninger lager gyldig SVG', async () => {
   const { normLook, sheepSvg, CATS } = await import('../public/js/live/sheep.js');
   // Krona kan ikke kjøpes (den er forbeholdt drømmemesteren)
-  assert.deepEqual(normLook({ color: 'gold', face: 'nope', hat: 'crown', pet: '<x>', border: 'fire' }), { color: 'gold', face: 'happy', hat: '', shoes: '', trail: '', pet: '', border: 'fire' });
+  assert.deepEqual(normLook({ color: 'gold', face: 'nope', hat: 'crown', pet: '<x>', border: 'fire', hair: 'afro', wings: 'x' }), { color: 'gold', face: 'happy', hair: 'afro', hat: '', shoes: '', cape: '', wings: '', trail: '', pet: '', border: 'fire', deathfx: '' });
   for (const cat of CATS) {
     for (const it of cat.list) {
       for (const view of ['head', 'body']) {
@@ -444,4 +444,52 @@ test('sauekatalogen: ukjente ting renses bort, og alle tegninger lager gyldig SV
       }
     }
   }
+  // Tilstandene grimen gir sauen (sover, spøkelse, hov opp osv.) med alle ting på
+  const full = { color: 'galaxy', face: 'laser', hair: 'mohawk', hat: 'viking', shoes: 'skates', cape: 'vampire', wings: 'dragon', trail: 'fire', pet: 'owl', border: 'fire', deathfx: 'ufo' };
+  for (const mood of ['', 'sleep', 'surprised', 'nervous', 'cheer', 'sad']) {
+    for (const ghost of [false, true]) {
+      for (const hoof of [false, true]) {
+        const svg = sheepSvg(full, { mood, ghost, hoof });
+        assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>') && !/undefined|NaN/.test(svg), `${mood}/${ghost}/${hoof}`);
+      }
+    }
+  }
+});
+
+test('lommeboka: dagens tilbud er 30 % billigere, og innbytte gir halve prisen tilbake', async () => {
+  const store = {};
+  globalThis.localStorage = { getItem: (k) => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); }, removeItem: (k) => { delete store[k]; } };
+  const { wallet } = await import('../public/js/play/wallet.js');
+  const { item } = await import('../public/js/live/sheep.js');
+  wallet.earn(5000);
+  const deal = wallet.deal;
+  assert.ok(deal && deal.item.price > 0, 'det finnes et tilbud');
+  assert.equal(deal.price, Math.round((deal.item.price * 0.7) / 10) * 10);
+  assert.equal(wallet.deal.id, deal.id, 'samme tilbud hele dagen');
+  const before = wallet.coins;
+  if (deal.price <= before) {
+    const r = wallet.buy(deal.cat, deal.id);
+    assert.ok(r.ok);
+    assert.equal(wallet.coins, before - deal.price);
+    assert.equal(wallet.deal.id, deal.id, 'tilbudet flytter seg ikke etter kjøp');
+    assert.ok(wallet.deal.owned);
+  }
+  // Innbytte av en vanlig ting
+  const hatPrice = item('hat', 'beanie').price;
+  wallet.buy('hat', 'beanie');
+  assert.equal(wallet.look.hat, 'beanie');
+  const c0 = wallet.coins;
+  const s = wallet.sell('hat', 'beanie');
+  assert.ok(s.ok);
+  assert.equal(s.value, Math.floor(hatPrice / 2));
+  assert.equal(wallet.coins, c0 + Math.floor(hatPrice / 2));
+  assert.equal(wallet.look.hat, '', 'tatt av når den byttes inn');
+  assert.equal(wallet.owns('hat', 'beanie'), false);
+  assert.equal(wallet.sell('color', 'white').ok, false, 'gratis ting kan ikke byttes inn');
+  // Endrer noen myntene i lagringen, nullstilles alt
+  const raw = JSON.parse(store['botc-sheep-v1']);
+  raw.coins = 99999;
+  store['botc-sheep-v1'] = JSON.stringify(raw);
+  assert.equal(wallet.coins, 0);
+  delete globalThis.localStorage;
 });

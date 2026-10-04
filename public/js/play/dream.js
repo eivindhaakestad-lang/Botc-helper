@@ -2,8 +2,10 @@
 // Hopp over hindrene: hvert hinder du kommer forbi, gir ett poeng.
 // Fra ca. 30 poeng kommer det også ørner. De flyr i hodehøyde – da må du IKKE hoppe:
 // hopper du når ørnen er nær, stuper den og tar deg.
+// Mynter svever i lufta innimellom (plukk dem for ekstra mynter – teller ikke på topplista),
+// og magneten trekker dem til deg. Slår du din egen rekord, smeller det fyrverkeri.
 
-import { sheepUrl, petUrl, svgUrl, particleSvg, item } from '../live/sheep.js';
+import { sheepUrl, petUrl, svgUrl, particleSvg, item, capeSideUrl, wingSideUrl } from '../live/sheep.js';
 
 const W = 720;
 const H = 260;
@@ -17,15 +19,21 @@ const EAGLE_HIGH = GROUND - 150; // høyeste høyde
 const EAGLE_H = 30;
 const FLY_Y = GROUND - 108; // superhopp-høyde (godt over alle gjerder, under poengteksten)
 const POWER_CHANCE = 1 / 30;
-const POWERS = ['rocket', 'shield', 'jet', 'slow', 'double'];
+const POWERS = ['rocket', 'shield', 'jet', 'slow', 'double', 'magnet'];
+const COIN_R = 9;
+const MAGNET_S = 15;
+const FW_COLS = ['#ffd23f', '#ff5c8a', '#5edc7a', '#63b3ff', '#b07bff', '#ff9b2e', '#ffffff'];
 const RAINBOW = ['#ff6b6b', '#ffb84d', '#ffe55c', '#6ee08a', '#63b3ff', '#b07bff'];
 
 export class DreamGame {
-  constructor(canvas, { onGameOver, onScore, text, best = 0, look = null, champion = false }) {
+  constructor(canvas, { onGameOver, onScore, onCoin, onPower, onRecord, text, best = 0, look = null, champion = false }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onGameOver = onGameOver || (() => {});
     this.onScore = onScore || (() => {});
+    this.onCoin = onCoin || (() => {});
+    this.onPower = onPower || (() => {});
+    this.onRecord = onRecord || (() => {});
     this.text = text;
     this.state = 'ready';
     this.best = best;
@@ -52,8 +60,11 @@ export class DreamGame {
 
   // Elevens egen sau: farge, ansikt, hatt (eller mesterkrone), sko, spor og kjæledyr
   setLook(look, champion = false) {
-    this.sprite = null; this.petImg = null; this.trail = null; this.shoe = null; this.partImgs = [];
+    this.sprite = null; this.petImg = null; this.trail = null; this.shoe = null; this.partImgs = []; this.capeImg = null; this.wingImg = null;
     if (!look) return;
+    if (look.cape && item('cape', look.cape)) { const im = new Image(); im.src = capeSideUrl(look.cape); this.capeImg = im; }
+    const wg = look.wings ? item('wings', look.wings) : null;
+    if (wg) { const im = new Image(); im.src = wingSideUrl(wg.id); this.wingImg = im; this.wingRate = wg.rate; }
     const img = new Image();
     img.src = sheepUrl(look, { view: 'body', champion });
     this.sprite = img;
@@ -88,6 +99,13 @@ export class DreamGame {
     this.double = 0;      // sekunder med dobbel poeng
     this.invuln = 0;      // kort udødelighet etter skjold/landing
     this.puMsg = null;    // { text, t }
+    this.magnet = 0;      // sekunder med magnet
+    this.coins = [];      // mynter i lufta
+    this.coinCount = 0;   // mynter plukket denne runden
+    this.coinGap = 3 + Math.floor(Math.random() * 4); // hinder til neste myntrekke
+    this.fw = [];         // fyrverkeri
+    this.best0 = this.best; // rekorden da runden startet
+    this.recordDone = false;
     this.speed = 360;
     this.score = 0;
     this.nextGap = 420;
@@ -167,6 +185,7 @@ export class DreamGame {
       v: 1, sheep: { ...this.sheep }, fences: plain(this.fences), items: plain(this.items),
       rockets: this.rockets + this.shots.length, lives: this.lives, fly: this.fly, slow: this.slow, double: this.double,
       score: this.score, time: this.time, speed: this.speed, nextGap: this.nextGap, eagleWarned: this.eagleWarned,
+      coins: plain(this.coins), coinCount: this.coinCount, magnet: this.magnet, coinGap: this.coinGap, best0: this.best0, recordDone: this.recordDone,
     };
   }
   restore(s) {
@@ -175,6 +194,7 @@ export class DreamGame {
     Object.assign(this, {
       sheep: s.sheep, fences: s.fences || [], items: s.items || [], rockets: s.rockets || 0, lives: s.lives || 0, fly: s.fly || 0,
       slow: s.slow || 0, double: s.double || 0, score: s.score || 0, time: s.time || 0, speed: s.speed || 380, nextGap: s.nextGap || 420, eagleWarned: !!s.eagleWarned,
+      coins: s.coins || [], coinCount: s.coinCount || 0, magnet: s.magnet || 0, coinGap: s.coinGap || 5, best0: s.best0 ?? this.best, recordDone: !!s.recordDone,
     });
     // Fortsett med nedtelling og noen sekunders beskyttelse
     this.state = 'running';
@@ -205,6 +225,53 @@ export class DreamGame {
   addScore() {
     this.score += this.double > 0 ? 2 : 1;
     this.onScore(this.score);
+    // Ny personlig rekord (bare når det finnes en rekord fra før): fyrverkeri!
+    if (!this.recordDone && this.best0 > 0 && this.score > this.best0) {
+      this.recordDone = true;
+      this.launchFireworks();
+      this.recordMsg = 3;
+      this.onRecord();
+    }
+  }
+
+  // ——— mynter i lufta ———
+  // Små rekker eller buer mellom hindrene: noen på bakken, noen i en hoppebue, noen høyt oppe.
+  spawnCoins(f) {
+    const x0 = W + 10;
+    const r = Math.random();
+    const add = (x, y) => this.coins.push({ x, y, spin: Math.random() * 6 });
+    if (f && f.eagle) {
+      for (let k = 0; k < 4; k++) add(f.x + 4 + k * 26, GROUND - 22); // løp under ørnen
+    } else if (r < 0.45 && f) {
+      // Bue over gjerdet (hopp gjennom den)
+      for (let k = -2; k <= 2; k++) add(f.x + f.w / 2 + k * 30, GROUND - 46 - 92 * (1 - (k / 2.6) ** 2));
+    } else if (r < 0.8) {
+      for (let k = 0; k < 4; k++) add(x0 + 110 + k * 28, GROUND - 22);
+    } else {
+      for (let k = 0; k < 3; k++) add(x0 + 120 + k * 30, GROUND - 128);
+    }
+  }
+
+  launchFireworks() {
+    for (let i = 0; i < 6; i++) {
+      this.fw.push({ x: 140 + Math.random() * (W - 200), y: GROUND, vy: -430 - Math.random() * 110, top: 40 + Math.random() * 70, wait: i * 0.28, c: FW_COLS[i % FW_COLS.length], sparks: null, t: 0 });
+    }
+  }
+
+  updateFireworks(dt) {
+    for (const r of this.fw) {
+      if (r.wait > 0) { r.wait -= dt; continue; }
+      if (!r.sparks) {
+        r.y += r.vy * dt;
+        if (r.y <= r.top) {
+          r.sparks = Array.from({ length: 34 }, (_, k) => { const a = (Math.PI * 2 * k) / 34; const v = 90 + Math.random() * 130; return { x: r.x, y: r.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, c: Math.random() < 0.25 ? '#fff' : r.c }; });
+        }
+      } else {
+        r.t += dt;
+        for (const p of r.sparks) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 140 * dt; p.vx *= 0.985; }
+      }
+    }
+    this.fw = this.fw.filter((r) => !r.sparks || r.t < 1.5);
   }
 
   givePower(kind) {
@@ -214,6 +281,8 @@ export class DreamGame {
     if (kind === 'jet') { this.fly = 10; this.sheep.vy = 0; this.sheep.onGround = false; }
     if (kind === 'slow') this.slow = 8;
     if (kind === 'double') this.double = 20;
+    if (kind === 'magnet') { this.magnet = MAGNET_S; this.coinGap = Math.min(this.coinGap, 1); }
+    this.onPower(kind);
     this.puMsg = { text: T['pu_' + kind] || kind, t: 2.2 };
     this.burst(this.sheep.x, this.sheep.y - 30, ['#f1c877', '#fff', '#6f90e2'], 18);
   }
@@ -240,7 +309,10 @@ export class DreamGame {
     if (this.invuln > 0) this.invuln = Math.max(0, this.invuln - dt);
     if (this.slow > 0) this.slow = Math.max(0, this.slow - dt);
     if (this.double > 0) this.double = Math.max(0, this.double - dt);
+    if (this.magnet > 0) this.magnet = Math.max(0, this.magnet - dt);
+    if (this.recordMsg > 0) this.recordMsg -= dt;
     if (this.puMsg) { this.puMsg.t -= dt; if (this.puMsg.t <= 0) this.puMsg = null; }
+    if (this.fw.length) this.updateFireworks(dt);
     // Farten øker jevnt hele tiden (også etter 50 poeng), opp til et tak langt fram.
     this.speed = Math.min(1650, 380 + this.time * 12);
     // Sakte tid: hindrene går saktere, og farten glir tilbake det siste sekundet.
@@ -298,6 +370,11 @@ export class DreamGame {
         const h = tall ? 54 + Math.random() * 12 : 32 + Math.random() * 14;
         this.fences.push({ x: W + 10, w, h, passed: false });
       }
+      // Mynter: en liten rekke omtrent hvert 7.–13. hinder (oftere med magnet)
+      if (--this.coinGap <= 0) {
+        this.spawnCoins(this.fences[this.fences.length - 1]);
+        this.coinGap = this.magnet > 0 ? 1 + Math.floor(Math.random() * 2) : 7 + Math.floor(Math.random() * 7);
+      }
       // Avstanden krymper litt etter hvert, men aldri så mye at et hopp ikke rekker å lande.
       const tight = Math.max(0.75, 1.15 - this.time / 250);
       this.nextGap = this.speed * (0.75 + Math.random() * (tight - 0.2)) + 120;
@@ -346,6 +423,23 @@ export class DreamGame {
       if (!it.taken && Math.abs(it.x - sh.x) < 34 && Math.abs((it.y + Math.sin(it.bob) * 4) - (sh.y - 20)) < 40) { it.taken = true; this.givePower(it.kind); }
     }
     this.items = this.items.filter((it) => !it.taken && it.x > -30);
+    const cx = sh.x + 6;
+    const cy = sh.y - 24;
+    for (const co of this.coins) {
+      co.x -= spd * dt;
+      co.spin += dt * 7;
+      if (this.magnet > 0) {
+        const dx = cx - co.x; const dy = cy - co.y; const d = Math.hypot(dx, dy) || 1;
+        if (d < 320) { const v = Math.min(d, (520 + (320 - d) * 3.2) * dt); co.x += (dx / d) * v; co.y += (dy / d) * v; }
+      }
+      if (!co.taken && Math.abs(co.x - cx) < 27 && Math.abs(co.y - cy) < 30) {
+        co.taken = true;
+        this.coinCount++;
+        this.onCoin();
+        for (let i = 0; i < 6; i++) { const a = Math.random() * Math.PI * 2; this.parts.push({ x: co.x, y: co.y, vx: Math.cos(a) * 140, vy: Math.sin(a) * 140 - 80, life: 0.35, c: i % 2 ? '#fff4b8' : '#f6c945', s: 2.5 }); }
+      }
+    }
+    if (this.coins.length) this.coins = this.coins.filter((co) => !co.taken && co.x > -20);
     for (const p of this.parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 900 * dt; p.life -= dt; }
     this.parts = this.parts.filter((p) => p.life > 0);
     // kollisjon (litt romslig)
@@ -362,7 +456,7 @@ export class DreamGame {
       this.state = 'over';
       this.overAt = performance.now();
       this.best = Math.max(this.best, this.score);
-      this.onGameOver(this.score);
+      this.onGameOver(this.score, this.coinCount, this.recordDone);
       break;
     }
   }
@@ -397,7 +491,9 @@ export class DreamGame {
     if (this.slow > 0) { c.fillStyle = 'rgba(111, 144, 226, 0.12)'; c.fillRect(0, 0, W, H); }
     // gjerder og ørner (sprengte vises som vrak)
     for (const f of this.fences) { if (f.broken) this.drawBroken(f); else if (f.eagle) this.drawEagle(f); else this.drawFence(f); }
+    if (this.fw.length) this.drawFireworks();
     for (const it of this.items) this.drawItem(it, t);
+    for (const co of this.coins) this.drawCoin(co);
     for (const r of this.shots) this.drawShot(r);
     for (const p of this.parts) { c.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); c.fillStyle = p.c; c.fillRect(p.x, p.y, p.s, p.s); }
     c.globalAlpha = 1;
@@ -407,7 +503,8 @@ export class DreamGame {
     this.drawTrail();
     this.drawPet(t);
     if (this.fly > 0) this.drawJet(t);
-    if (!blinking) this.drawSheep();
+    if (this.magnet > 0) this.drawMagnet(t);
+    if (!blinking) this.drawSheep(t);
     if (this.lives > 0) {
       const { x, y } = this.sheep;
       c.strokeStyle = `rgba(111, 170, 255, ${0.65 + 0.25 * Math.sin(t * 5)})`;
@@ -431,12 +528,21 @@ export class DreamGame {
     c.font = '16px "Alegreya Sans", system-ui, sans-serif';
     c.fillStyle = '#a99fba';
     c.fillText(`${this.text.best}: ${Math.max(this.best, this.score)}`, 16, 54);
+    if (this.coinCount || this.coins.length || this.state === 'running') {
+      c.fillStyle = '#f6c945';
+      c.font = '700 17px "Alegreya Sans", system-ui, sans-serif';
+      c.fillText(`🪙 ${this.coinCount}`, 16, 77);
+    }
     c.textAlign = 'center';
     if (this.state === 'ready') this.banner(this.text.start);
     if (this.state === 'over') this.banner(`${this.text.woke} ${this.score} ${this.text.sheepCounted}`, this.text.again);
     if (this.state === 'paused') this.banner(this.text.paused);
     if (this.state === 'running' && this.countdown > 0) this.banner(String(Math.ceil(this.countdown)));
-    else if (this.state === 'running' && this.puMsg) {
+    else if (this.state === 'running' && this.recordMsg > 0 && this.text.newRecord) {
+      c.fillStyle = '#ffe27a';
+      c.font = '700 30px "Alegreya Sans", system-ui, sans-serif';
+      c.fillText(this.text.newRecord, W / 2, 92 + Math.sin(t * 9) * 3);
+    } else if (this.state === 'running' && this.puMsg) {
       c.fillStyle = '#f1c877';
       c.font = '700 22px "Alegreya Sans", system-ui, sans-serif';
       c.fillText(this.puMsg.text, W / 2, 84);
@@ -481,6 +587,7 @@ export class DreamGame {
     if (this.fly > 0) tags.push(`🎆 ${this.fly}`);
     if (this.slow > 0) tags.push(`⏱ ${Math.ceil(this.slow)}`);
     if (this.double > 0) tags.push(`✨2× ${Math.ceil(this.double)}`);
+    if (this.magnet > 0) tags.push(`🧲 ${Math.ceil(this.magnet)}`);
     if (!tags.length) return;
     c.font = '700 18px "Alegreya Sans", system-ui, sans-serif';
     c.textAlign = 'left';
@@ -501,6 +608,67 @@ export class DreamGame {
     c.textBaseline = 'middle';
     c.fillText('🎁', it.x, y + 1);
     c.textBaseline = 'alphabetic';
+  }
+
+  drawCoin(co) {
+    const c = this.ctx;
+    const w = Math.max(1.4, Math.abs(Math.cos(co.spin)) * COIN_R);
+    const g = c.createRadialGradient(co.x - 3, co.y - 3, 1, co.x, co.y, COIN_R);
+    g.addColorStop(0, '#fff6c2');
+    g.addColorStop(0.55, '#f6c945');
+    g.addColorStop(1, '#b8860b');
+    c.fillStyle = 'rgba(255, 220, 90, 0.18)';
+    c.beginPath(); c.arc(co.x, co.y, COIN_R + 5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = g;
+    c.strokeStyle = '#8a6206';
+    c.lineWidth = 1.4;
+    c.beginPath(); c.ellipse(co.x, co.y, w, COIN_R, 0, 0, Math.PI * 2); c.fill(); c.stroke();
+    if (w > 4) { c.strokeStyle = 'rgba(138, 98, 6, 0.6)'; c.beginPath(); c.ellipse(co.x, co.y, w * 0.6, COIN_R * 0.6, 0, 0, Math.PI * 2); c.stroke(); }
+  }
+
+  drawMagnet(t) {
+    const c = this.ctx;
+    const { x, y } = this.sheep;
+    // Magnetfelt: ringer som pulserer ut fra sauen
+    for (let k = 0; k < 3; k++) {
+      const ph = (t * 1.4 + k / 3) % 1;
+      c.strokeStyle = `rgba(255, 90, 90, ${0.35 * (1 - ph)})`;
+      c.lineWidth = 2;
+      c.beginPath(); c.arc(x + 6, y - 26, 30 + ph * 90, 0, Math.PI * 2); c.stroke();
+    }
+    // Liten hesteskomagnet over hodet
+    const mx = x + 26; const my = y - 76 + Math.sin(t * 6) * 2;
+    c.lineWidth = 6; c.lineCap = 'butt';
+    c.strokeStyle = '#e0303f';
+    c.beginPath(); c.arc(mx, my, 8, Math.PI, 0); c.stroke();
+    c.beginPath(); c.moveTo(mx - 8, my); c.lineTo(mx - 8, my + 6); c.moveTo(mx + 8, my); c.lineTo(mx + 8, my + 6); c.stroke();
+    c.strokeStyle = '#e5e9ef';
+    c.beginPath(); c.moveTo(mx - 8, my + 6); c.lineTo(mx - 8, my + 10); c.moveTo(mx + 8, my + 6); c.lineTo(mx + 8, my + 10); c.stroke();
+  }
+
+  drawFireworks() {
+    const c = this.ctx;
+    for (const r of this.fw) {
+      if (r.wait > 0) continue;
+      if (!r.sparks) {
+        c.fillStyle = '#fff4b8';
+        c.beginPath(); c.arc(r.x, r.y, 2.6, 0, Math.PI * 2); c.fill();
+        c.fillStyle = 'rgba(255, 210, 120, 0.5)';
+        c.fillRect(r.x - 1, r.y + 3, 2, 14);
+        continue;
+      }
+      const a = Math.max(0, 1 - r.t / 1.5);
+      for (const p of r.sparks) {
+        c.globalAlpha = a;
+        c.fillStyle = p.c;
+        c.beginPath(); c.arc(p.x, p.y, 3, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = a * 0.4;
+        c.beginPath(); c.arc(p.x - p.vx * 0.035, p.y - p.vy * 0.035, 2.2, 0, Math.PI * 2); c.fill();
+        c.globalAlpha = a * 0.2;
+        c.beginPath(); c.arc(p.x - p.vx * 0.07, p.y - p.vy * 0.07, 1.6, 0, Math.PI * 2); c.fill();
+      }
+      c.globalAlpha = 1;
+    }
   }
 
   drawShot(r) {
@@ -631,10 +799,42 @@ export class DreamGame {
     }
   }
 
-  drawSheep() {
+  // Kappe som flagrer bak sauen
+  drawCape(t, bob) {
+    const im = this.capeImg;
+    if (!im || !im.complete || !im.naturalWidth) return;
+    const c = this.ctx;
+    const { x, y, vy } = this.sheep;
+    const lift = Math.max(-0.35, Math.min(0.3, (vy || 0) / 2600));
+    c.save();
+    c.translate(x + 18, y - 44 + bob);
+    c.rotate(-0.06 + lift + Math.sin(t * 9) * 0.07);
+    c.scale(1, 1 + Math.sin(t * 12) * 0.08);
+    c.drawImage(im, -74, -6, 78, 43);
+    c.restore();
+  }
+  // Vinger: én bak sauen og én foran, som slår i takt
+  drawWing(t, bob, front) {
+    const im = this.wingImg;
+    if (!im || !im.complete || !im.naturalWidth) return;
+    const c = this.ctx;
+    const { x, y } = this.sheep;
+    const ang = Math.sin((t * Math.PI * 2) / (this.wingRate || 0.6)) * 0.45 - 0.15;
+    const k = 0.62;
+    c.save();
+    c.translate(x + (front ? 2 : 8), y - 40 + bob);
+    c.rotate(ang + (front ? 0 : -0.18));
+    if (!front) c.globalAlpha = 0.75;
+    c.drawImage(im, -52 * k, -74 * k, 58 * k, 102 * k);
+    c.restore();
+  }
+
+  drawSheep(t = 0) {
     const c = this.ctx;
     const { x, y } = this.sheep;
     const bob = this.sheep.onGround ? Math.sin(this.sheep.legT) * 1.5 : 0;
+    this.drawWing(t, bob, false);
+    this.drawCape(t, bob);
     if (this.sprite && this.sprite.complete && this.sprite.naturalWidth) {
       // Bein (med sko) tegnes her, resten er sauen eleven har laget
       const swing = this.sheep.onGround ? Math.sin(this.sheep.legT * 2) * 5 : 4;
@@ -657,6 +857,7 @@ export class DreamGame {
         }
       }
       c.drawImage(this.sprite, x - 37, y - 60 + bob, 93, 62.7);
+      this.drawWing(t, bob, true);
       return;
     }
     // bein

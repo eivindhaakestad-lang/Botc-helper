@@ -11,11 +11,14 @@ import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
 import { syncWeather } from './weather.js';
-import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame } from '../live/sheep.js';
+import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame, sheepDisc } from '../live/sheep.js';
+import { deathFxEl, DEATH_MS } from '../live/deathfx.js';
+import { playParade } from './parade.js';
+import { CHEER_MS, SAD_MS } from '../live/reveal.js';
 
 const TXT = {
-  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.' },
-  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOff: 'Disable weather', settings: 'Settings', gearHelp: 'The gear hides when the mouse is still. Sound and fullscreen must be turned on here on this PC.' },
+  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.', parade: 'Spill saueparaden', paradeHelp: 'Sauene marsjerer inn av seg selv når Storytelleren låser rommet.' },
+  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOff: 'Disable weather', settings: 'Settings', gearHelp: 'The gear hides when the mouse is still. Sound and fullscreen must be turned on here on this PC.', parade: 'Play the sheep parade', paradeHelp: 'The sheep march in by themselves when the Storyteller locks the room.' },
 };
 
 const S = { dying: new Map(), deadSeen: null, pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
@@ -48,7 +51,10 @@ function shotLayer(p, n) {
 }
 
 // ——— dødsanimasjon: hver gang en spiller vises som død for første gang ———
-const DEATH_MS = 2600;
+// Sauer med kjøpt dødsanimasjon får sin egen (ullpuff, lyn, UFO …), ellers den vanlige.
+// Alle de andre sauene ser overrasket ut et øyeblikk.
+const SURPRISE_MS = 2000;
+const FX_SOUND = { puff: () => setTimeout(() => sfx.poof(), 450), leaves: () => sfx.rustle(), confetti: () => setTimeout(() => sfx.confetti(), 380), lightning: () => sfx.zap(), ufo: () => sfx.ufo(), vortex: () => sfx.vortex() };
 function detectDeaths(p) {
   const dead = new Set(p.seats.filter((x) => !x.alive).map((x) => x.id));
   if (!S.deadSeen) { S.deadSeen = dead; return; }
@@ -56,11 +62,15 @@ function detectDeaths(p) {
   for (const id of [...S.deadSeen]) if (!dead.has(id)) S.deadSeen.delete(id);
   if (!fresh.length) return;
   const now = Date.now();
-  for (const id of fresh) { S.deadSeen.add(id); S.dying.set(id, now + DEATH_MS); }
+  for (const id of fresh) { S.deadSeen.add(id); S.dying.set(id, { start: now, until: now + DEATH_MS }); }
+  S.surpriseUntil = now + SURPRISE_MS;
   // Slayer/Gunslinger-skuddet har allerede sin egen lyd
   const shotTarget = S.shotAnim && S.shotAnim.shot.hit ? S.shotAnim.shot.to : null;
-  if (fresh.some((id) => id !== shotTarget)) sfx.death();
-  setTimeout(() => { const t = Date.now(); for (const [id, until] of S.dying) if (until <= t) S.dying.delete(id); render(); }, DEATH_MS + 50);
+  const fxs = fresh.filter((id) => id !== shotTarget).map((id) => (seatLook(id) || {}).deathfx || '');
+  fxs.filter((x) => FX_SOUND[x]).forEach((x) => FX_SOUND[x]());
+  if (fxs.some((x) => !FX_SOUND[x])) sfx.death();
+  setTimeout(render, SURPRISE_MS + 30);
+  setTimeout(() => { const t = Date.now(); for (const [id, d] of S.dying) if (d.until <= t) S.dying.delete(id); render(); }, DEATH_MS + 50);
 }
 
 function seatToken(seat, i, n) {
@@ -77,19 +87,28 @@ function seatToken(seat, i, n) {
   const d = S.pub.day;
   const block = !!(d && d.block && !d.executed && d.block.nomineeId === seat.id);
   const sa = S.shotAnim;
-  const dying = S.dying.has(seat.id) ? ' dying' : '';
-  const shotCls = sa ? (sa.shot.from === seat.id ? ' shooter' : sa.shot.to === seat.id ? (Date.now() - sa.start >= SHOT_FLY ? (sa.shot.hit ? ' shot-hit' : ' shot-miss') : ' shot-target') : '') : '';
-  return h('div', { class: 'grim-slot', style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls + dying },
+  const now = Date.now();
+  const dy = S.dying.get(seat.id);
+  const dying = dy ? ' dying' : '';
+  const look = seatLook(seat.id);
+  const fx = dy && look ? look.deathfx || 'default' : null;
+  const shotCls = sa ? (sa.shot.from === seat.id ? ' shooter' : sa.shot.to === seat.id ? (now - sa.start >= SHOT_FLY ? (sa.shot.hit ? ' shot-hit' : ' shot-miss') : ' shot-target') : '') : '';
+  // Sauen: sover om natten, skvetter når noen dør, svetter når den er nominert, løfter hoven når den stemmer, spøkelse når den er død
+  let sheep = null;
+  if (look) {
+    sheep = dy
+      ? [seatSheep(seat.id, 'token-sheep fx-target'), seatSheep(seat.id, 'token-sheep fx-ghost', { ghost: true }), seatFrame(seat.id), fx !== 'default' ? deathFxEl(fx) : null]
+      : sheepDisc(seat, { night: S.pub.phase.type === 'night', mood: seat.alive && now < (S.surpriseUntil || 0) ? 'surprised' : nominee ? 'nervous' : '', hoof: voted });
+  }
+  return h('div', { class: 'grim-slot', 'data-seat': seat.id, style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
+    h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + (look ? ' has-sheep' : '') + shotCls + dying + (fx ? ' fx-' + fx : ''), style: dy ? `--dt:${Math.min(0, dy.start - now)}ms` : undefined },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
-        seatLook(seat.id)
-          ? [seatSheep(seat.id), seatFrame(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : nominee ? '⚖️' : '')]
-          : h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
-        seat.traveller && seatLook(seat.id) ? h('span', { class: 'trav-badge', 'aria-hidden': 'true' }, seat.traveller.icon) : null,
-        seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
+        look ? sheep : h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
+        seat.traveller && look ? h('span', { class: 'trav-badge', 'aria-hidden': 'true' }, seat.traveller.icon) : null,
+        seat.alive || look ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
         handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null,
-        dying ? h('span', { class: 'death-skull', 'aria-hidden': 'true' }, '💀') : null,
+        dying && (!look || fx === 'default') ? h('span', { class: 'death-skull', 'aria-hidden': 'true' }, '💀') : null,
         block ? h('span', { class: 'block-badge' }, '💀') : null),
       h('span', { class: 'token-label' }, seat.names.join(' + '),
         seat.alive ? null : h('span', { class: 'ghost-vote' + (seat.ghostVote ? ' has' : '') }, seat.ghostVote ? '●' : '○')),
@@ -122,7 +141,7 @@ function render() {
     const dt = S.dealAt ? Date.now() - S.dealAt : Infinity;
     const deal = dt < REVEAL_CINE_MS + 8000;
     root.replaceChildren(h('div', { class: 'screen screen-reveal' + (deal ? ' deal' : ''), style: deal ? `--deal0:${Math.round(REVEAL_CINE_MS - 700 - dt)}ms` : undefined },
-      revealCircle({ seats: p.seats, reveal: p.reveal || [], winner: p.winner, size: 150, text: { title: T('reveal'), good: T('good'), evil: T('evil') } }),
+      revealCircle({ seats: p.seats, reveal: p.reveal || [], winner: p.winner, size: 150, text: { title: T('reveal'), good: T('good'), evil: T('evil') }, celebrate: S.winAt ? { at: S.winAt, winners: p.winners || [] } : null }),
       podium({ board: S.board && S.board.board, step: S.dreamReveal, text: { title: T('champs'), points: T('points') } })));
     return;
   }
@@ -217,6 +236,7 @@ function gearPanel() {
     h('button', { class: 'btn' + (on ? '' : ' primary'), onclick: () => { if (on) disableSound(); else { enableSound(); sfx.pop(); } syncGear(true); } }, on ? '🔊 ' + T('soundOff') : '🔇 ' + T('soundOn')),
     h('button', { class: 'btn', title: T('musicHelp'), onclick: () => { musicWanted = !musicWanted; syncMusic(); syncGear(true); } }, musicWanted ? '🎵 ' + T('musicOn') : '🎵 ' + T('musicOff')),
     h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !weatherOn(), onchange: (e) => { try { localStorage.setItem('botc-screen-weather', e.target.checked ? 'off' : 'on'); } catch { /* */ } render(); syncGear(true); } }), T('weatherOff')),
+    h('button', { class: 'btn', title: T('paradeHelp'), onclick: () => { gearOpen = false; syncGear(true); playParade(document.getElementById('screen')); } }, '🐑 ' + T('parade')),
     h('p', { class: 'muted small' }, T('gearHelp')));
 }
 function syncGear(rebuild = false) {
@@ -239,6 +259,23 @@ document.addEventListener('click', (e) => { if (gearOpen && !e.target.closest('#
 let musicWanted = false;
 function syncMusic() {
   if (musicWanted && S.pub && S.pub.phase.type === 'night') playMusic(); else stopMusic();
+}
+
+// Konfetti som drysser ned over hele skjermen når vinneren kunngjøres
+function winConfetti() {
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const el = document.createElement('div');
+  el.className = 'win-confetti';
+  el.setAttribute('aria-hidden', 'true');
+  const cols = ['#ffd23f', '#ff5c8a', '#5edc7a', '#63b3ff', '#b07bff', '#ff9b2e', '#ffffff'];
+  let html = '';
+  for (let i = 0; i < 110; i++) {
+    const r = (k) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+    html += `<i style="--x:${(r(1) * 100).toFixed(1)}%;--c:${cols[i % cols.length]};--t:${(2.6 + r(2) * 2.2).toFixed(2)}s;--d:${(r(3) * 1.8).toFixed(2)}s;--dx:${Math.round((r(4) - 0.5) * 240)}px;--r:${Math.round(r(5) * 1440 - 720)}deg"></i>`;
+  }
+  el.innerHTML = html;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 7000);
 }
 
 // Skyer og regn om natten – kan slås av hvis projektor-PC-en er treg (huskes på denne maskinen)
@@ -327,7 +364,16 @@ function soundsFor(prev, m) {
   if ((m.hands || []).length > (prev.hands || []).length) sfx.pop();
   const ba = a.day && a.day.block && a.day.block.nomineeId; const bb = b.day && b.day.block && b.day.block.nomineeId;
   if (bb && bb !== ba) sfx.lock();
-  if (b.winner && b.winner !== a.winner) sfx.fanfare();
+  if (b.winner && b.winner !== a.winner) {
+    sfx.fanfare();
+    if (b.phase.type === 'ended') {
+      // Vinnerlagets sauer hopper og jubler, taperne er lei seg en liten stund
+      S.winAt = Date.now();
+      winConfetti();
+      setTimeout(render, SAD_MS + 50);
+      setTimeout(render, CHEER_MS + 50);
+    }
+  }
   const rca = a.recap; const rcb = b.recap;
   if (rcb && (!rca || rcb.step > rca.step)) {
     const it = rcb.items[rcb.items.length - 1];
@@ -400,6 +446,7 @@ if (!code) {
         }
         soundsFor(lastPublic, m);
         detectShots(m, !lastPublic);
+        if (lastPublic && !(lastPublic.room && lastPublic.room.locked) && m.room && m.room.locked && m.public.phase.type === 'setup') S.paradeNext = true;
         lastPublic = m;
         if (m.now) S.offset = m.now - Date.now();
         if ((m.dreamReveal || 0) > (S.dreamReveal || 0)) { if ((m.dreamReveal || 0) >= Math.min(3, (S.board && S.board.board.length) || 3)) sfx.fanfare(); else sfx.reveal(); }
@@ -411,6 +458,7 @@ if (!code) {
       else if (m.t === 'closed') S.error = 'closed';
       else if (m.t === 'error' && m.code === 'noroom') S.error = 'noroom';
       render();
+      if (S.paradeNext) { S.paradeNext = false; requestAnimationFrame(() => playParade(document.getElementById('screen'))); }
     },
   });
   render();
