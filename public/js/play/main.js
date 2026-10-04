@@ -37,7 +37,7 @@ const TXT = {
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
-    newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.', recap: 'Slik gikk det egentlig', tip: 'Tips:', myGrim: 'Min grim', whoWas: 'Hvem var hvem?', myGrimHelp: 'Trykk på en spiller for å notere', markGood: 'God', markEvil: 'Ond', markUnsure: 'Usikker',
+    newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.', recap: 'Slik gikk det egentlig', tip: 'Tips:', myGrim: 'Min grim', whoWas: 'Hvem var hvem?', backHome: 'Tilbake', close: 'Lukk', myGrimHelp: 'Trykk på en spiller for å notere', markGood: 'God', markEvil: 'Ond', markUnsure: 'Usikker',
   },
   en: {
     title: 'Botc Helper', enterCode: 'Type the room code from the board', join: 'Join', connecting: 'Connecting …', reconnecting: 'Lost connection – retrying …',
@@ -62,7 +62,7 @@ const TXT = {
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
     chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
-    newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.', recap: 'What really happened', tip: 'Tip:', myGrim: 'My grim', whoWas: 'Who was who?', myGrimHelp: 'Tap a player to take notes', markGood: 'Good', markEvil: 'Evil', markUnsure: 'Unsure',
+    newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.', recap: 'What really happened', tip: 'Tip:', myGrim: 'My grim', whoWas: 'Who was who?', backHome: 'Back', close: 'Close', myGrimHelp: 'Tap a player to take notes', markGood: 'Good', markEvil: 'Evil', markUnsure: 'Unsure',
   },
 };
 
@@ -351,6 +351,19 @@ function overlayView() {
 }
 
 // Spy: grimoiren som en ordentlig sirkel (bare på Spy-elevens skjerm)
+// Stor, tydelig tilbakeknapp (drømmespill, Min grim, script) – Esc virker også
+function goHome() { P.view = 'home'; P.noteSeat = null; render(); window.scrollTo(0, 0); }
+function backButton(onBack = goHome) {
+  return h('button', { class: 'btn primary back-btn', onclick: onBack }, '← ' + T('backHome'));
+}
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !P.me) return;
+  if (P.grimOpen) { P.grimOpen = null; render(); return; }
+  if (P.noteSeat) { P.noteSeat = null; render(); return; }
+  if (P.view === 'dream') { closeDream(); render(); return; }
+  if (P.view === 'script' || P.view === 'mygrim') goHome();
+});
+
 function grimSheet() {
   const card = P.grimOpen;
   if (!card || !card.grim) return null;
@@ -361,7 +374,7 @@ function grimSheet() {
     h('div', { class: 'grim-sheet-inner' },
       h('div', { class: 'row between' },
         h('span', { class: 'display' }, `📖 ${T('grimTitle')} · ${T('night')} ${card.grim.night}`),
-        h('button', { class: 'btn primary', onclick: () => { P.grimOpen = null; render(); } }, '✕ ' + T('hide'))),
+        h('button', { class: 'btn primary back-btn', onclick: () => { P.grimOpen = null; render(); } }, '✕ ' + T('close'))),
       h('div', { class: 'grim spy-grim', style: `--tok:min(110px, ${tok}cqw)` },
         h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
         h('div', { class: 'grim-center' }, h('div', { class: 'center-text' }, h('span', { class: 'muted small' }, T('grimSecret')))),
@@ -479,7 +492,7 @@ function scriptView() {
   const roles = (sc && sc.roles) || [];
   return h('div', { class: 'stack script-view' },
     h('div', { class: 'row between' },
-      h('button', { class: 'btn ghost', onclick: () => { P.view = 'home'; render(); } }, '← ' + T('back')),
+      backButton(),
       h('span', { class: 'display' }, '📜 ' + (sc && sc.name ? sc.name : T('script')))),
     roles.length ? TEAMS.filter((tm) => roles.some((r) => r.team === tm)).map((tm) => h('section', { class: 'panel script-team team-' + tm },
       h('h3', { class: 'section-title' }, T('team_' + tm)),
@@ -562,7 +575,7 @@ function myGrimView() {
     }));
   return h('div', { class: 'stack my-grim-view' },
     h('div', { class: 'row between' },
-      h('button', { class: 'btn ghost', onclick: () => { P.view = 'home'; P.noteSeat = null; render(); } }, '← ' + T('back')),
+      backButton(),
       h('span', { class: 'muted small' }, T('notesHelp'))),
     circle,
     P.noteSeat ? noteSheet(P.noteSeat, notes, roles) : null);
@@ -810,7 +823,7 @@ function dreamLabel() {
 function dreamView() {
   const wrap = h('div', { class: 'dream-view' },
     h('div', { class: 'row between' },
-      h('button', { class: 'btn ghost', onclick: () => { closeDream(); render(); } }, '← ' + T('back')),
+      backButton(() => { closeDream(); render(); }),
       h('span', { id: 'dream-phase', class: 'display' }, dreamLabel())),
     h('canvas', { id: 'dream-canvas', class: 'dream-canvas', 'aria-label': T('playDream') }),
     boardView());

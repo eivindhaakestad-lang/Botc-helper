@@ -1282,3 +1282,9 @@ body:has(#blood-frame) .play-top { z-index: 36; }
 .gear-panel { display: grid; gap: 8px; min-width: 260px; padding: 14px; border-radius: var(--r); background: var(--bg-2); border: 1px solid var(--line-2); box-shadow: var(--shadow); }
 body.idle .screen-gear:not(.open) { opacity: 0; pointer-events: none; }
 body.idle { cursor: none; }
+
+/* Stor, tydelig tilbakeknapp for elevene (drømmespill, Min grim, script, Spy-grimoire) */
+.back-btn { min-height: 52px; padding: 10px 26px; font-size: 1.15rem; font-weight: 800; border-radius: 14px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.3); }
+.back-btn:hover { transform: translateY(-1px); }
+.play-main .row:has(> .back-btn) { position: sticky; top: 50px; z-index: 9; padding: 8px 0; background: var(--bg); border-radius: 0 0 14px 14px; }
+@media (max-width: 600px) { .back-btn { width: 100%; justify-content: center; } .play-main .row:has(> .back-btn) { flex-wrap: wrap; gap: 6px; } }
