@@ -109,10 +109,10 @@ export const HATS = [
   }),
   hat('chef', N('Kokkelue', 'Chef hat'), 350, () => `<g fill="#fff" stroke="#dedad4" stroke-width="1.2"><circle cx="44" cy="19" r="10"/><circle cx="56" cy="13" r="12"/><circle cx="68" cy="13" r="12"/><circle cx="78" cy="20" r="9"/></g><rect x="40" y="14" width="40" height="12" fill="#fff"/><rect x="36" y="23" width="48" height="11" rx="2" fill="#fff" stroke="#dedad4" stroke-width="1.2"/>`),
   hat('cowboy', N('Cowboyhatt', 'Cowboy hat'), 450, () => `<path d="M38 28 Q35 7 50 9 Q60 15 70 9 Q85 7 82 28 Z" fill="#a0693a"/><rect x="38" y="22" width="44" height="6" fill="#5a3518"/><ellipse cx="60" cy="29.5" rx="45" ry="7.5" fill="#8b5a2b"/><path d="M17 27 Q60 40 103 27" fill="none" stroke="#6f441f" stroke-width="1.4"/>`),
-  hat('tophat', N('Flosshatt', 'Top hat'), 600, () => `<rect x="42" y="1" width="36" height="28" rx="2" fill="#24212b"/><rect x="42" y="20" width="36" height="6" fill="#c0392b"/>` + line('M46 4 L46 18', 2, '#ffffff22') + `<ellipse cx="60" cy="29.5" rx="31" ry="5.6" fill="#1c1a22"/>`),
-  hat('viking', N('Vikinghjelm', 'Viking helmet'), 800, () => `<path d="M35 25 Q17 21 12 3 Q24 13 39 16 Z" fill="#f2e6c8" stroke="#c4b083" stroke-width="1.2"/><path d="M85 25 Q103 21 108 3 Q96 13 81 16 Z" fill="#f2e6c8" stroke="#c4b083" stroke-width="1.2"/><path d="M33 32 Q33 7 60 7 Q87 7 87 32 Z" fill="#a3acb6" stroke="#6c757d" stroke-width="1.4"/><rect x="56" y="7.5" width="8" height="24" fill="#858e98"/><rect x="31" y="27" width="58" height="7" rx="3" fill="#858e98"/>` + [38, 48, 72, 82].map((x) => `<circle cx="${x}" cy="30.5" r="1.4" fill="#e5e9ed"/>`).join('')),
+  hat('tophat', N('Flosshatt', 'Top hat'), 600, () => `<rect x="43" y="4" width="34" height="25" rx="2" fill="#24212b"/><rect x="43" y="20" width="34" height="6" fill="#c0392b"/>` + line('M47 7 L47 18', 2, '#ffffff22') + `<ellipse cx="60" cy="29.5" rx="31" ry="5.6" fill="#1c1a22"/>`),
+  hat('viking', N('Vikinghjelm', 'Viking helmet'), 800, () => `<path d="M35 27 Q19 27 18 13 Q26 19 39 18 Z" fill="#f2e6c8" stroke="#c4b083" stroke-width="1.2"/><path d="M85 27 Q101 27 102 13 Q94 19 81 18 Z" fill="#f2e6c8" stroke="#c4b083" stroke-width="1.2"/><path d="M33 32 Q33 7 60 7 Q87 7 87 32 Z" fill="#a3acb6" stroke="#6c757d" stroke-width="1.4"/><rect x="56" y="7.5" width="8" height="24" fill="#858e98"/><rect x="31" y="27" width="58" height="7" rx="3" fill="#858e98"/>` + [38, 48, 72, 82].map((x) => `<circle cx="${x}" cy="30.5" r="1.4" fill="#e5e9ed"/>`).join('')),
   hat('witch', N('Heksehatt', 'Witch hat'), 1000, () => `<path d="M41 29 L65 1 Q70 -1 72 4 L80 29 Z" fill="#5b347f"/><path d="M43.5 25 L79 25 L80.4 29.5 L42 29.5 Z" fill="#2c1a40"/><rect x="57" y="23.6" width="7" height="7" rx="1" fill="none" stroke="#f4c542" stroke-width="1.6"/><ellipse cx="60" cy="30" rx="41" ry="7" fill="#4a2a6b"/>`),
-  hat('horns', N('Djevlehorn', 'Devil horns'), 1200, () => `<path d="M38 26 Q28 10 37 1 Q37 13 47 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/><path d="M82 26 Q92 10 83 1 Q83 13 73 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/>`),
+  hat('horns', N('Djevlehorn', 'Devil horns'), 1200, () => `<path d="M38 26 Q29 13 39 5 Q38 15 47 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/><path d="M82 26 Q91 13 81 5 Q82 15 73 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/>`),
   hat('halo', N('Glorie', 'Halo'), 1200, () => `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="2.4s" repeatCount="indefinite"/><ellipse cx="60" cy="7" rx="23" ry="5.2" fill="none" stroke="#ffe680" stroke-width="8" opacity="0.35"/><ellipse cx="60" cy="7" rx="23" ry="5.2" fill="none" stroke="#ffd23f" stroke-width="3.6"/></g>`),
 ];
 
@@ -141,7 +141,7 @@ const P = {
   dust: (x, y, s) => `<circle cx="${x}" cy="${y}" r="${f(s * 0.35)}" fill="#c9a6ff"/><circle cx="${f(x + s * 0.8)}" cy="${f(y + s * 0.5)}" r="${f(s * 0.22)}" fill="#7fc4ff"/><path d="${sparkle(f(x - s * 0.5), f(y + s * 0.6), f(s * 0.55))}" fill="#fff"/>`,
 };
 
-const DECOR_SPOTS = [[12, 18, 7], [106, 16, 6], [7, 60, 6], [113, 52, 5], [16, 96, 5.5], [104, 96, 5], [26, 6, 4.5], [94, 6, 4.5]];
+const DECOR_SPOTS = [[18, 24, 7], [102, 22, 6], [8, 60, 6], [112, 52, 5], [17, 94, 5.5], [103, 94, 5], [31, 10, 4.5], [89, 10, 4.5]];
 const trail = (id, name, price, kind, colors) => ({ id, name, price, kind, colors });
 export const TRAILS = [
   trail('bubbles', N('Bobler', 'Bubbles'), 300, 'bubble'),
@@ -159,7 +159,7 @@ export const TRAILS = [
 function trailDecor(t) {
   if (t.kind === 'rainbow') {
     const cols = ['#ff5e5e', '#ffb03b', '#ffe14d', '#5edc7a', '#5ea8ff', '#a36bff'];
-    return `<g opacity="0.8" fill="none">${cols.map((c, i) => `<path d="M${6 + i * 3.4} 104 A${54 - i * 3.4} ${54 - i * 3.4} 0 0 1 ${114 - i * 3.4} 104" stroke="${c}" stroke-width="3.6"/>`).join('')}</g>`;
+    return `<g opacity="0.8" fill="none">${cols.map((c, i) => `<path d="M${12 + i * 3.4} 100 A${48 - i * 3.4} ${48 - i * 3.4} 0 0 1 ${108 - i * 3.4} 100" stroke="${c}" stroke-width="3.6"/>`).join('')}</g>`;
   }
   return DECOR_SPOTS.map(([x, y, s], i) => {
     const c = t.colors ? t.colors[i % t.colors.length] : undefined;
@@ -398,12 +398,12 @@ function sweatDrop(x, y, s, delay) {
     + `<path d="M${x} ${f(y - s)} Q${f(x + s * 0.8)} ${f(y + s * 0.25)} ${x} ${f(y + s * 0.62)} Q${f(x - s * 0.8)} ${f(y + s * 0.25)} ${x} ${f(y - s)} Z" fill="#8fd8ff" stroke="#2d79b0" stroke-width="1"/><circle cx="${f(x - s * 0.22)}" cy="${f(y + s * 0.05)}" r="${f(s * 0.17)}" fill="#fff"/></g>`;
 }
 function moodProps(mood) {
-  if (mood === 'sleep') return zee(83, 33, 7, 0) + zee(93, 19, 9, 0.9) + zee(104, 3, 11, 1.8);
+  if (mood === 'sleep') return zee(76, 36, 6.5, 0) + zee(84, 22, 8, 0.9) + zee(80, 8, 9, 1.8);
   if (mood === 'nervous') return sweatDrop(86, 42, 6.4, 0) + sweatDrop(33, 47, 5, 0.55) + sweatDrop(80, 30, 4.4, 0.3);
   if (mood === 'surprised') {
     return '<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2.5;0 0" dur="0.5s" repeatCount="indefinite"/>'
-      + `<path d="M97 3 L105 3 L102.6 21 L99.4 21 Z" fill="#ffd23f" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><circle cx="101" cy="27" r="3.2" fill="#ffd23f" stroke="${INK}" stroke-width="1.8"/></g>`
-      + [[88, 8, -30], [112, 12, 30], [114, 26, 75]].map(([x, y, r]) => `<path d="M${x} ${y} l0 -6" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" transform="rotate(${r} ${x} ${y})"/>`).join('');
+      + `<path d="M97 20 L105 20 L102.6 38 L99.4 38 Z" fill="#ffd23f" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><circle cx="101" cy="44" r="3.2" fill="#ffd23f" stroke="${INK}" stroke-width="1.8"/></g>`
+      + [[86, 14, 30], [34, 14, -30], [60, 6, 0]].map(([x, y, r]) => `<path d="M${x} ${y} l0 -6" stroke="${INK}" stroke-width="2.2" stroke-linecap="round" transform="rotate(${r} ${x} ${y})"/>`).join('');
   }
   if (mood === 'cheer') {
     return [[12, 26, 5.4, 0], [108, 30, 5, 0.4], [18, 82, 4.4, 0.8], [104, 84, 4.6, 0.2], [60, 2, 4, 0.6]].map(([x, y, r, d]) => `<path d="${sparkle(x, y, r)}" fill="#ffe56b" stroke="#c98a00" stroke-width="0.6"><animate attributeName="opacity" values="0;1;0" dur="1.1s" begin="${d}s" repeatCount="indefinite"/></path>`).join('');
@@ -433,7 +433,7 @@ function hairWool(look, c) {
     case 'afro': {
       // Stor og rund: bredere enn hodet, med små krøller i ulla
       const dots = [[22, 30], [30, 16], [44, 8], [76, 8], [90, 16], [98, 30], [16, 48], [104, 48], [20, 66], [100, 66]].map(([x, y]) => curl(x, y, 2.6, S)).join('');
-      return { ...base, ears: [10, 110], area: [10, 2, 100, 86], sweepBox: [6, 0, 108, 92],
+      return { ...base, ears: [13, 107], area: [10, 2, 100, 86], sweepBox: [6, 0, 108, 92],
         cloud: cloud(c, 60, 45, 41, 32, 18, 12, 0), clip: cloudShapes(60, 45, 41, 32, 18, 12, 0), front: dots,
         fringe: circles([[41, 41, 8.4], [50, 36, 9], [60, 34, 9.2], [70, 36, 9], [79, 41, 8.4]], fill) };
     }
@@ -454,7 +454,7 @@ function hairWool(look, c) {
     case 'bun':
       return { ...base, front: `<circle cx="60" cy="11.4" r="10.6" fill="${W}" stroke="${S}" stroke-width="1.6"/><path d="M53.4 9.6 Q60 4.4 66.6 9.6" fill="none" stroke="${S}" stroke-width="1.1" opacity="0.6"/><rect x="49" y="18.4" width="22" height="5.6" rx="2.8" fill="#ff5fa2" stroke="#b93676" stroke-width="0.9"/>` };
     case 'pigtails':
-      return { ...base, front: circles([[14, 27, 9], [8, 38.6, 8], [11.6, 49, 6.6], [106, 27, 9], [112, 38.6, 8], [108.4, 49, 6.6]], `fill="${W}" stroke="${S}" stroke-width="1.5"`) + bow(24, 25) + bow(96, 25) };
+      return { ...base, front: circles([[18, 28, 9], [12.4, 39, 8], [15.6, 49, 6.6], [102, 28, 9], [107.6, 39, 8], [104.4, 49, 6.6]], `fill="${W}" stroke="${S}" stroke-width="1.5"`) + bow(27, 26) + bow(93, 26) };
     case 'spikes': {
       let sp = '';
       for (const a of [192, 214, 236, 258, 282, 304, 326, 348]) {
@@ -475,31 +475,32 @@ function hairWool(look, c) {
 function capeDefs(cp) {
   return cp ? `<linearGradient id="cpg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${cp.a}"/><stop offset="1" stop-color="${cp.b}"/></linearGradient>` : '';
 }
+// (Alt holdes innenfor sirkelen sauen vises i, så kappa synes på sidene av kroppen.)
 function capeBack(cp) {
-  const p1 = 'M43 80 Q14 90 3 119 Q18 113 31.5 119 Q45.5 113 60 119 Q74.5 113 88.5 119 Q102 113 117 119 Q106 90 77 80 Z';
-  const p2 = 'M43 80 Q17 92 6 118 Q20.5 115.4 33 118 Q46.6 115.4 60 118 Q73.4 115.4 87 118 Q99.5 115.4 114 118 Q103 92 77 80 Z';
-  const edge1 = 'M3 119 Q18 113 31.5 119 Q45.5 113 60 119 Q74.5 113 88.5 119 Q102 113 117 119';
-  const edge2 = 'M6 118 Q20.5 115.4 33 118 Q46.6 115.4 60 118 Q73.4 115.4 87 118 Q99.5 115.4 114 118';
+  const p1 = 'M43 79 Q16 79 8 91 Q7 100 15 104 Q14 110 26 110 Q40 108 52 112 L68 112 Q80 108 94 110 Q106 110 105 104 Q113 100 112 91 Q104 79 77 79 Z';
+  const p2 = 'M43 79 Q19 81 11 92 Q11 101 18 104 Q18 109 28 109 Q41 107 52 111 L68 111 Q79 107 92 109 Q102 109 102 104 Q109 101 109 92 Q101 81 77 79 Z';
+  const edge1 = 'M8 91 Q7 100 15 104 Q14 110 26 110 M94 110 Q106 110 105 104 Q113 100 112 91';
+  const edge2 = 'M11 92 Q11 101 18 104 Q18 109 28 109 M92 109 Q102 109 102 104 Q109 101 109 92';
   const wave = (a, b) => `<animate attributeName="d" values="${a};${b};${a}" dur="2.4s" repeatCount="indefinite"/>`;
   let s = '';
   if (cp.collar) {
     // Høy, spiss krage som stikker opp bak hodet
-    s += `<path d="M42 86 L5 28 Q14 52 32 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 81 L11 37 Q18 54 32 64 Z" fill="${cp.lining}"/>`
-      + `<path d="M78 86 L115 28 Q106 52 88 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M80 81 L109 37 Q102 54 88 64 Z" fill="${cp.lining}"/>`;
+    s += `<path d="M42 86 L11 31 Q17 53 32 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M40 81 L16 39 Q20 55 32 64 Z" fill="${cp.lining}"/>`
+      + `<path d="M78 86 L109 31 Q103 53 88 66 Z" fill="${cp.a}" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/><path d="M80 81 L104 39 Q100 55 88 64 Z" fill="${cp.lining}"/>`;
   }
   s += `<path d="${p1}" fill="url(#cpg)" stroke="${cp.b}" stroke-width="1.3" stroke-linejoin="round">${wave(p1, p2)}</path>`;
-  if (cp.lining) s += `<path d="M45 86 L14 117 L106 117 L75 86 Z" fill="${cp.lining}" opacity="0.9"/>`;
-  if (cp.id === 'hero') s += line('M28 98 Q22 108 16 117', 1.6, '#ff7a6b') + line('M92 98 Q98 108 104 117', 1.6, '#ff7a6b');
+  if (cp.lining) s += `<path d="M44 84 Q22 86 15 94 Q16 102 26 106 L94 106 Q104 102 105 94 Q98 86 76 84 Z" fill="${cp.lining}" opacity="0.9"/>`;
+  if (cp.id === 'hero') s += line('M30 86 Q18 92 15 101', 1.6, '#ff7a6b') + line('M90 86 Q102 92 105 101', 1.6, '#ff7a6b');
   if (cp.trim) {
     s += `<path d="${edge1}" fill="none" stroke="#fffaf0" stroke-width="5.4" stroke-linecap="round">${wave(edge1, edge2)}</path>`
-      + [9, 21, 37, 83, 99, 111].map((x) => `<path d="M${x} 115.6 l1.1 2.6 l-2.2 0 Z" fill="#1a1420"/>`).join('');
+      + [[9, 95], [12, 102], [20, 107], [100, 107], [108, 102], [111, 95]].map(([x, y]) => `<path d="M${x} ${y - 1.4} l1.1 2.6 l-2.2 0 Z" fill="#1a1420"/>`).join('');
   }
   if (cp.stars) {
-    s += [[11, 110, 2.6], [21, 100, 2], [27, 113, 1.6], [109, 110, 2.6], [99, 100, 2], [93, 113, 1.6], [16, 117, 1.4], [104, 117, 1.4]]
+    s += [[14, 93, 2.6], [21, 101, 2], [19, 88, 1.6], [106, 93, 2.6], [99, 101, 2], [101, 88, 1.6], [26, 107, 1.4], [94, 107, 1.4]]
       .map(([x, y, r], i) => `<path d="${sparkle(x, y, r * 1.6)}" fill="#fff6c2"><animate attributeName="opacity" values="1;0.25;1" dur="${1.4 + (i % 3) * 0.5}s" repeatCount="indefinite"/></path>`).join('');
   }
   if (cp.flames) {
-    s += [8, 19, 30, 90, 101, 112].map((x, i) => `<g opacity="0.95"><animate attributeName="opacity" values="1;0.45;1" dur="${0.5 + (i % 3) * 0.17}s" repeatCount="indefinite"/>${P.flame(x, 114, 6.5)}</g>`).join('');
+    s += [[10, 97], [17, 105], [27, 109], [93, 109], [103, 105], [110, 97]].map(([x, y], i) => `<g opacity="0.95"><animate attributeName="opacity" values="1;0.45;1" dur="${0.5 + (i % 3) * 0.17}s" repeatCount="indefinite"/>${P.flame(x, y, 6)}</g>`).join('');
   }
   return s;
 }
@@ -636,7 +637,7 @@ export function sheepSvg(lookIn, { view = 'head', champion = false, mood = '', g
     + (cp ? capeBack(cp) : '')
     + bodyAndLegs(look, c, st)
     + headParts(look, c, champion, st)
-    + (pt ? `<g transform="translate(74 70) scale(0.48)">${pt.draw()}</g>` : '')
+    + (pt ? `<g transform="translate(63 61) scale(0.45)">${pt.draw()}</g>` : '')
     // Jubel: begge hovene i været, tegnet helt øverst så de aldri forsvinner bak noe
     + (mood === 'cheer' ? raisedLeg(c, sh, true, 0.37) + raisedLeg(c, sh, false, 0) : '');
   const body = (tr ? trailDecor(tr) : '') + (ghost ? `<g transform="translate(0 -6)">${sheep}</g>` : sheep);
@@ -743,7 +744,11 @@ export function sheepDisc(seat, { night = false, mood = '', lantern = true, cls 
   if (!reg.looks[seat.id]) return null;
   const ghost = seat.alive === false;
   const m = mood || (night && !ghost ? 'sleep' : '');
-  return [seatSheep(seat.id, cls, { mood: m, ghost }), seatFrame(seat.id), ghost && lantern ? ghostLantern(!!seat.ghostVote) : null];
+  return [clipSheep(seatSheep(seat.id, cls, { mood: m, ghost })), seatFrame(seat.id), ghost && lantern ? ghostLantern(!!seat.ghostVote) : null];
+}
+// Sauen klippes til sirkelen (vinger, hatter, kjæledyr osv. stikker ikke ut på utsiden av rammen)
+export function clipSheep(img) {
+  return img ? h('span', { class: 'sheep-clip' }, img) : null;
 }
 
 export function frameUrl(id) {

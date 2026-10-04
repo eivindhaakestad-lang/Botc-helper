@@ -11,7 +11,7 @@ export function playParade(root) {
   if (running) running.stop();
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const grim = root && root.querySelector('.screen-grim .grim');
-  const slots = root ? [...root.querySelectorAll('.screen-grim .grim-slot[data-seat]')].filter((el) => el.querySelector('.token-disc > .token-sheep')) : [];
+  const slots = root ? [...root.querySelectorAll('.screen-grim .grim-slot[data-seat]')].filter((el) => el.querySelector('.token-disc .sheep-clip > .token-sheep')) : [];
   if (!grim || !slots.length) return;
 
   const style = document.createElement('style');
@@ -19,7 +19,7 @@ export function playParade(root) {
   const waiting = new Set(slots.map((el) => el.dataset.seat));
   const esc = (id) => (window.CSS && CSS.escape ? CSS.escape(id) : id);
   const sync = () => {
-    style.textContent = [...waiting].map((id) => `#screen .grim-slot[data-seat="${esc(id)}"] .token-disc > .token-sheep, #screen .grim-slot[data-seat="${esc(id)}"] .sheep-frame, #screen .grim-slot[data-seat="${esc(id)}"] .ghost-lantern { visibility: hidden; }`).join('\n');
+    style.textContent = [...waiting].map((id) => `#screen .grim-slot[data-seat="${esc(id)}"] .token-disc .sheep-clip > .token-sheep, #screen .grim-slot[data-seat="${esc(id)}"] .sheep-frame, #screen .grim-slot[data-seat="${esc(id)}"] .ghost-lantern { visibility: hidden; }`).join('\n');
   };
   sync();
   const layer = document.createElement('div');
@@ -36,7 +36,7 @@ export function playParade(root) {
   const H = window.innerHeight;
   slots.forEach((el, i) => {
     const id = el.dataset.seat;
-    const img = el.querySelector('.token-disc > .token-sheep');
+    const img = el.querySelector('.token-disc .sheep-clip > .token-sheep');
     const r = img.getBoundingClientRect();
     const w = r.width;
     const hgt = r.height;

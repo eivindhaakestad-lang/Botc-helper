@@ -5,7 +5,7 @@
 // mens taperne ser lei seg ut en liten stund.
 
 import { h } from '../app/dom.js';
-import { seatSheep, seatLook, seatFrame } from './sheep.js';
+import { seatSheep, seatLook, seatFrame, clipSheep } from './sheep.js';
 
 export const CHEER_MS = 10000;
 export const SAD_MS = 5500;
@@ -47,7 +47,7 @@ export function revealCircle({ seats, reveal = [], winner = null, text, size = 1
         h('div', { class: 'token reveal-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : ' face-down') + (seat.alive ? '' : ' rv-dead') + (me === seat.id ? ' me' : '') + (mood ? ' ' + mood : '') },
           h('span', { class: 'token-disc' },
             r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
-            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : seatLook(seat.id) ? [seatSheep(seat.id, 'token-sheep', st), seatFrame(seat.id)] : h('span', { class: 'token-back', 'aria-hidden': 'true' }, '✦'),
+            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : seatLook(seat.id) ? [clipSheep(seatSheep(seat.id, 'token-sheep', st)), seatFrame(seat.id)] : h('span', { class: 'token-back', 'aria-hidden': 'true' }, '✦'),
             r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
             r && seatLook(seat.id) ? h('span', { class: 'sheep-badge' }, seatSheep(seat.id, 'mini-sheep', st)) : null),
           seat.alive ? null : h('span', { class: 'rv-skull', title: '†' }, '💀'),

@@ -122,6 +122,7 @@ Kopier-knappene virker fortsatt for elever uten PC.
 - **Alle ser overrasket ut** et øyeblikk når noen dør (store øyne og «!»).
 - **Grim reveal:** når du kunngjør vinneren, hopper vinnerlagets sauer og jubler med begge hovene i været mens det drysser konfetti over storskjermen. Taperlaget ser lei seg ut (med en tåre) en liten stund.
 - **Navneskilt:** navnet til hver elev står på et lite skilt som alltid ligger foran rammer, vinger og effekter, så det er lett å lese.
+- **Ryddige sirkler:** sauen vises i et rundt vindu inni sirkelen, og rammen ligger tett rundt. Vinger, hatter, kapper og kjæledyr stikker aldri ut på utsiden av rammen. (Bare dødsanimasjonene får fly utenfor, mens de spilles av.)
 - **Saueparade:** når du låser rommet (Live-panelet), marsjerer sauene inn fra venstre på storskjermen og hopper opp på plassen sin én og én – med bræk. Paraden kan også spilles av fra tannhjulet på storskjermen.
 - **Lagring:** mynter, kjøp og sau lagres bare på elevens egen PC (samme nettleser) og følger eleven fra spill til spill. Ingenting av dette lagres på nett utover at rommet vet hvilken sau som sitter på hvilken plass mens spillet pågår. En enkel sjekksum gjør at det ikke holder å endre tallet i nettleseren (da nullstilles myntene), men en elev med utviklerverktøy kan i prinsippet jukse.
 

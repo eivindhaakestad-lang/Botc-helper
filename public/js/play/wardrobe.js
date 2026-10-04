@@ -2,7 +2,7 @@
 // ctx = { T, lang, render, sendLook, open, champion, done }
 
 import { h } from '../app/dom.js';
-import { CATS, COLORS, FACES, REMOVABLE, item, itemName, sheepImg, sheepUrl, randomLook, frameEl } from '../live/sheep.js';
+import { CATS, COLORS, FACES, REMOVABLE, item, itemName, sheepImg, sheepUrl, randomLook, frameEl, clipSheep } from '../live/sheep.js';
 import { deathFxEl } from '../live/deathfx.js';
 import { wallet } from './wallet.js';
 import { sfx } from '../live/sound.js';
@@ -60,7 +60,7 @@ export function creatorView(ctx) {
     h('p', { class: 'muted center' }, T('makeSheepHelp')),
     h('div', { class: 'creator-stage' },
       h('button', { class: 'arrow-btn', 'aria-label': T('prevFace'), onclick: () => creatorStep(ctx, -1) }, '◀'),
-      h('div', { class: 'creator-sheep' }, sheepImg(draft, { cls: 'creator-img', champion: ctx.champion }), draft.border ? frameEl(draft.border) : null),
+      h('div', { class: 'creator-sheep' }, clipSheep(sheepImg(draft, { cls: 'creator-img', champion: ctx.champion })), draft.border ? frameEl(draft.border) : null),
       h('button', { class: 'arrow-btn', 'aria-label': T('nextFace'), onclick: () => creatorStep(ctx, 1) }, '▶')),
     h('p', { class: 'center face-name' }, `${T('face')}: `, h('strong', null, itemName(fc, lang)), h('span', { class: 'muted small' }, `  (${faces.findIndex((x) => x.id === draft.face) + 1}/${faces.length})`)),
     h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': T('color') }, colors.map((c) => h('button', {
@@ -140,7 +140,7 @@ function priceTag(T, cat, it, owns, on) {
 
 // Bildet av en ting i rutenettet (sauen med tingen på; rammer i en sirkel; dødsanimasjoner med et ikon)
 function itemPic(cat, it, tryLook) {
-  if (cat === 'border') return h('span', { class: 'shop-disc' }, h('img', { class: 'shop-disc-img', src: sheepUrl(tryLook), alt: '', decoding: 'async' }), frameEl(it.id));
+  if (cat === 'border') return h('span', { class: 'shop-disc' }, clipSheep(h('img', { class: 'shop-disc-img', src: sheepUrl(tryLook), alt: '', decoding: 'async' })), frameEl(it.id));
   if (cat === 'deathfx') return h('span', { class: 'shop-fx' }, h('img', { src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' }), h('span', { class: 'shop-fx-icon', 'aria-hidden': 'true' }, it.icon));
   return h('img', { class: 'shop-item-img', src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' });
 }
@@ -151,7 +151,7 @@ function dealCard(ctx) {
   if (!d) return null;
   const look = { ...wallet.look, [d.cat]: d.id };
   return h('div', { class: 'shop-deal' },
-    h('span', { class: 'shop-deal-pic' }, h('img', { src: sheepUrl(look), alt: '', decoding: 'async' }), d.cat === 'border' ? frameEl(d.id) : null, d.cat === 'deathfx' ? h('span', { class: 'shop-fx-icon', 'aria-hidden': 'true' }, d.item.icon) : null),
+    h('span', { class: 'shop-deal-pic' }, clipSheep(h('img', { src: sheepUrl(look), alt: '', decoding: 'async' })), d.cat === 'border' ? frameEl(d.id) : null, d.cat === 'deathfx' ? h('span', { class: 'shop-fx-icon', 'aria-hidden': 'true' }, d.item.icon) : null),
     h('div', { class: 'stack tight' },
       h('span', { class: 'deal-title' }, '🔥 ' + T('dealTitle'), h('span', { class: 'deal-tag' }, '−30 %')),
       h('strong', null, itemName(d.item, lang)),
@@ -180,7 +180,7 @@ export function shopView(ctx) {
       sheepImg(preview, { cls: 'shop-preview fx-ghost', champion: ctx.champion, ghost: true }),
       preview.border ? frameEl(preview.border) : null,
       deathFxEl(fx))
-    : h('div', { class: 'shop-preview-wrap' }, sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion }), preview.border ? frameEl(preview.border) : null);
+    : h('div', { class: 'shop-preview-wrap' }, clipSheep(sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion })), preview.border ? frameEl(preview.border) : null);
   return h('div', { class: 'stack shop' },
     h('div', { class: 'row between' }, ctx.back(), h('span', { class: 'display' }, '🛍 ' + T('shop'))),
     h('div', { class: 'shop-head panel' },

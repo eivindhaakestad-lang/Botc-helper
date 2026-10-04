@@ -12,7 +12,7 @@ import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playRevealCine, REVEAL_CINE_MS } from '../screen/cine.js';
-import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, sheepDisc, sheepImg, frameEl } from '../live/sheep.js';
+import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, sheepDisc, sheepImg, frameEl, clipSheep } from '../live/sheep.js';
 import { wallet } from './wallet.js';
 import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe, fmtCoins } from './wardrobe.js';
 
@@ -294,7 +294,7 @@ function mySheepRow() {
   const me = P.pub && P.me && P.pub.seats.find((x) => x.id === P.me.seatId);
   const ghost = !!(me && !me.alive && P.pub.phase.type !== 'ended');
   return h('div', { class: 'my-sheep panel' + (champ ? ' champ' : '') },
-    h('button', { class: 'my-sheep-pic', disabled: !open, title: T('editSheep'), onclick: openCreator }, sheepImg(wallet.look, { cls: 'my-sheep-img', champion: champ, ghost, mood: !ghost && isNight() ? 'sleep' : '' }), wallet.look.border ? frameEl(wallet.look.border) : null),
+    h('button', { class: 'my-sheep-pic', disabled: !open, title: T('editSheep'), onclick: openCreator }, clipSheep(sheepImg(wallet.look, { cls: 'my-sheep-img', champion: champ, ghost, mood: !ghost && isNight() ? 'sleep' : '' })), wallet.look.border ? frameEl(wallet.look.border) : null),
     h('div', { class: 'stack tight grow' },
       h('strong', null, T('mySheep')),
       champ ? h('span', { class: 'champ-note' }, T('youLead')) : null,
