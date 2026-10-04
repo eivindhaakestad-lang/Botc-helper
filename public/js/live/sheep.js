@@ -16,27 +16,32 @@ const N = (no, en) => ({ no, en });
 // Billig: kjøpes første time. Dyrest: ca. 6–8 timer sparing.
 const color = (id, name, price, wool, shade, face, fx = {}) => ({ id, name, price, wool, shade, face, ...fx });
 export const COLORS = [
-  color('white', N('Hvit', 'White'), 0, '#f6f3ec', '#cfc6b6', '#f7dccb'),
-  color('cream', N('Krem', 'Cream'), 0, '#f4e2bf', '#d2b582', '#f7dccb'),
-  color('grey', N('Grå', 'Grey'), 0, '#c3c0cb', '#8f8b9b', '#f2d6c6'),
-  color('black', N('Svart', 'Black'), 0, '#4a4554', '#26222c', '#ecd0bf'),
-  color('brown', N('Brun', 'Brown'), 0, '#a87a52', '#734d2e', '#f4d8c4'),
-  color('pink', N('Rosa', 'Pink'), 0, '#f7bfd4', '#d985a6', '#f9ddd0'),
-  color('sky', N('Lyseblå', 'Light blue'), 0, '#acd6f6', '#6fa2cf', '#f5dccd'),
-  color('mint', N('Mint', 'Mint'), 0, '#b2ead2', '#72bf9d', '#f5dccd'),
-  color('yellow', N('Gul', 'Yellow'), 0, '#f8de75', '#cfa936', '#f8dfc9'),
-  color('purple', N('Lilla', 'Purple'), 0, '#c9a9ee', '#9370c7', '#f5dacd'),
-  color('orange', N('Oransje', 'Orange'), 0, '#f7b072', '#d27b35', '#f8ddc9'),
-  color('red', N('Rød', 'Red'), 0, '#ec6f72', '#b83d42', '#f8d9cc'),
-  // Luksusfarger
-  color('silver', N('Sølv', 'Silver'), 300, 'url(#w)', '#868e9c', '#f1dccf', { grad: ['#ffffff', '#d5dae2', '#9ea7b5'], shine: true }),
-  color('rose', N('Rosegull', 'Rose gold'), 450, 'url(#w)', '#b07060', '#f7dccd', { grad: ['#fde3da', '#eab3a2', '#c4826e'], shine: true }),
-  color('midnight', N('Midnatt', 'Midnight'), 800, 'url(#w)', '#14173a', '#efd5c6', { grad: ['#454aa0', '#2c3074', '#1b1e4d'], stars: true }),
-  color('neon', N('Neon', 'Neon'), 1000, 'url(#w)', '#0e9e6a', '#f4dccd', { grad: ['#d2ffe8', '#5effb0', '#14d488'], glow: true }),
-  color('gold', N('Gull', 'Gold'), 2000, 'url(#w)', '#a8760a', '#fbe6bf', { grad: ['#fff4b8', '#f6c945', '#c48a14'], shine: true, sparkle: true }),
-  color('rainbow', N('Regnbue', 'Rainbow'), 3000, 'url(#w)', '#7b55b0', '#f8dccd', { rainbow: true }),
-  color('galaxy', N('Galakse', 'Galaxy'), 3800, 'url(#w)', '#120a2c', '#efd3c8', { galaxy: true, stars: true }),
-  color('diamond', N('Diamant', 'Diamond'), 4500, 'url(#w)', '#5aa9c9', '#f3e3dc', { grad: ['#ffffff', '#cdf3ff', '#86cdea'], diamond: true, sparkle: true }),
+  // Basisfarger: enkle og dempede, uten effekter
+  color('white', N('Hvit', 'White'), 0, '#efece6', '#c6bfb3', '#f4dccd'),
+  color('grey', N('Grå', 'Grey'), 0, '#b9b7bd', '#8a878f', '#f1d8ca'),
+  color('charcoal', N('Mørkegrå', 'Charcoal'), 0, '#5d5a63', '#3b3940', '#ecd2c3'),
+  color('brown', N('Brun', 'Brown'), 0, '#93725a', '#6a5040', '#f2d7c5'),
+  color('beige', N('Beige', 'Beige'), 0, '#ddd0b8', '#ae9f83', '#f4dccd'),
+  color('dustyrose', N('Støvrosa', 'Dusty rose'), 0, '#d2aeb4', '#a6828a', '#f5dbcf'),
+  color('dove', N('Dueblå', 'Dove blue'), 0, '#a7b6c6', '#7c8b9b', '#f2d9cc'),
+  color('sage', N('Salvie', 'Sage'), 0, '#adbba2', '#829078', '#f2d9cc'),
+  color('mustard', N('Sennep', 'Mustard'), 0, '#cdb878', '#a08d50', '#f4dbc9'),
+  color('lavender', N('Lavendel', 'Lavender'), 0, '#b8b0cf', '#8d85a6', '#f3d9cd'),
+  color('terracotta', N('Terrakotta', 'Terracotta'), 0, '#c69a83', '#99715d', '#f4d9c8'),
+  color('brick', N('Murstein', 'Brick'), 0, '#b17d77', '#855a55', '#f4d8cb'),
+  // Luksusfarger: alle skinner (en glans som glir over ulla), mange er animert
+  color('silver', N('Sølv', 'Silver'), 400, 'url(#w)', '#7d8797', '#f1dccf', { grad: ['#ffffff', '#cfd5de', '#8e98a8'], sparkle: true }),
+  color('rosegold', N('Rosegull', 'Rose gold'), 600, 'url(#w)', '#a96a57', '#f7dccd', { grad: ['#ffe9e1', '#efb8a6', '#c27d68'], sparkle: true }),
+  color('pearl', N('Perlemor', 'Mother of pearl'), 900, 'url(#w)', '#a8a2bf', '#f6e0d6', { anim: [['#fff6fb', '#eef8ff', '#f4fff6', '#fff6fb'], ['#f3d9f0', '#d6e8fb', '#d8f5e4', '#f3d9f0'], ['#c9b6e4', '#a9c8ec', '#a8dcc1', '#c9b6e4']], dur: 7 }),
+  color('neon', N('Neon', 'Neon'), 1200, 'url(#w)', '#0b9c66', '#f4dccd', { anim: [['#e6fff2', '#fff0fb', '#e6fff2'], ['#4dffa6', '#ff5fd8', '#4dffa6'], ['#10c97e', '#c41ca8', '#10c97e']], dur: 4, glow: true }),
+  color('midnight', N('Midnatt', 'Midnight'), 1500, 'url(#w)', '#11143a', '#efd5c6', { grad: ['#4b50ad', '#2c3074', '#191c48'], stars: true }),
+  color('lava', N('Lava', 'Lava'), 1900, 'url(#w)', '#5a0e05', '#f6d8c8', { anim: [['#ffd34d', '#ff9b2e', '#ffd34d'], ['#ff5a1f', '#e0301a', '#ff5a1f'], ['#7a1406', '#4a0a03', '#7a1406']], dur: 2.6, embers: true }),
+  color('ice', N('Is', 'Ice'), 2200, 'url(#w)', '#6aa9c9', '#f3e1db', { grad: ['#ffffff', '#d6f3ff', '#9fd8f2'], frost: true, sparkle: true }),
+  color('gold', N('Gull', 'Gold'), 2600, 'url(#w)', '#a8760a', '#fbe6bf', { grad: ['#fff6c2', '#f6c945', '#c08410'], sparkle: true, glints: true }),
+  color('holo', N('Holografisk', 'Holographic'), 3000, 'url(#w)', '#8a86b8', '#f6e0d6', { anim: [['#ffd6f5', '#d6f0ff', '#e2ffd6', '#fff3c4', '#ffd6f5'], ['#c7b8ff', '#9fe8ff', '#b8ffcf', '#ffe08a', '#c7b8ff'], ['#9d8cff', '#5fc8ff', '#6ee8a8', '#ffb84d', '#9d8cff']], dur: 5, sparkle: true }),
+  color('rainbow', N('Regnbue', 'Rainbow'), 3400, 'url(#w)', '#6d4ba6', '#f8dccd', { rainbow: true }),
+  color('galaxy', N('Galakse', 'Galaxy'), 4000, 'url(#w)', '#120a2c', '#efd3c8', { galaxy: true, stars: true }),
+  color('diamond', N('Diamant', 'Diamond'), 4800, 'url(#w)', '#5aa9c9', '#f3e3dc', { grad: ['#ffffff', '#d4f6ff', '#8fd3ef'], diamond: true, sparkle: true, glints: true }),
 ];
 
 // Øyne sitter på (51,58) og (69,58), nese/munn rundt (60,67–74) i hodet (koordinater 0–120).
@@ -104,7 +109,6 @@ export const HATS = [
   hat('witch', N('Heksehatt', 'Witch hat'), 1000, () => `<path d="M41 29 L65 1 Q70 -1 72 4 L80 29 Z" fill="#5b347f"/><path d="M43.5 25 L79 25 L80.4 29.5 L42 29.5 Z" fill="#2c1a40"/><rect x="57" y="23.6" width="7" height="7" rx="1" fill="none" stroke="#f4c542" stroke-width="1.6"/><ellipse cx="60" cy="30" rx="41" ry="7" fill="#4a2a6b"/>`),
   hat('horns', N('Djevlehorn', 'Devil horns'), 1200, () => `<path d="M38 26 Q28 10 37 1 Q37 13 47 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/><path d="M82 26 Q92 10 83 1 Q83 13 73 20 Z" fill="#d2342f" stroke="#8e1f1f" stroke-width="1.2"/>`),
   hat('halo', N('Glorie', 'Halo'), 1200, () => `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -2;0 0" dur="2.4s" repeatCount="indefinite"/><ellipse cx="60" cy="7" rx="23" ry="5.2" fill="none" stroke="#ffe680" stroke-width="8" opacity="0.35"/><ellipse cx="60" cy="7" rx="23" ry="5.2" fill="none" stroke="#ffd23f" stroke-width="3.6"/></g>`),
-  hat('crown', N('Krone', 'Crown'), 3000, () => `<path d="M38 29 L40 10 L50 20 L60 5 L70 20 L80 10 L82 29 Z" fill="url(#gold)" stroke="#a8760a" stroke-width="1.3"/><rect x="38" y="25" width="44" height="6" rx="1.5" fill="#d9a520" stroke="#a8760a" stroke-width="1"/>` + [[50, 28, '#e0303f'], [60, 28, '#2f7de0'], [70, 28, '#e0303f']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="2.1" fill="${c}"/>`).join('')),
 ];
 
 const shoe = (id, name, price, draw, canvas) => ({ id, name, price, draw, canvas });
@@ -174,6 +178,41 @@ export const PETS = [
   pet('dragon', N('Minidrage', 'Baby dragon'), 4500, true, () => `<path d="M22 70 Q6 66 8 52 Q14 62 26 62 Z" fill="#3fa05a"/><path d="M40 46 Q22 16 6 26 Q18 32 16 44 Q26 40 34 52 Z" fill="#8b5cd6"/><path d="M60 46 Q78 16 94 26 Q82 32 84 44 Q74 40 66 52 Z" fill="#8b5cd6"/><ellipse cx="50" cy="66" rx="22" ry="20" fill="#4cbb6c"/><ellipse cx="50" cy="72" rx="12" ry="12" fill="#c7f0b0"/><circle cx="50" cy="40" r="17" fill="#4cbb6c"/><path d="M38 28 L36 16 L44 25 Z" fill="#f4e3b0"/><path d="M62 28 L64 16 L56 25 Z" fill="#f4e3b0"/>` + petEye(44, 38) + petEye(56, 38) + `<ellipse cx="50" cy="47" rx="7" ry="4" fill="#3fa05a"/><circle cx="47" cy="46.4" r="1" fill="${INK}"/><circle cx="53" cy="46.4" r="1" fill="${INK}"/><path d="M57 50 Q66 52 70 46 Q68 54 74 56 Q64 58 57 52 Z" fill="#ff7a1a"><animate attributeName="opacity" values="1;0.3;1" dur="1.2s" repeatCount="indefinite"/></path>`),
 ];
 
+
+// ——— rammer rundt sauen i grimen (sirkelen) ———
+// css: ringen tegnes med CSS (glans som roterer osv.), svg: pynt rundt (blomster, hjerter, flammer …)
+const ringPos = (n, r = 45, start = -90) => Array.from({ length: n }, (_, i) => { const a = ((start + (360 / n) * i) * Math.PI) / 180; return [f(50 + r * Math.cos(a)), f(50 + r * Math.sin(a)), f((start + (360 / n) * i) + 90)]; });
+const spin = (dur, rev = false) => `<animateTransform attributeName="transform" type="rotate" from="${rev ? 360 : 0} 50 50" to="${rev ? 0 : 360} 50 50" dur="${dur}s" repeatCount="indefinite"/>`;
+const FRAME_SVG = {
+  flowers: () => `<g>${spin(40)}<circle cx="50" cy="50" r="45" fill="none" stroke="#4f9a45" stroke-width="2.2"/>${ringPos(12).map(([x, y], i) => { const col = ['#ff8fb1', '#ffffff', '#c39bff', '#ffd23f'][i % 4]; let p = ''; for (let k = 0; k < 5; k++) { const a = (Math.PI * 2 * k) / 5; p += `<circle cx="${f(x + Math.cos(a) * 2.9)}" cy="${f(y + Math.sin(a) * 2.9)}" r="2.6" fill="${col}"/>`; } return p + `<circle cx="${x}" cy="${y}" r="1.9" fill="#f4b400"/>`; }).join('')}</g>`,
+  hearts: () => `<g>${spin(14)}${ringPos(10).map(([x, y], i) => `<path d="${heartPath(+x, +y, 7.5)}" fill="${['#ff4d7d', '#ff8fb1'][i % 2]}"/>`).join('')}</g>`,
+  stars: () => `<g>${spin(10, true)}${ringPos(9).map(([x, y], i) => `<path d="${sparkle(+x, +y, 4.6)}" fill="${['#ffd23f', '#ffffff', '#ffe98a'][i % 3]}"><animate attributeName="opacity" values="1;0.35;1" dur="1.6s" begin="${(i * 0.18).toFixed(2)}s" repeatCount="indefinite"/></path>`).join('')}</g>`,
+  ice: () => `<circle cx="50" cy="50" r="45" fill="none" stroke="#bfefff" stroke-width="3" opacity="0.85"/>${ringPos(12).map(([x, y, rot], i) => `<g transform="rotate(${rot} ${x} ${y})" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"><path d="M${x} ${f(y - 5)} L${x} ${f(+y + 5)} M${f(x - 4.3)} ${f(y - 2.5)} L${f(+x + 4.3)} ${f(+y + 2.5)} M${f(x - 4.3)} ${f(+y + 2.5)} L${f(+x + 4.3)} ${f(y - 2.5)}"/><animate attributeName="opacity" values="1;0.4;1" dur="${2 + (i % 3) * 0.5}s" repeatCount="indefinite"/></g>`).join('')}`,
+  fire: () => {
+    const flames = (off, col1, col2) => ringPos(16, 44, -90 + off).map(([x, y, rot]) => `<g transform="rotate(${rot} ${x} ${y})"><path d="M${x} ${f(y - 8)} Q${f(+x + 4.5)} ${f(y - 1)} ${x} ${f(+y + 3.5)} Q${f(x - 4.5)} ${f(y - 1)} ${x} ${f(y - 8)} Z" fill="${col1}"/><path d="M${x} ${f(y - 4)} Q${f(+x + 2.2)} ${f(y - 0.2)} ${x} ${f(+y + 2.5)} Q${f(x - 2.2)} ${f(y - 0.2)} ${x} ${f(y - 4)} Z" fill="${col2}"/></g>`).join('');
+    return `<circle cx="50" cy="50" r="44" fill="none" stroke="#ff7a1a" stroke-width="3"/><g>${flames(0, '#ff6a1a', '#ffd34d')}<animate attributeName="opacity" values="1;0.25;1" dur="0.7s" repeatCount="indefinite"/></g><g>${flames(11.25, '#ff3b1f', '#ffb02e')}<animate attributeName="opacity" values="0.25;1;0.25" dur="0.7s" repeatCount="indefinite"/></g>`;
+  },
+  lightning: () => `<circle cx="50" cy="50" r="45" fill="none" stroke="#7fd4ff" stroke-width="2.4"/>${ringPos(6, 45, -60).map(([x, y, rot], i) => `<g transform="rotate(${rot} ${x} ${y})"><path d="M${f(x - 1.5)} ${f(y - 9)} L${f(+x + 3)} ${f(y - 1.5)} L${f(x - 0.5)} ${f(y - 1)} L${f(+x + 2)} ${f(+y + 8)} L${f(x - 3.5)} ${f(+y + 0.5)} L${f(+x + 0.5)} ${y} Z" fill="#fff36b" stroke="#ffb800" stroke-width="0.6"/><animate attributeName="opacity" values="1;0;1;1;0;1" keyTimes="0;0.1;0.2;0.6;0.65;1" dur="${1.4 + i * 0.23}s" repeatCount="indefinite"/></g>`).join('')}`,
+  galaxy: () => `<g>${spin(30)}${ringPos(14, 45).map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="${i % 3 ? 0.9 : 1.6}" fill="#fff"><animate attributeName="opacity" values="1;0.2;1" dur="${1.4 + (i % 4) * 0.4}s" repeatCount="indefinite"/></circle>`).join('')}</g>`,
+  demon: () => ringPos(10, 46).map(([x, y], i) => `<circle cx="${x}" cy="${y}" r="1.3" fill="#ffb02e"><animate attributeName="opacity" values="0;1;0" dur="${1.2 + (i % 4) * 0.3}s" begin="${(i * 0.15).toFixed(2)}s" repeatCount="indefinite"/></circle>`).join(''),
+};
+const frameDef = (id, name, price, svg = false) => ({ id, name, price, svg });
+export const BORDERS = [
+  frameDef('wood', N('Treramme', 'Wooden frame'), 250),
+  frameDef('silver', N('Sølvring', 'Silver ring'), 500),
+  frameDef('flowers', N('Blomsterring', 'Flower ring'), 800, true),
+  frameDef('hearts', N('Hjerteramme', 'Heart ring'), 1000, true),
+  frameDef('gold', N('Gullring', 'Gold ring'), 1400),
+  frameDef('neon', N('Neonring', 'Neon ring'), 1700),
+  frameDef('stars', N('Stjernebane', 'Star orbit'), 2000, true),
+  frameDef('ice', N('Isring', 'Ice ring'), 2300, true),
+  frameDef('fire', N('Ildring', 'Ring of fire'), 2800, true),
+  frameDef('demon', N('Demonring', 'Demon ring'), 3000, true),
+  frameDef('lightning', N('Lynring', 'Lightning ring'), 3200, true),
+  frameDef('rainbow', N('Regnbuering', 'Rainbow ring'), 3600),
+  frameDef('galaxy', N('Galaksevirvel', 'Galaxy swirl'), 4200, true),
+];
+
 export const CATS = [
   { key: 'color', icon: '🎨', name: N('Farger', 'Colors'), list: COLORS },
   { key: 'face', icon: '😀', name: N('Ansikter', 'Faces'), list: FACES },
@@ -181,6 +220,7 @@ export const CATS = [
   { key: 'shoes', icon: '👟', name: N('Sko', 'Shoes'), list: SHOES },
   { key: 'trail', icon: '✨', name: N('Spor', 'Trails'), list: TRAILS },
   { key: 'pet', icon: '🐾', name: N('Kjæledyr', 'Pets'), list: PETS },
+  { key: 'border', icon: '⭕', name: N('Rammer', 'Frames'), list: BORDERS },
 ];
 const BY = Object.fromEntries(CATS.map((c) => [c.key, Object.fromEntries(c.list.map((x) => [x.id, x]))]));
 export function item(cat, id) { return (BY[cat] || {})[id] || null; }
@@ -191,24 +231,29 @@ export const FREE_FACES = FACES.filter((x) => !x.price).map((x) => x.id);
 export function normLook(l) {
   const o = l && typeof l === 'object' ? l : {};
   const pick = (cat, def) => (BY[cat][o[cat]] ? o[cat] : def);
-  return { color: pick('color', 'white'), face: pick('face', 'happy'), hat: pick('hat', ''), shoes: pick('shoes', ''), trail: pick('trail', ''), pet: pick('pet', '') };
+  return { color: pick('color', 'white'), face: pick('face', 'happy'), hat: pick('hat', ''), shoes: pick('shoes', ''), trail: pick('trail', ''), pet: pick('pet', ''), border: pick('border', '') };
 }
 export function randomLook() {
-  return { color: FREE_COLORS[Math.floor(Math.random() * FREE_COLORS.length)], face: FREE_FACES[Math.floor(Math.random() * FREE_FACES.length)], hat: '', shoes: '', trail: '', pet: '' };
+  return { color: FREE_COLORS[Math.floor(Math.random() * FREE_COLORS.length)], face: FREE_FACES[Math.floor(Math.random() * FREE_FACES.length)], hat: '', shoes: '', trail: '', pet: '', border: '' };
 }
 
 // ——— tegning ———
+function animStops(lists, dur) {
+  return lists.map((vals, i) => `<stop offset="${i / (lists.length - 1)}" stop-color="${vals[0]}"><animate attributeName="stop-color" values="${vals.join(';')}" dur="${dur}s" repeatCount="indefinite"/></stop>`).join('');
+}
 function woolDefs(c) {
+  if (c.anim) return `<linearGradient id="w" x1="0" y1="0" x2="0.5" y2="1">${animStops(c.anim, c.dur || 6)}</linearGradient>`;
   if (c.rainbow) {
     const cols = ['#ff6b6b', '#ffb84d', '#ffe55c', '#6ee08a', '#63b3ff', '#b07bff', '#ff6b6b'];
     const rot = (i) => [...cols.slice(i), ...cols.slice(1, i + 1)].join(';');
     return `<linearGradient id="w" x1="0" y1="0" x2="1" y2="1">${[0, 0.5, 1].map((o, i) => `<stop offset="${o}" stop-color="${cols[i * 2]}"><animate attributeName="stop-color" values="${rot(i * 2)}" dur="6s" repeatCount="indefinite"/></stop>`).join('')}</linearGradient>`;
   }
-  if (c.galaxy) return '<radialGradient id="w" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#7a4fd6"/><stop offset="0.55" stop-color="#3a2580"/><stop offset="1" stop-color="#160c38"/></radialGradient>';
+  if (c.galaxy) return `<radialGradient id="w" cx="0.4" cy="0.35" r="0.8">${animStops([['#8a5ae6', '#c25ae6', '#5a7ae6', '#8a5ae6'], ['#3a2580', '#5a1f7a', '#1f3a80', '#3a2580'], ['#160c38', '#1a0a30', '#0c1638', '#160c38']], 8)}</radialGradient>`;
   if (c.grad) return `<linearGradient id="w" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="${c.grad[0]}"/><stop offset="0.55" stop-color="${c.grad[1]}"/><stop offset="1" stop-color="${c.grad[2]}"/></linearGradient>`;
   return '';
 }
 const GOLD_DEF = '<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4b8"/><stop offset="0.5" stop-color="#f6c945"/><stop offset="1" stop-color="#c48a14"/></linearGradient>';
+const SWEEP_DEF = '<linearGradient id="sw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="0.5" stop-color="#fff" stop-opacity="0.8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>';
 const GLOW_DEF = '<filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>';
 
 function bumps(cx, cy, rx, ry, n, r, start = 0) {
@@ -218,6 +263,13 @@ function bumps(cx, cy, rx, ry, n, r, start = 0) {
     s += `<circle cx="${f(cx + rx * Math.cos(a))}" cy="${f(cy + ry * Math.sin(a))}" r="${r}"/>`;
   }
   return s;
+}
+function cloudShapes(cx, cy, rx, ry, n, r, start = 0) {
+  return bumps(cx, cy, rx, ry, n, r, start) + `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+}
+// Glans som glir over ulla (bare luksusfarger). id må være unik i dokumentet.
+function sweep(id, shapes, x, y, w, hh, delay = 0) {
+  return `<clipPath id="${id}">${shapes}</clipPath><g clip-path="url(#${id})"><g transform="rotate(24 ${f(x + w / 2)} ${f(y + hh / 2)})"><rect x="${f(x - 60)}" y="${f(y - 40)}" width="${f(w * 0.32)}" height="${f(hh + 80)}" fill="url(#sw)"><animate attributeName="x" values="${f(x - 60)};${f(x + w + 30)};${f(x + w + 30)}" keyTimes="0;0.5;1" dur="3.4s" begin="${delay}s" repeatCount="indefinite"/></rect></g></g>`;
 }
 // Ullsky: klumper med kant + et fyll i midten som skjuler de indre kantene
 function cloud(c, cx, cy, rx, ry, n, r, start = 0) {
@@ -234,6 +286,15 @@ function woolFx(c, area) {
   }
   if (c.diamond) {
     s += `<g fill="#fff" opacity="0.45"><path d="M${f(x0 + w * 0.2)} ${f(y0 + hh * 0.3)} l${f(w * 0.12)} ${f(-hh * 0.12)} l${f(w * 0.08)} ${f(hh * 0.2)} Z"/><path d="M${f(x0 + w * 0.62)} ${f(y0 + hh * 0.22)} l${f(w * 0.14)} ${f(hh * 0.06)} l${f(-w * 0.06)} ${f(hh * 0.16)} Z"/><path d="M${f(x0 + w * 0.45)} ${f(y0 + hh * 0.6)} l${f(w * 0.1)} ${f(-hh * 0.1)} l${f(w * 0.06)} ${f(hh * 0.14)} Z"/></g>`;
+  }
+  if (c.embers) {
+    s += [[0.25, 0.7], [0.55, 0.8], [0.75, 0.6], [0.4, 0.5]].map(([px, py], i) => `<circle cx="${f(x0 + w * px)}" cy="${f(y0 + hh * py)}" r="1.6" fill="#ffd34d"><animate attributeName="cy" values="${f(y0 + hh * py)};${f(y0 + hh * py - 18)}" dur="${1.6 + i * 0.3}s" begin="${i * 0.4}s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="${1.6 + i * 0.3}s" begin="${i * 0.4}s" repeatCount="indefinite"/></circle>`).join('');
+  }
+  if (c.frost) {
+    s += [[0.2, 0.3], [0.7, 0.25], [0.45, 0.65], [0.82, 0.62]].map(([px, py], i) => { const x = f(x0 + w * px); const y = f(y0 + hh * py); return `<g stroke="#ffffff" stroke-width="0.9" opacity="0.8"><path d="M${x - 3} ${y} L${x + 3} ${y} M${x} ${y - 3} L${x} ${y + 3} M${x - 2.1} ${y - 2.1} L${x + 2.1} ${y + 2.1} M${x - 2.1} ${y + 2.1} L${x + 2.1} ${y - 2.1}"/><animate attributeName="opacity" values="0.9;0.3;0.9" dur="${2.4 + i * 0.4}s" repeatCount="indefinite"/></g>`; }).join('');
+  }
+  if (c.glints) {
+    s += [[0.3, 0.18, 5.4], [0.7, 0.55, 4.6]].map(([px, py, r], i) => `<path d="${sparkle(f(x0 + w * px), f(y0 + hh * py), r)}" fill="#fff"><animate attributeName="opacity" values="0;0;1;0" keyTimes="0;0.6;0.8;1" dur="2.6s" begin="${i * 1.3}s" repeatCount="indefinite"/></path>`).join('');
   }
   if (c.sparkle) {
     const pts = [[0.22, 0.2, 4], [0.78, 0.32, 3.4], [0.5, 0.72, 3]];
@@ -265,6 +326,7 @@ function headParts(look, c, champion) {
   const glow = c.glow ? ' filter="url(#glow)"' : '';
   return ear(19, -22) + ear(101, 22)
     + `<g${glow}>${cloud(c, 60, 48, 31, 29, 12, 12, 15)}</g>`
+    + (c.price ? sweep('sh', cloudShapes(60, 48, 31, 29, 12, 12, 15), 17, 6, 86, 84, 0) : '')
     + woolFx(c, [20, 8, 80, 80])
     + `<ellipse cx="60" cy="63" rx="23.6" ry="24.6" fill="${c.face}"/>`
     + `<g fill="${c.wool}" stroke="${c.shade}" stroke-width="1.4"><circle cx="45.5" cy="40" r="8"/><circle cx="54.5" cy="36" r="8.4"/><circle cx="65" cy="36" r="8.4"/><circle cx="74" cy="40" r="8"/></g>`
@@ -278,6 +340,7 @@ function bodyAndLegs(look, c) {
   const leg = (x) => `<rect x="${f(x - 4.3)}" y="102.5" width="8.6" height="13" rx="3.6" fill="${c.face}" stroke="${c.shade}" stroke-width="0.9"/>`;
   const hoof = (x) => `<rect x="${f(x - 5)}" y="111.4" width="10" height="6.4" rx="3" fill="${INK}"/>`;
   return `<g${c.glow ? ' filter="url(#glow)"' : ''}>${cloud(c, 60, 101, 26, 11, 10, 11, 0)}</g>`
+    + (c.price ? sweep('sb', cloudShapes(60, 101, 26, 11, 10, 11, 0), 23, 79, 74, 44, 0.5) : '')
     + woolFx(c, [30, 88, 60, 30])
     + leg(50.8) + leg(69.6)
     + (sh ? sh.draw(c) : hoof(50.8) + hoof(69.6));
@@ -292,10 +355,11 @@ function svgDoc(vb, defs, body) {
 export function sheepSvg(lookIn, { view = 'head', champion = false } = {}) {
   const look = normLook(lookIn);
   const c = item('color', look.color);
-  const defs = woolDefs(c) + GOLD_DEF + (c.glow ? GLOW_DEF : '');
+  const defs = woolDefs(c) + GOLD_DEF + (c.price ? SWEEP_DEF : '') + (c.glow ? GLOW_DEF : '');
   if (view === 'body') {
     const s = 0.76;
     const body = `<g${c.glow ? ' filter="url(#glow)"' : ''}><circle cx="27" cy="60" r="9" fill="${c.wool}" stroke="${c.shade}" stroke-width="1.6"/>${cloud(c, 66, 64, 32, 17, 12, 12, 0)}</g>`
+      + (c.price ? sweep('sv', cloudShapes(66, 64, 32, 17, 12, 12, 0), 18, 35, 96, 60, 0.3) : '')
       + woolFx(c, [30, 44, 72, 40])
       + `<g transform="translate(${f(118 - 60 * s)} ${f(42 - 55 * s)}) scale(${s})">${headParts(look, c, champion)}</g>`;
     return svgDoc('0 0 166 112', defs, body);
@@ -357,6 +421,22 @@ export function seatSheep(id, cls = 'token-sheep') {
   const l = reg.looks[id];
   if (!l) return null;
   return sheepImg(l, { champion: reg.champion === id, cls });
+}
+
+export function frameUrl(id) {
+  const key = 'frame|' + id;
+  if (!urlCache.has(key)) urlCache.set(key, svgUrl(svgDoc('0 0 100 100', '', FRAME_SVG[id] ? FRAME_SVG[id]() : '')));
+  return urlCache.get(key);
+}
+// Rammen som legges rundt sirkelen (span med CSS-ring og ev. SVG-pynt)
+export function frameEl(id) {
+  const b = item('border', id);
+  if (!b) return null;
+  return h('span', { class: 'sheep-frame fr-' + b.id, 'aria-hidden': 'true' }, b.svg ? h('img', { class: 'fr-img', src: frameUrl(b.id), alt: '', draggable: 'false' }) : null);
+}
+export function seatFrame(id) {
+  const l = reg.looks[id];
+  return l && l.border ? frameEl(l.border) : null;
 }
 
 export function itemName(it, lang) { return it ? (it.name[lang] || it.name.no) : ''; }

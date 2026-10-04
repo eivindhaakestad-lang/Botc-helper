@@ -7,7 +7,7 @@ import { item, normLook, randomLook } from '../live/sheep.js';
 
 const KEY = 'botc-sheep-v1';
 const SALT = 'blodklokke|ull|v1';
-const LOOK_KEYS = ['color', 'face', 'hat', 'shoes', 'trail', 'pet'];
+const LOOK_KEYS = ['color', 'face', 'hat', 'shoes', 'trail', 'pet', 'border'];
 
 function hash(str) {
   let h = 2166136261;

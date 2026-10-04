@@ -12,7 +12,7 @@ import { sfx, enableSound, disableSound, soundEnabled } from '../live/sound.js';
 import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playRevealCine, REVEAL_CINE_MS } from '../screen/cine.js';
-import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, sheepImg } from '../live/sheep.js';
+import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, seatFrame, sheepImg, frameEl } from '../live/sheep.js';
 import { wallet } from './wallet.js';
 import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe } from './wardrobe.js';
 
@@ -284,7 +284,7 @@ function mySheepRow() {
   const open = shopOpen();
   const champ = amChampion();
   return h('div', { class: 'my-sheep panel' + (champ ? ' champ' : '') },
-    h('button', { class: 'my-sheep-pic', disabled: !open, title: T('editSheep'), onclick: openCreator }, sheepImg(wallet.look, { cls: 'my-sheep-img', champion: champ })),
+    h('button', { class: 'my-sheep-pic', disabled: !open, title: T('editSheep'), onclick: openCreator }, sheepImg(wallet.look, { cls: 'my-sheep-img', champion: champ }), wallet.look.border ? frameEl(wallet.look.border) : null),
     h('div', { class: 'stack tight grow' },
       h('strong', null, T('mySheep')),
       champ ? h('span', { class: 'champ-note' }, T('youLead')) : null,
@@ -649,7 +649,7 @@ function myGrimView() {
         },
         h('span', { class: 'token-disc' },
           r ? h('span', { class: 'token-icon' }, r.icon || '✦') : null,
-          r || !seatLook(x.id) ? h('span', { class: 'token-char' + (r && r.name.length > 10 ? ' long' : '') }, r ? r.name : mine ? T('you') : x.names.map((y) => y[0]).join('')) : seatSheep(x.id),
+          r || !seatLook(x.id) ? h('span', { class: 'token-char' + (r && r.name.length > 10 ? ' long' : '') }, r ? r.name : mine ? T('you') : x.names.map((y) => y[0]).join('')) : [seatSheep(x.id), seatFrame(x.id)],
           r && seatLook(x.id) ? h('span', { class: 'sheep-badge' }, seatSheep(x.id, 'mini-sheep')) : null,
           x.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
           note.mark ? h('span', { class: 'my-mark', 'aria-hidden': 'true' }, MARK_ICON[note.mark]) : null),

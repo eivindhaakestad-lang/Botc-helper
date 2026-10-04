@@ -1364,3 +1364,39 @@ body.idle { cursor: none; }
 .coin-fx-coin { position: absolute; font-size: 1.6rem; line-height: 1; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5)); }
 .confetti { position: absolute; width: 9px; height: 14px; border-radius: 2px; }
 @media (max-width: 440px) { .play-top .brand-name { display: none; } .wallet-chip { padding: 3px 9px; } }
+
+/* ——— rammer rundt sauen (kjøpes i Saueboden) ——— */
+.my-sheep-pic { position: relative; }
+.sheep-frame { position: absolute; inset: -11%; border-radius: 50%; pointer-events: none; z-index: 1; }
+.sheep-frame::before, .sheep-frame::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.fr-img { position: absolute; inset: -6%; width: 112%; height: 112%; pointer-events: none; }
+/* Ring som maskeres ut av en fylt sirkel: --fw = tykkelse */
+.fr-wood::before, .fr-silver::before, .fr-gold::before, .fr-rainbow::before, .fr-galaxy::before, .fr-demon::before {
+  background: var(--fr); --fw: 13%;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--fw)), #000 calc(100% - var(--fw) + 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--fw)), #000 calc(100% - var(--fw) + 1px));
+}
+.fr-wood::before { --fr: repeating-conic-gradient(#7a4b22 0 9deg, #a06c3b 9deg 18deg, #8a5a2c 18deg 27deg); }
+.fr-wood::after { box-shadow: 0 0 0 1.5px #4a2c12, inset 0 0 0 2px #4a2c12; inset: 0; }
+.fr-silver::before { --fr: conic-gradient(#f8fbff, #9aa4b2 15%, #ffffff 28%, #75808f 45%, #f8fbff 62%, #a7b0bc 80%, #f8fbff); animation: fr-spin 3.2s linear infinite; }
+.fr-gold::before { --fr: conic-gradient(#fff6c2, #c08410 14%, #ffe680 28%, #a8760a 46%, #fff6c2 62%, #d9a520 80%, #fff6c2); animation: fr-spin 2.8s linear infinite; }
+.fr-gold::after { box-shadow: 0 0 14px 3px rgb(255 200 60 / 0.55); animation: fr-pulse 2s ease-in-out infinite; }
+.fr-neon::before { border: 3px solid #ff3fd1; box-shadow: 0 0 10px 2px #ff3fd1, inset 0 0 10px 1px #ff3fd1; }
+.fr-neon::after { border: 3px solid #3ff0ff; box-shadow: 0 0 10px 2px #3ff0ff, inset 0 0 10px 1px #3ff0ff; animation: fr-swap 2.4s ease-in-out infinite; }
+.fr-rainbow::before { --fr: conic-gradient(#ff5e5e, #ffb03b, #ffe14d, #5edc7a, #5ea8ff, #a36bff, #ff5e5e); animation: fr-spin 2.2s linear infinite; }
+.fr-rainbow::after { box-shadow: 0 0 16px 2px rgb(255 255 255 / 0.35); }
+.fr-galaxy::before { --fr: conic-gradient(#2b1055, #7a4fd6, #e04fd6, #2b1055, #4f7ad6, #9ad6ff, #2b1055); --fw: 16%; animation: fr-spin 7s linear infinite; }
+.fr-galaxy::after { box-shadow: 0 0 18px 3px rgb(160 100 255 / 0.5); animation: fr-pulse 3s ease-in-out infinite; }
+.fr-demon::before { --fr: conic-gradient(#1a0000, #a3000f, #1a0000, #ff3b1f, #1a0000, #7a0010, #1a0000); --fw: 15%; animation: fr-spin 5s linear infinite reverse; }
+.fr-demon::after { box-shadow: 0 0 18px 4px rgb(255 40 20 / 0.55); animation: fr-pulse 1.6s ease-in-out infinite; }
+.fr-fire::after { box-shadow: 0 0 16px 4px rgb(255 120 30 / 0.55); animation: fr-pulse 0.9s ease-in-out infinite; }
+.fr-lightning::after { box-shadow: 0 0 14px 2px rgb(127 212 255 / 0.6); animation: fr-flash 1.7s steps(1) infinite; }
+.fr-ice::after { box-shadow: 0 0 12px 2px rgb(191 239 255 / 0.6); }
+@keyframes fr-spin { to { transform: rotate(360deg); } }
+@keyframes fr-pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+@keyframes fr-swap { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes fr-flash { 0%, 100% { opacity: 1; } 8% { opacity: 0.2; } 16% { opacity: 1; } 55% { opacity: 0.4; } 60% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sheep-frame::before, .sheep-frame::after { animation: none !important; } }
+/* Forhåndsvisning av rammer i Saueboden */
+.shop-disc { position: relative; width: 84px; height: 84px; margin: 8px 6px 4px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #3a334b, #231e2e 70%); border: 3px solid var(--line-2); display: block; }
+.shop-disc-img { position: absolute; left: -6%; top: -10%; width: 112%; height: 112%; }

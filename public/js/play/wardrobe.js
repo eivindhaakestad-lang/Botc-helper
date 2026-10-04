@@ -2,7 +2,7 @@
 // ctx = { T, lang, render, sendLook, open, champion, done }
 
 import { h } from '../app/dom.js';
-import { CATS, COLORS, FACES, item, itemName, sheepImg, sheepUrl, randomLook } from '../live/sheep.js';
+import { CATS, COLORS, FACES, item, itemName, sheepImg, sheepUrl, randomLook, frameEl } from '../live/sheep.js';
 import { wallet } from './wallet.js';
 import { sfx } from '../live/sound.js';
 
@@ -55,7 +55,7 @@ export function creatorView(ctx) {
     h('p', { class: 'muted center' }, T('makeSheepHelp')),
     h('div', { class: 'creator-stage' },
       h('button', { class: 'arrow-btn', 'aria-label': T('prevFace'), onclick: () => creatorStep(ctx, -1) }, '◀'),
-      h('div', { class: 'creator-sheep' }, sheepImg(draft, { cls: 'creator-img', champion: ctx.champion })),
+      h('div', { class: 'creator-sheep' }, sheepImg(draft, { cls: 'creator-img', champion: ctx.champion }), draft.border ? frameEl(draft.border) : null),
       h('button', { class: 'arrow-btn', 'aria-label': T('nextFace'), onclick: () => creatorStep(ctx, 1) }, '▶')),
     h('p', { class: 'center face-name' }, `${T('face')}: `, h('strong', null, itemName(fc, lang)), h('span', { class: 'muted small' }, `  (${faces.findIndex((x) => x.id === draft.face) + 1}/${faces.length})`)),
     h('div', { class: 'swatches', role: 'radiogroup', 'aria-label': T('color') }, colors.map((c) => h('button', {
@@ -76,7 +76,7 @@ function action(ctx, cat, id) {
   const owns = wallet.owns(cat, id);
   const look = wallet.look;
   const on = look[cat] === id;
-  const removable = ['hat', 'shoes', 'trail', 'pet'].includes(cat);
+  const removable = ['hat', 'shoes', 'trail', 'pet', 'border'].includes(cat);
   const { T } = ctx;
   if (owns && on) {
     return removable
@@ -117,7 +117,7 @@ export function shopView(ctx) {
   return h('div', { class: 'stack shop' },
     h('div', { class: 'row between' }, ctx.back(), h('span', { class: 'display' }, '🛍 ' + T('shop'))),
     h('div', { class: 'shop-head panel' },
-      h('div', { class: 'shop-preview-wrap' }, sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion })),
+      h('div', { class: 'shop-preview-wrap' }, sheepImg(preview, { cls: 'shop-preview', champion: ctx.champion }), preview.border ? frameEl(preview.border) : null),
       h('div', { class: 'stack tight grow' },
         h('span', { class: 'label' }, T('yourCoins')),
         h('span', { class: 'display shop-coins' }, coinTxt(coins)),
@@ -139,7 +139,9 @@ export function shopView(ctx) {
         onclick: () => { sel = isSel ? null : { cat: cat.key, id: it.id }; ctx.render(); },
         'aria-pressed': isSel ? 'true' : 'false',
       },
-      h('img', { class: 'shop-item-img', src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' }),
+      cat.key === 'border'
+        ? h('span', { class: 'shop-disc' }, h('img', { class: 'shop-disc-img', src: sheepUrl(tryLook), alt: '', decoding: 'async' }), frameEl(it.id))
+        : h('img', { class: 'shop-item-img', src: sheepUrl(tryLook), alt: '', loading: 'lazy', decoding: 'async' }),
       h('span', { class: 'shop-item-name' }, itemName(it, lang)),
       h('span', { class: 'shop-item-price' + (on ? ' on' : owns ? ' owned' : '') }, on ? '✓ ' + T('wearing') : owns ? (it.price ? T('owned') : T('free')) : coinTxt(it.price)));
     })));

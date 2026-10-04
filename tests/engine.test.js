@@ -433,7 +433,8 @@ test('vinnerlaget publiseres først når vinneren er annonsert (for myntbonusen)
 
 test('sauekatalogen: ukjente ting renses bort, og alle tegninger lager gyldig SVG', async () => {
   const { normLook, sheepSvg, CATS } = await import('../public/js/live/sheep.js');
-  assert.deepEqual(normLook({ color: 'gold', face: 'nope', hat: 'crown', pet: '<x>' }), { color: 'gold', face: 'happy', hat: 'crown', shoes: '', trail: '', pet: '' });
+  // Krona kan ikke kjøpes (den er forbeholdt drømmemesteren)
+  assert.deepEqual(normLook({ color: 'gold', face: 'nope', hat: 'crown', pet: '<x>', border: 'fire' }), { color: 'gold', face: 'happy', hat: '', shoes: '', trail: '', pet: '', border: 'fire' });
   for (const cat of CATS) {
     for (const it of cat.list) {
       for (const view of ['head', 'body']) {

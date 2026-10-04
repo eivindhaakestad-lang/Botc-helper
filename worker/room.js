@@ -89,7 +89,7 @@ function cleanPublic(p) {
 }
 
 // Elevenes sau (bare ID-er for farge, ansikt, hatt osv. – ingenting personlig)
-const LOOK_KEYS = ['color', 'face', 'hat', 'shoes', 'trail', 'pet'];
+const LOOK_KEYS = ['color', 'face', 'hat', 'shoes', 'trail', 'pet', 'border'];
 function cleanLook(l) {
   if (!l || typeof l !== 'object') return null;
   const out = {};

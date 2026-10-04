@@ -11,7 +11,7 @@ import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
 import { syncWeather } from './weather.js';
-import { setLooks, setChampionFromBoard, seatSheep, seatLook } from '../live/sheep.js';
+import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame } from '../live/sheep.js';
 
 const TXT = {
   no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.' },
@@ -84,7 +84,7 @@ function seatToken(seat, i, n) {
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
         seatLook(seat.id)
-          ? [seatSheep(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : nominee ? '⚖️' : '')]
+          ? [seatSheep(seat.id), seatFrame(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : nominee ? '⚖️' : '')]
           : h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
         seat.traveller && seatLook(seat.id) ? h('span', { class: 'trav-badge', 'aria-hidden': 'true' }, seat.traveller.icon) : null,
         seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),

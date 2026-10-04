@@ -387,7 +387,7 @@ test('rom: elevenes sau (look) vises for alle, renses og fjernes når plassen fr
   await say(room, p1, { t: 'claim', seatId: 's1' });
   await say(room, p1, { t: 'look', look: { color: 'gold', face: 'shades', hat: '<script>', pet: 'dragon', extra: 'x' } });
   const looks = screen.last('public').looks;
-  assert.deepEqual(looks.s1, { color: 'gold', face: 'shades', hat: '', shoes: '', trail: '', pet: 'dragon' });
+  assert.deepEqual(looks.s1, { color: 'gold', face: 'shades', hat: '', shoes: '', trail: '', pet: 'dragon', border: '' });
   assert.deepEqual(st.last('looks').looks.s1.color, 'gold');
   await say(room, st, { t: 'release', seatId: 's1' });
   assert.equal(screen.last('public').looks.s1, undefined);

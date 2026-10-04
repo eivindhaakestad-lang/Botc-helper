@@ -2,7 +2,7 @@
 // Eleven må stemme før viseren når dem; da låses stemmen. Brukes av storskjerm og elevvisning.
 
 import { h } from '../app/dom.js';
-import { seatSheep, seatLook } from './sheep.js';
+import { seatSheep, seatLook, seatFrame } from './sheep.js';
 
 // offset = servertid − lokal tid (ms)
 // Stemmetall med vekter (Bureaucrat ×3, Thief negativ)
@@ -81,7 +81,7 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
           h('span', { class: 'token-disc' },
             seatLook(seat.id)
               // Med sau: bildet står fast, og ✋/⚖️ vises som et merke oppå
-              ? [seatSheep(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : role === 'nominee' ? '⚖️' : '')]
+              ? [seatSheep(seat.id), seatFrame(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : role === 'nominee' ? '⚖️' : '')]
               : h('span', { class: 'token-char', 'data-plain': seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('') }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
             seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
             vote.blockId === seat.id ? h('span', { class: 'block-badge' }, '💀') : null),
