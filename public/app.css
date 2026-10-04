@@ -1535,9 +1535,21 @@ body.idle { cursor: none; }
 .sell-btn { border-color: var(--warn); }
 .sell-btn.confirm { background: var(--warn); color: #1d1300; font-weight: 800; }
 .shop-cat-help { margin: -4px 0 0; }
-/* Hånda når en elev med sau stemmer: større og spretter fram */
+/* Merket nede til høyre på sauen (⚖️ for den nominerte) */
 .vc-token.has-sheep .vc-mark, .screen-token.has-sheep .vc-mark { font-size: max(1.2rem, calc(var(--tok) * 0.4)); right: -14%; bottom: -10%; z-index: 5; filter: drop-shadow(0 0 4px rgb(255 255 255 / 0.9)) drop-shadow(0 2px 4px rgb(0 0 0 / 0.6)); }
-.vc-token.voted .vc-mark { animation: mark-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.6) both; }
+/* Når en elev stemmer: hånda i en egen grønn sirkel som spretter fram og sender ut en pulserende ring */
+.vc-token.voted .vc-mark, .screen-token.voted .vc-mark {
+  display: grid; place-items: center; right: -18%; bottom: -14%; z-index: 5;
+  width: max(32px, calc(var(--tok) * 0.56)); height: max(32px, calc(var(--tok) * 0.56));
+  font-size: max(1rem, calc(var(--tok) * 0.32)); line-height: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #74ffa6, #17a14f 72%);
+  box-shadow: 0 0 0 3px #fff, 0 0 18px rgb(94 240 142 / 0.9), 0 3px 8px rgb(0 0 0 / 0.5);
+  filter: none; animation: mark-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.6) both;
+}
+.vc-token.voted .vc-mark::before, .screen-token.voted .vc-mark::before { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 3px solid #5ef08e; pointer-events: none; animation: hand-ring 1.5s ease-out infinite; }
 @keyframes mark-pop { from { transform: scale(0.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .vc-token.voted .vc-mark { animation: none; } }
+@keyframes hand-ring { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.6); opacity: 0; } }
+/* Låsen (viseren har passert) flyttes opp til høyre, så den ikke havner bak den grønne sirkelen */
+.vc-token.has-sheep.locked.voted .token-disc::after { top: -8%; bottom: auto; right: -8%; }
+@media (prefers-reduced-motion: reduce) { .vc-token.voted .vc-mark, .vc-token.voted .vc-mark::before, .screen-token.voted .vc-mark::before { animation: none; } }
 .my-sheep-img.ghost { opacity: 0.35; filter: grayscale(1) sepia(0.5) hue-rotate(175deg) saturate(1.6) brightness(1.1) drop-shadow(0 0 3px rgb(150 200 255 / 0.5)); }

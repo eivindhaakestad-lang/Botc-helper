@@ -118,7 +118,7 @@ Kopier-knappene virker fortsatt for elever uten PC.
 - **Om natten sover de** (øynene lukket og «zzz»), og våkner når dagen kommer.
 - **Døde blir spøkelser:** nesten usynlige (bare et blekt, blåaktig omriss), svevende, med bølgende spøkelseshale i stedet for bein, og rammen blekner. Ved siden av henger en **lykt** som lyser så lenge spøkelset har ghost vote igjen, og som slukkes når den er brukt. Eleven ser også sin egen sau som spøkelse.
 - **Den nominerte svetter** og ser nervøs ut i stemmesirkelen.
-- **Stemmer:** sirkelen blir lysende grønn og en stor ✋ spretter fram nede til høyre. Et spøkelse som bruker ghost vote-en, synes litt bedre mens det stemmer.
+- **Stemmer:** sirkelen blir lysende grønn, og en stor ✋ i en egen grønn sirkel med hvit kant spretter fram nede til høyre og sender ut en pulserende ring. Et spøkelse som bruker ghost vote-en, synes litt bedre mens det stemmer.
 - **Alle ser overrasket ut** et øyeblikk når noen dør (store øyne og «!»).
 - **Grim reveal:** når du kunngjør vinneren, hopper vinnerlagets sauer og jubler med begge hovene i været mens det drysser konfetti over storskjermen. Taperlaget ser lei seg ut (med en tåre) en liten stund.
 - **Navneskilt:** navnet til hver elev står på et lite skilt som alltid ligger foran rammer, vinger og effekter, så det er lett å lese.
