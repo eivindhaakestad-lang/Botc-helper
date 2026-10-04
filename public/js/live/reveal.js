@@ -2,6 +2,7 @@
 // Brukes av både storskjermen og elevvisningen.
 
 import { h } from '../app/dom.js';
+import { seatSheep, seatLook } from './sheep.js';
 
 const seen = new Set();
 
@@ -35,8 +36,9 @@ export function revealCircle({ seats, reveal = [], winner = null, text, size = 1
         h('div', { class: 'token reveal-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : ' face-down') + (seat.alive ? '' : ' rv-dead') + (me === seat.id ? ' me' : '') },
           h('span', { class: 'token-disc' },
             r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
-            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : h('span', { class: 'token-back', 'aria-hidden': 'true' }, '✦'),
-            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null),
+            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : seatLook(seat.id) ? seatSheep(seat.id) : h('span', { class: 'token-back', 'aria-hidden': 'true' }, '✦'),
+            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
+            r && seatLook(seat.id) ? h('span', { class: 'sheep-badge' }, seatSheep(seat.id, 'mini-sheep')) : null),
           seat.alive ? null : h('span', { class: 'rv-skull', title: '†' }, '💀'),
           h('span', { class: 'token-label' }, seat.names.join(' + '))));
     }));

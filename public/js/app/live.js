@@ -11,6 +11,7 @@ import { seatName, getSeat, voteWeights } from '../engine/state.js';
 import { clockInfo } from '../live/voteclock.js';
 import { storedKey } from './lock.js';
 import { recapForPublic } from './recap.js';
+import { setLooks, setChampionFromBoard } from '../live/sheep.js';
 
 export const live = {
   client: null,
@@ -86,6 +87,7 @@ function onMessage(m) {
       live.proposals = m.proposals || {};
       live.vote = m.vote || null;
       live.chats = m.chats || {};
+      setLooks(m.looks || {});
       scheduleAutoFinish();
       for (const [seatId, cards] of Object.entries(m.cards || {})) {
         for (const c of cards) {
@@ -124,6 +126,11 @@ function onMessage(m) {
     }
     case 'board':
       live.board = m;
+      setChampionFromBoard(m);
+      render();
+      break;
+    case 'looks':
+      setLooks(m.looks || {});
       render();
       break;
     case 'dreamReveal':

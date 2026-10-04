@@ -2,6 +2,7 @@
 // Eleven må stemme før viseren når dem; da låses stemmen. Brukes av storskjerm og elevvisning.
 
 import { h } from '../app/dom.js';
+import { seatSheep, seatLook } from './sheep.js';
 
 // offset = servertid − lokal tid (ms)
 // Stemmetall med vekter (Bureaucrat ×3, Thief negativ)
@@ -76,9 +77,12 @@ export function voteCircle({ seats, vote, text, me = null, size = 110 }) {
       const role = seat.id === vote.nominatorId ? 'nominator' : seat.id === vote.nomineeId ? 'nominee' : '';
       const cant = !seat.alive && !seat.ghostVote;
       return h('div', { class: 'grim-slot', 'data-seat': seat.id, style: `left:${left.toFixed(2)}%;top:${top.toFixed(2)}%` },
-        h('div', { class: `token vc-token ${role}${voted ? ' voted' : ''}${seat.alive ? '' : ' dead'}${cant ? ' cant' : ''}${me === seat.id ? ' me' : ''}` },
+        h('div', { class: `token vc-token ${role}${voted ? ' voted' : ''}${seat.alive ? '' : ' dead'}${cant ? ' cant' : ''}${me === seat.id ? ' me' : ''}${seatLook(seat.id) ? ' has-sheep' : ''}` },
           h('span', { class: 'token-disc' },
-            h('span', { class: 'token-char', 'data-plain': seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('') }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
+            seatLook(seat.id)
+              // Med sau: bildet står fast, og ✋/⚖️ vises som et merke oppå
+              ? [seatSheep(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : role === 'nominee' ? '⚖️' : '')]
+              : h('span', { class: 'token-char', 'data-plain': seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('') }, voted ? '✋' : role === 'nominee' ? '⚖️' : seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
             seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
             vote.blockId === seat.id ? h('span', { class: 'block-badge' }, '💀') : null),
           h('span', { class: 'token-label' }, seat.names.join(' + ')),
@@ -146,6 +150,8 @@ export function patchVoteCircle(root, vote) {
     const voted = vote.voters.includes(id);
     if (tok.classList.contains('voted') === voted) continue;
     tok.classList.toggle('voted', voted);
+    const mark = tok.querySelector('.vc-mark');
+    if (mark) mark.textContent = voted ? '✋' : tok.classList.contains('nominee') ? '⚖️' : '';
     const ch = tok.querySelector('.token-char');
     if (ch) ch.textContent = voted ? '✋' : tok.classList.contains('nominee') ? '⚖️' : (ch.dataset.plain || ch.textContent);
   }

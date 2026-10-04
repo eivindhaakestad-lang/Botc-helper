@@ -1,5 +1,6 @@
 // Drømmemestere: pallen som avsløres én plass om gangen (3. → 2. → 1.) etter grim reveal.
 import { h } from '../app/dom.js';
+import { seatSheep } from './sheep.js';
 
 export function podium({ board, step, text }) {
   const top = (board || []).slice(0, 3);
@@ -15,7 +16,7 @@ export function podium({ board, step, text }) {
       const on = shown(i);
       return h('div', { class: `podium-col place-${i + 1}${on ? ' shown' : ''}` },
         h('div', { class: 'podium-who' },
-          on ? [h('span', { class: 'podium-medal' }, medal[i]), h('span', { class: 'podium-name display' }, e.name), h('span', { class: 'podium-score' }, `${e.score} ${text.points}`)]
+          on ? [seatSheep(e.seatId, 'podium-sheep'), h('span', { class: 'podium-medal' }, medal[i]), h('span', { class: 'podium-name display' }, e.name), h('span', { class: 'podium-score' }, `${e.score} ${text.points}`)]
             : h('span', { class: 'podium-q' }, '?')),
         h('div', { class: 'podium-block display' }, String(i + 1)));
     })));

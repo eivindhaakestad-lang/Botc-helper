@@ -1,5 +1,6 @@
 // Velg spillere ved å trykke i en sirkel (som grimen), brukt av elevene til nattvalg og nominasjonsforslag.
 import { h } from '../app/dom.js';
+import { seatSheep, seatLook } from './sheep.js';
 
 export function pickCircle({ seats, selected = [], me = null, allowSelf = true, disabled = () => false, onToggle, center = null, size = 84 }) {
   const n = Math.max(1, seats.length);
@@ -18,7 +19,8 @@ export function pickCircle({ seats, selected = [], me = null, allowSelf = true, 
           onclick: () => onToggle(x.id),
         },
         h('span', { class: 'token-disc' },
-          h('span', { class: 'token-char' }, on ? '✓' : x.traveller ? x.traveller.icon : x.names.map((s) => s[0]).join('')),
+          seatLook(x.id) ? seatSheep(x.id) : h('span', { class: 'token-char' }, on ? '✓' : x.traveller ? x.traveller.icon : x.names.map((s) => s[0]).join('')),
+          on && seatLook(x.id) ? h('span', { class: 'pick-check', 'aria-hidden': 'true' }, '✓') : null,
           x.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†')),
         h('span', { class: 'token-label' }, x.names.join(' + '))));
     }));

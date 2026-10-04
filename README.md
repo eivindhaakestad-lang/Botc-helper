@@ -100,6 +100,15 @@ Kopier-knappene virker fortsatt for elever uten PC.
 
 **Død spiller:** Når en elev er død (henrettet, drept om natten, skutt – uansett årsak), renner det blod ned fra toppen av elevens egen skjerm, og kantene får et mørkerødt skjær. Det kommer først når døden er kunngjort, så nattens dødsfall avsløres ikke før morgenen.
 
+**Sauer, mynter og Saueboden:** Når eleven trykker på navnet sitt, lager hen sin egen sau: bytt ansikt med pilene (12 uttrykk) og velg en av 12 farger. Sauen erstatter forbokstavene i alle sirkler – på storskjermen, i stemmesirkelen, når elevene velger spillere, i grim reveal, i gjennomgangen og i Min grim – og vises som et lite bilde ved navnet i din grim, i bylista, på drømmetoppen og på pallen.
+- **Mynter:** 1 hinder i drømmespillet = 1 mynt. Når runden er over, «renner» poengene inn i mynt-telleren øverst. I tillegg får alle 50 mynter for å være med et helt spill og vinnerlaget 100 (når du annonserer vinneren).
+- **Hvor mye tjener de?** Et hinder kommer ca. hvert 1,2–1,5 sekund. En runde på 30 sekunder gir ca. 20 mynter, ett minutt ca. 40. Med 15–20 minutter drømmespill per time blir det ca. 500–650 mynter i timen.
+- **Saueboden** (🛍) er åpen før spillet, om natten og etter spillet – stengt på dagen, så diskusjonen får full oppmerksomhet. Du kan stenge den helt i Live-panelet eller under ⋯ Spill. Elevene kan prøve alt på sauen sin før de kjøper.
+- **Priser:** luksusfarger 300–4500 (sølv, rosegull, midnatt, neon, gull, regnbue, galakse, diamant), kulere ansikter 200–2500 (solbriller, hjerteøyne, … laserblikk), hatter 100–3000, sko 100–1800, spor 300–3800 (bobler, løv, hjerter, noter, stjerner, ild, spøkelser, regnbue, mynter, stjernestøv) og kjæledyr 600–4500 (kylling … minidrage). Noe kan kjøpes første time; de råeste tingene tar ca. 6–8 timer å spare til.
+- **Mesterkrona:** den som leder drømmetoppen akkurat nå, får en animert gullkrone med juveler og gnister i stedet for hatten. Den kan ikke kjøpes, og den går videre til nestemann som tar ledelsen.
+- **I drømmespillet** løper elevens egen sau med farge, ansikt, hatt, sko, spor bak seg og kjæledyret ved siden av.
+- **Lagring:** mynter, kjøp og sau lagres bare på elevens egen PC (samme nettleser) og følger eleven fra spill til spill. Ingenting av dette lagres på nett utover at rommet vet hvilken sau som sitter på hvilken plass mens spillet pågår. En enkel sjekksum gjør at det ikke holder å endre tallet i nettleseren (da nullstilles myntene), men en elev med utviklerverktøy kan i prinsippet jukse.
+
 **Min grim for elevene:** Under «Byen» har elevene knappen 🎭 Min grim. Den viser en sirkel som i den offisielle appen. Eleven trykker på en spiller og velger en rolle-token, markerer 😇/😈/❓ og skriver et kort notat. Alt lagres bare på elevens egen PC.
 
 **Tips på rollekortet:** Når eleven holder inne for å se rollen, vises også et kort tips om hvordan rollen spilles (Trouble Brewing og Travellers, norsk og engelsk). Tipsene er skrevet for appen og er ikke offisielle tekster. En Drunk får tipset til rollen den tror den har.

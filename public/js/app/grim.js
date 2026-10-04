@@ -3,6 +3,7 @@
 import { h } from './dom.js';
 import { charInfo } from '../engine/characters.js';
 import { teamClass } from './ui.js';
+import { seatSheep } from '../live/sheep.js';
 
 export function grimCircle({ seats, token, center, cls = '', overlay = null }) {
   const n = Math.max(1, seats.length);
@@ -21,7 +22,7 @@ export function grimCircle({ seats, token, center, cls = '', overlay = null }) {
 }
 
 // Et rolle-token (sirkel) med navn under.
-export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null, hand = null, block = false, voted = false, nomTag = null, weight = null, extraCls = '', skull = false }) {
+export function roleToken({ characterId, shownId, label, sub, dead, active, onClick, reminders = [], ghost = null, index = null, alignment = null, hand = null, block = false, voted = false, nomTag = null, weight = null, extraCls = '', skull = false, seatId = null }) {
   const info = characterId ? charInfo(characterId) : null;
   const team = info ? info.team : 'none';
   const flipped = info && alignment && ((alignment === 'evil') !== (team === 'minion' || team === 'demon'));
@@ -43,7 +44,7 @@ export function roleToken({ characterId, shownId, label, sub, dead, active, onCl
   nomTag ? h('span', { class: 'vc-role ' + nomTag.cls }, nomTag.text) : null,
   skull ? h('span', { class: 'rv-skull', title: '†' }, '💀') : null,
   weight ? h('span', { class: 'vc-weight' + (weight < 0 ? ' neg' : '') }, weight < 0 ? String(weight) : '×' + weight) : null,
-  h('span', { class: 'token-label' }, label,
+  h('span', { class: 'token-label' }, seatId ? seatSheep(seatId, 'mini-sheep') : null, label,
     ghost !== null ? h('span', { class: 'ghost-vote' + (ghost ? ' has' : ''), title: ghost ? 'Ghost vote' : '' }, ghost ? '●' : '○') : null),
   sub ? h('span', { class: 'token-sub' }, sub) : null,
   reminders.length ? h('span', { class: 'token-rem' }, reminders.map((r) => h('span', { class: 'rem rem-' + (r.kind || 'custom') }, r.label))) : null);

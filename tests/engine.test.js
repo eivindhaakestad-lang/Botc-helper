@@ -418,3 +418,29 @@ test('gjennomgang: viser forgiftet, demondrap, feil info og henrettelse uten å 
   assert.equal(pub.items[0].text, 'Noen ble forgiftet');
   assert.equal(pub.title, 'Natt 1');
 });
+
+test('vinnerlaget publiseres først når vinneren er annonsert (for myntbonusen)', async () => {
+  const { publicProjection } = await import('../public/js/engine/live.js');
+  const g = makeGame(['empath', 'soldier', 'monk', 'chef', 'undertaker', 'mayor', 'poisoner', 'imp']);
+  const ev = [{ type: 'NIGHT_START' }, { type: 'GAME_END', winner: 'good' }];
+  let p = publicProjection(replay(g, ev));
+  assert.equal(p.winners, undefined, 'ikke før annonsering');
+  ev.push({ type: 'ANNOUNCE', winner: 'evil' });
+  p = publicProjection(replay(g, ev), { shop: false });
+  assert.deepEqual(p.winners, ['s6', 's7']);
+  assert.equal(p.shop, false);
+});
+
+test('sauekatalogen: ukjente ting renses bort, og alle tegninger lager gyldig SVG', async () => {
+  const { normLook, sheepSvg, CATS } = await import('../public/js/live/sheep.js');
+  assert.deepEqual(normLook({ color: 'gold', face: 'nope', hat: 'crown', pet: '<x>' }), { color: 'gold', face: 'happy', hat: 'crown', shoes: '', trail: '', pet: '' });
+  for (const cat of CATS) {
+    for (const it of cat.list) {
+      for (const view of ['head', 'body']) {
+        const svg = sheepSvg({ [cat.key]: it.id }, { view, champion: cat.key === 'hat' });
+        assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>'), `${cat.key}:${it.id}`);
+        assert.ok(!/undefined|NaN/.test(svg), `ingen undefined/NaN i ${cat.key}:${it.id} (${view})`);
+      }
+    }
+  }
+});

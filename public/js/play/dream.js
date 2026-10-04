@@ -3,6 +3,8 @@
 // Fra ca. 30 poeng kommer det også ørner. De flyr i hodehøyde – da må du IKKE hoppe:
 // hopper du når ørnen er nær, stuper den og tar deg.
 
+import { sheepUrl, petUrl, svgUrl, particleSvg, item } from '../live/sheep.js';
+
 const W = 720;
 const H = 260;
 const GROUND = 214;
@@ -16,9 +18,10 @@ const EAGLE_H = 30;
 const FLY_Y = GROUND - 108; // superhopp-høyde (godt over alle gjerder, under poengteksten)
 const POWER_CHANCE = 1 / 30;
 const POWERS = ['rocket', 'shield', 'jet', 'slow', 'double'];
+const RAINBOW = ['#ff6b6b', '#ffb84d', '#ffe55c', '#6ee08a', '#63b3ff', '#b07bff'];
 
 export class DreamGame {
-  constructor(canvas, { onGameOver, onScore, text, best = 0 }) {
+  constructor(canvas, { onGameOver, onScore, text, best = 0, look = null, champion = false }) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.onGameOver = onGameOver || (() => {});
@@ -28,6 +31,9 @@ export class DreamGame {
     this.best = best;
     this.stars = Array.from({ length: 40 }, () => ({ x: Math.random() * W, y: Math.random() * (GROUND - 60), r: Math.random() * 1.4 + 0.4, p: Math.random() * 6 }));
     this.hills = [0, 260, 520].map((x) => ({ x, w: 260 + Math.random() * 120, h: 30 + Math.random() * 30 }));
+    this.trailParts = [];
+    this.hist = [];
+    this.setLook(look, champion);
     this.reset();
     this.resize = this.resize.bind(this);
     this.loop = this.loop.bind(this);
@@ -44,7 +50,29 @@ export class DreamGame {
     this.raf = requestAnimationFrame(this.loop);
   }
 
+  // Elevens egen sau: farge, ansikt, hatt (eller mesterkrone), sko, spor og kjæledyr
+  setLook(look, champion = false) {
+    this.sprite = null; this.petImg = null; this.trail = null; this.shoe = null; this.partImgs = [];
+    if (!look) return;
+    const img = new Image();
+    img.src = sheepUrl(look, { view: 'body', champion });
+    this.sprite = img;
+    const pt = look.pet ? item('pet', look.pet) : null;
+    if (pt) { const p = new Image(); p.src = petUrl(pt.id); this.petImg = p; this.petFly = !!pt.fly; }
+    const tr = look.trail ? item('trail', look.trail) : null;
+    if (tr) {
+      this.trail = tr;
+      if (tr.kind !== 'rainbow' && tr.kind !== 'flame') {
+        const n = tr.colors ? tr.colors.length : 1;
+        this.partImgs = Array.from({ length: n }, (_, i) => { const im = new Image(); im.src = svgUrl(particleSvg(tr.kind, i)); return im; });
+      }
+    }
+    this.shoe = look.shoes ? item('shoes', look.shoes) : null;
+  }
+
   reset() {
+    this.trailParts = [];
+    this.hist = [];
     this.sheep = { x: 92, y: GROUND, vy: 0, onGround: true, legT: 0 };
     this.fences = [];
     this.eagleWarned = false;
@@ -231,6 +259,28 @@ export class DreamGame {
       if (sh.y >= GROUND) { sh.y = GROUND; sh.vy = 0; sh.onGround = true; }
     }
     sh.legT += dt * (sh.onGround ? spd / 40 : 0);
+    // Spor bak sauen
+    if (this.trail) {
+      const kind = this.trail.kind;
+      if (kind === 'rainbow') {
+        this.hist.unshift(sh.y);
+        if (this.hist.length > 28) this.hist.length = 28;
+      } else {
+        this.trailT = (this.trailT || 0) + dt;
+        const every = kind === 'flame' ? 0.022 : 0.075;
+        while (this.trailT > every) {
+          this.trailT -= every;
+          this.trailParts.push({
+            x: sh.x - 30 + Math.random() * 6, y: sh.y - 12 - Math.random() * 18,
+            vx: -spd * 0.5 - 30 - Math.random() * 40, vy: (kind === 'flame' ? -60 : kind === 'bubble' ? -45 : -15) - Math.random() * 30,
+            life: kind === 'flame' ? 0.4 : 0.95, max: kind === 'flame' ? 0.4 : 0.95, i: Math.floor(Math.random() * 6), rot: Math.random() * 6.28,
+            s: kind === 'flame' ? 5 + Math.random() * 5 : 11 + Math.random() * 6,
+          });
+        }
+      }
+    }
+    for (const p of this.trailParts) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; p.rot += dt * 3; }
+    if (this.trailParts.length) this.trailParts = this.trailParts.filter((p) => p.life > 0);
     for (const hl of this.hills) { hl.x -= spd * 0.15 * dt; if (hl.x + hl.w < 0) { hl.x = W + Math.random() * 80; hl.w = 260 + Math.random() * 120; hl.h = 30 + Math.random() * 30; } }
     this.nextGap -= spd * dt;
     if (this.nextGap <= 0) {
@@ -354,6 +404,8 @@ export class DreamGame {
     // Blinker mens den er udødelig (raskere de siste sekundene)
     const blinkRate = this.shield > 1.2 ? 8 : 16;
     const blinking = (this.shield > 0 && Math.floor(t * blinkRate) % 2 === 0) || (this.invuln > 0 && Math.floor(t * 14) % 2 === 0);
+    this.drawTrail();
+    this.drawPet(t);
     if (this.fly > 0) this.drawJet(t);
     if (!blinking) this.drawSheep();
     if (this.lives > 0) {
@@ -528,10 +580,85 @@ export class DreamGame {
     c.beginPath(); c.arc(cx - 18, cy - 2, 1.4, 0, Math.PI * 2); c.fill();
   }
 
+  drawTrail() {
+    const c = this.ctx;
+    if (this.trail && this.trail.kind === 'rainbow' && this.hist.length > 2 && this.state === 'running') {
+      const x0 = this.sheep.x - 26;
+      c.lineWidth = 3.4;
+      c.lineCap = 'round';
+      RAINBOW.forEach((col, k) => {
+        c.strokeStyle = col;
+        c.globalAlpha = 0.85;
+        c.beginPath();
+        this.hist.forEach((hy, i) => { const px = x0 - i * 7; const py = hy - 30 + k * 3.2; if (i) c.lineTo(px, py); else c.moveTo(px, py); });
+        c.stroke();
+      });
+      c.globalAlpha = 1;
+    }
+    for (const p of this.trailParts) {
+      const a = Math.max(0, Math.min(1, p.life / p.max * 1.4));
+      c.globalAlpha = a;
+      if (this.trail && this.trail.kind === 'flame') {
+        const g = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.s);
+        g.addColorStop(0, 'rgba(255, 236, 140, 0.95)');
+        g.addColorStop(0.5, 'rgba(255, 122, 26, 0.8)');
+        g.addColorStop(1, 'rgba(255, 60, 20, 0)');
+        c.fillStyle = g;
+        c.beginPath(); c.arc(p.x, p.y, p.s * (0.6 + a * 0.6), 0, Math.PI * 2); c.fill();
+      } else {
+        const im = this.partImgs[p.i % (this.partImgs.length || 1)];
+        if (im && im.complete && im.naturalWidth) {
+          c.save(); c.translate(p.x, p.y); c.rotate(this.trail && this.trail.kind === 'note' ? 0 : Math.sin(p.rot) * 0.5);
+          c.drawImage(im, -p.s / 2, -p.s / 2, p.s, p.s); c.restore();
+        }
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
+  drawPet(t) {
+    const im = this.petImg;
+    if (!im || !im.complete || !im.naturalWidth) return;
+    const c = this.ctx;
+    const sh = this.sheep;
+    const run = this.state === 'running' && this.countdown <= 0;
+    if (this.petFly) {
+      this.petY = this.petY === undefined ? sh.y - 60 : this.petY + (sh.y - 60 - this.petY) * 0.08;
+      c.drawImage(im, sh.x - 78 + Math.sin(t * 2) * 4, this.petY - 18 + Math.sin(t * 3) * 5, 34, 34);
+    } else {
+      const hop = run ? Math.abs(Math.sin(t * 9)) * 9 : 0;
+      c.drawImage(im, sh.x - 74, GROUND - 32 - hop, 32, 32);
+    }
+  }
+
   drawSheep() {
     const c = this.ctx;
     const { x, y } = this.sheep;
     const bob = this.sheep.onGround ? Math.sin(this.sheep.legT) * 1.5 : 0;
+    if (this.sprite && this.sprite.complete && this.sprite.naturalWidth) {
+      // Bein (med sko) tegnes her, resten er sauen eleven har laget
+      const swing = this.sheep.onGround ? Math.sin(this.sheep.legT * 2) * 5 : 4;
+      c.strokeStyle = '#2b2533';
+      c.lineWidth = 4;
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(x - 12, y - 10); c.lineTo(x - 12 - swing, y - 1);
+      c.moveTo(x + 12, y - 10); c.lineTo(x + 12 + swing, y - 1);
+      c.stroke();
+      const sc = this.shoe && this.shoe.canvas;
+      if (sc) {
+        for (const fx of [x - 12 - swing, x + 12 + swing]) {
+          const hgt = sc.tall ? 9 : 5;
+          c.fillStyle = sc.c;
+          c.beginPath(); c.roundRect ? c.roundRect(fx - 4.5, y - hgt, 11, hgt, 2) : c.rect(fx - 4.5, y - hgt, 11, hgt); c.fill();
+          c.fillStyle = sc.s;
+          c.fillRect(fx - 4.5, y - 2, 11, 2);
+          if (sc.wheels) { c.fillStyle = '#ffd23f'; c.beginPath(); c.arc(fx - 2, y + 1, 1.8, 0, Math.PI * 2); c.arc(fx + 4, y + 1, 1.8, 0, Math.PI * 2); c.fill(); }
+        }
+      }
+      c.drawImage(this.sprite, x - 37, y - 60 + bob, 93, 62.7);
+      return;
+    }
     // bein
     c.strokeStyle = '#2b2533';
     c.lineWidth = 4;

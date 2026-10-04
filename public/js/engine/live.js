@@ -7,7 +7,7 @@ import { msg, summary, TEAM_LABEL } from './text.js';
 import { nominationsToday, onTheBlock, voteThreshold } from './day.js';
 import { tipFor } from './tips.js';
 
-export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false, nomProps = true, weather = true } = {}) {
+export function publicProjection(s, { dream = true, decoys = true, chat = 'always', rolesOut = false, nomProps = true, weather = true, shop = true } = {}) {
   const phaseMsgs = s.messages.filter((m) => m.kind === 'public' && m.phase && m.phase.type === s.phase.type && m.phase.number === s.phase.number);
   const ended = s.phase.type === 'ended';
   const out = {
@@ -23,7 +23,7 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     }),
     announcement: phaseMsgs.length ? phaseMsgs[phaseMsgs.length - 1].text : '',
     dawnPending: false,
-    dream, decoys, chat, nomProps: nomProps !== false, weather: weather !== false,
+    dream, decoys, chat, nomProps: nomProps !== false, weather: weather !== false, shop: shop !== false,
     // Scriptet er offentlig: alle roller med beskrivelse, sortert etter team.
     script: {
       name: s.script.name || '',
@@ -64,6 +64,8 @@ export function publicProjection(s, { dream = true, decoys = true, chat = 'alway
     const rev = new Set(s.revealed || []);
     out.announcement = '';
     out.winner = s.announced || null;
+    // Vinnerlaget (for myntbonusen) – først når vinneren er annonsert
+    if (s.announced) out.winners = s.seats.filter((x) => x.alignment === s.announced).map((x) => x.id);
     out.reveal = s.seats.filter((x) => rev.has(x.id)).map((x) => {
       const info = charInfo(x.characterId);
       const shown = actingId(x) !== x.characterId ? charInfo(actingId(x)).name : null;

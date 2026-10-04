@@ -54,6 +54,7 @@ function cleanPublic(p) {
     dawnPending: !!p.dawnPending,
     nomProps: p.nomProps !== false,
     weather: p.weather !== false,
+    shop: p.shop !== false,
   };
   if (phase.type === 'day' && p.day && typeof p.day === 'object') {
     const ids = (a) => (Array.isArray(a) ? a.slice(0, 30).map((x) => str(x, 80)) : []);
@@ -77,11 +78,24 @@ function cleanPublic(p) {
       dead: ids(p.recap.dead),
     };
   }
+  if (phase.type === 'ended' && Array.isArray(p.winners)) out.winners = p.winners.slice(0, 30).map((x) => str(x, 80));
   if (phase.type === 'ended' && Array.isArray(p.reveal)) {
     out.reveal = p.reveal.slice(0, 30).map((r) => ({
       seatId: str(r.seatId, 80), character: str(r.character, 40), team: str(r.team, 12),
       alignment: r.alignment === 'evil' ? 'evil' : 'good', shown: r.shown ? str(r.shown, 40) : null, icon: str(r.icon, 16),
     }));
+  }
+  return out;
+}
+
+// Elevenes sau (bare ID-er for farge, ansikt, hatt osv. – ingenting personlig)
+const LOOK_KEYS = ['color', 'face', 'hat', 'shoes', 'trail', 'pet'];
+function cleanLook(l) {
+  if (!l || typeof l !== 'object') return null;
+  const out = {};
+  for (const k of LOOK_KEYS) {
+    const v = typeof l[k] === 'string' ? l[k].slice(0, 24) : '';
+    out[k] = /^[a-z0-9_-]*$/.test(v) ? v : '';
   }
   return out;
 }
@@ -253,7 +267,7 @@ export class Room {
     return out;
   }
   publicMsg() {
-    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null, timer: this.room.timer || null, dreamReveal: this.room.dreamReveal || 0, now: Date.now() };
+    return { t: 'public', room: { code: this.room.code, locked: this.room.locked }, public: this.room.public, claimed: this.claimedCount(), hands: this.room.hands || [], vote: this.room.vote || null, timer: this.room.timer || null, dreamReveal: this.room.dreamReveal || 0, looks: this.room.looks || {}, now: Date.now() };
   }
   boardMsg() {
     const names = Object.fromEntries(this.room.public.seats.map((x) => [x.id, x.names.join(' + ')]));
@@ -321,7 +335,7 @@ export class Room {
     }
     const chats = {};
     for (const key of this.room.chatKeys || []) chats[key] = await this.chat(key);
-    return { t: 'hello', chats, proposals: this.room.proposals || {}, room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
+    return { t: 'hello', chats, looks: this.room.looks || {}, proposals: this.room.proposals || {}, room: { code: this.room.code, locked: this.room.locked }, claimed: this.claimedCount(), online: this.onlineCount(), cards, hands: this.room.hands || [], vote: this.room.vote || null };
   }
   async youMsg(seatId, tok) {
     const seat = await this.seat(seatId);
@@ -498,6 +512,7 @@ export class Room {
       case 'release': {
         const seatId = str(msg.seatId, 80);
         delete r.claims[seatId];
+        if (r.looks) delete r.looks[seatId];
         r.hands = (r.hands || []).filter((x) => x !== seatId);
         await this.saveRoom();
         for (const p of this.playersOf(seatId)) {
@@ -506,6 +521,7 @@ export class Room {
         }
         this.broadcastPublic();
         this.pushPresence();
+        this.toSt({ t: 'looks', looks: r.looks || {} });
         break;
       }
       case 'close': {
@@ -638,6 +654,19 @@ export class Room {
         }
         await this.saveRoom();
         this.broadcastHands();
+        break;
+      }
+      case 'look': {
+        // Eleven har laget/endret sauen sin: vises i sirkelen for alle
+        const seatId = meta.seatId;
+        const look = cleanLook(msg.look);
+        if (!seatId || !look) return;
+        r.looks = r.looks || {};
+        if (JSON.stringify(r.looks[seatId]) === JSON.stringify(look)) return;
+        r.looks[seatId] = look;
+        await this.saveRoom();
+        this.broadcastPublic();
+        this.toSt({ t: 'looks', looks: r.looks });
         break;
       }
       case 'score': {

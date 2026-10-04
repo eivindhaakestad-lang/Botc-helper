@@ -372,3 +372,35 @@ test('rom: nominasjonsforslag havner i håndskøen og kan slås av', async () =>
   await say(room, ps.s2, { t: 'nomPropose', nomineeId: 's1' });
   assert.equal(ps.s2.last('error').code, 'nomprop');
 });
+
+test('rom: elevenes sau (look) vises for alle, renses og fjernes når plassen frigjøres', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const screen = await connect(room, 'screen');
+  await say(room, st, { t: 'sync', public: PUB, roleCards: {} });
+  const anon = await connect(room, 'player');
+  await say(room, anon, { t: 'look', look: { color: 'gold' } });
+  assert.deepEqual(screen.last('public').looks, {}, 'uten plass blir ingen sau lagret');
+  const p1 = await connect(room, 'player');
+  await say(room, p1, { t: 'claim', seatId: 's1' });
+  await say(room, p1, { t: 'look', look: { color: 'gold', face: 'shades', hat: '<script>', pet: 'dragon', extra: 'x' } });
+  const looks = screen.last('public').looks;
+  assert.deepEqual(looks.s1, { color: 'gold', face: 'shades', hat: '', shoes: '', trail: '', pet: 'dragon' });
+  assert.deepEqual(st.last('looks').looks.s1.color, 'gold');
+  await say(room, st, { t: 'release', seatId: 's1' });
+  assert.equal(screen.last('public').looks.s1, undefined);
+});
+
+test('rom: vinnerlaget og butikk-bryteren går gjennom til elevene', async () => {
+  const room = new Room(fakeState(), {});
+  await room.load();
+  await room.init({ code: 'ABCDE', stToken: 'secret' });
+  const st = await connect(room, 'st', 'secret');
+  const screen = await connect(room, 'screen');
+  await say(room, st, { t: 'sync', public: { ...PUB, phase: { type: 'ended', number: 2 }, shop: false, winners: ['s1', 's3'] }, roleCards: {} });
+  const pub = screen.last('public').public;
+  assert.equal(pub.shop, false);
+  assert.deepEqual(pub.winners, ['s1', 's3']);
+});

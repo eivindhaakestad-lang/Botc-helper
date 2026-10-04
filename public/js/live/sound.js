@@ -70,6 +70,9 @@ export const sfx = {
   countdown() { tone(880, 0.12, { type: 'triangle', gain: 0.18 }); },
   go() { tone(1320, 0.3, { type: 'triangle', gain: 0.2 }); },
   bell() { bellAt(660); bellAt(660, 0.9, 0.16); },
+  // Mynt som lander i lommeboka, og kjøp i Saueboden
+  coin() { tone(1568, 0.09, { type: 'square', gain: 0.045 }); tone(2093, 0.14, { type: 'square', gain: 0.04, delay: 0.06 }); },
+  buy() { [1047, 1319, 1568, 2093].forEach((fq, i) => tone(fq, 0.18, { type: 'triangle', gain: 0.1, delay: i * 0.07 })); bellAt(2093, 0.3, 0.06, 1.2); },
   // Kirkeklokka i tårnet: n dype slag
   toll(n = 1, start = 0) { for (let i = 0; i < Math.min(12, n); i++) { bellAt(196, start + i * 1.15, 0.22, 3.6); bellAt(98, start + i * 1.15, 0.14, 4); } },
   gong() { [[55, 0.35], [110, 0.25], [164, 0.12], [233, 0.08]].forEach(([f, g]) => tone(f, 5, { gain: g, attack: 0.02, release: 5 })); noise(1.2, { gain: 0.05, freq: 300, q: 0.7 }); },

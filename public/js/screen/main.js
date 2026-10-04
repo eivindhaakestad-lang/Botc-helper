@@ -11,6 +11,7 @@ import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
 import { syncWeather } from './weather.js';
+import { setLooks, setChampionFromBoard, seatSheep, seatLook } from '../live/sheep.js';
 
 const TXT = {
   no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.' },
@@ -82,7 +83,10 @@ function seatToken(seat, i, n) {
     h('div', { class: 'token screen-token' + (seat.alive ? '' : ' dead') + (joined ? ' joined' : '') + (voted ? ' voted' : '') + (nominee ? ' nominee' : '') + (nominator ? ' nominator' : '') + (block ? ' on-block' : '') + shotCls + dying },
       h('span', { class: 'token-disc' },
         h('span', { class: 'token-num' }, String(i + 1)),
-        h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
+        seatLook(seat.id)
+          ? [seatSheep(seat.id), h('span', { class: 'vc-mark', 'aria-hidden': 'true' }, voted ? '✋' : nominee ? '⚖️' : '')]
+          : h('span', { class: 'token-char' }, voted ? '✋' : nominee ? '⚖️' : seat.traveller ? seat.traveller.icon : initials),
+        seat.traveller && seatLook(seat.id) ? h('span', { class: 'trav-badge', 'aria-hidden': 'true' }, seat.traveller.icon) : null,
         seat.alive ? null : h('span', { class: 'token-shroud', 'aria-hidden': 'true' }, '†'),
         handPos >= 0 ? h('span', { class: 'hand-badge' }, '✋' + (handPos + 1)) : null,
         dying ? h('span', { class: 'death-skull', 'aria-hidden': 'true' }, '💀') : null,
@@ -164,7 +168,7 @@ function render() {
         (ph.type === 'night' || ph.type === 'setup') && p.dream !== false ? h('div', { class: 'panel' },
           h('h3', { class: 'section-title' }, '🏃 ' + T('board')),
           S.board && S.board.board.length
-            ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x) => h('li', null, h('span', { class: 'grow' }, x.name), h('span', { class: 'strong' }, String(x.score)))))
+            ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x, i) => h('li', null, seatSheep(x.seatId, 'mini-sheep'), h('span', { class: 'grow' }, (i === 0 && x.score > 0 ? '👑 ' : '') + x.name), h('span', { class: 'strong' }, String(x.score)))))
             : h('p', { class: 'muted' }, T('noScores'))) : null)));
   tick(true);
 }
@@ -358,7 +362,7 @@ function handsPanel() {
   if (!S.hands.length || !S.pub || !['setup', 'day'].includes(S.pub.phase.type)) return null;
   return h('div', { class: 'panel' },
     h('h3', { class: 'section-title' }, '✋ ' + T('hands')),
-    h('ol', { class: 'board big hands-screen' }, S.hands.map((id) => h('li', null, h('span', { class: 'grow' }, nameOf(id))))));
+    h('ol', { class: 'board big hands-screen' }, S.hands.map((id) => h('li', null, seatSheep(id, 'mini-sheep'), h('span', { class: 'grow' }, nameOf(id))))));
 }
 
 function dayPanel(p) {
@@ -387,7 +391,7 @@ if (!code) {
         const prev = lastPublic;
         const onlyVotes = prev && m.vote && prev.vote && prev.vote.id === m.vote.id && prev.vote.open === m.vote.open
           && JSON.stringify(prev.vote.clock || null) === JSON.stringify(m.vote.clock || null)
-          && JSON.stringify([prev.public, prev.hands, prev.timer, prev.room, prev.claimed, prev.dreamReveal]) === JSON.stringify([m.public, m.hands, m.timer, m.room, m.claimed, m.dreamReveal]);
+          && JSON.stringify([prev.public, prev.hands, prev.timer, prev.room, prev.claimed, prev.dreamReveal, prev.looks]) === JSON.stringify([m.public, m.hands, m.timer, m.room, m.claimed, m.dreamReveal, m.looks]);
         if (onlyVotes && patchVoteCircle(document.getElementById('screen'), m.vote)) {
           soundsFor(prev, m);
           lastPublic = m;
@@ -400,9 +404,10 @@ if (!code) {
         if (m.now) S.offset = m.now - Date.now();
         if ((m.dreamReveal || 0) > (S.dreamReveal || 0)) { if ((m.dreamReveal || 0) >= Math.min(3, (S.board && S.board.board.length) || 3)) sfx.fanfare(); else sfx.reveal(); }
         S.dreamReveal = m.dreamReveal || 0;
+        setLooks(m.looks || {});
         S.pub = m.public; S.room = m.room; S.claimed = m.claimed || {}; S.hands = m.hands || []; S.vote = m.vote || null; S.timer = m.timer || null;
       }
-      else if (m.t === 'board') S.board = m;
+      else if (m.t === 'board') { S.board = m; setChampionFromBoard(m); }
       else if (m.t === 'closed') S.error = 'closed';
       else if (m.t === 'error' && m.code === 'noroom') S.error = 'noroom';
       render();

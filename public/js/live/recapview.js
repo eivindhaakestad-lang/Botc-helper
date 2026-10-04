@@ -1,6 +1,7 @@
 // «Slik gikk det egentlig» på storskjermen og hos elevene: sirkel med navn (ingen roller)
 // og merker på dem det gjaldt, pluss lista over det som er vist i kapitlet så langt.
 import { h } from '../app/dom.js';
+import { seatSheep, seatLook } from './sheep.js';
 
 // Hvilke plasser et punkt merker (et skudd merker bare den som ble skutt på)
 function markedSeats(it) {
@@ -40,8 +41,9 @@ export function recapCircle({ seats, recap, size = 130, reveal = [] }) {
           return h('div', { class: 'token recap-token' + (r ? ` revealed team-${r.team}${fresh ? ' flip-in' : ''}` : '') + (dead.has(seat.id) ? ' rv-dead' : '') + (m.length ? ' marked' : '') + (isNew ? ' recap-new kind-' + newest.kind : '') },
           h('span', { class: 'token-disc' },
             r && r.icon ? h('span', { class: 'token-icon', 'aria-hidden': 'true' }, r.icon) : null,
-            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : h('span', { class: 'token-char' }, seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
-            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null),
+            r ? h('span', { class: 'token-char' + charClass(r.character) }, r.character) : seatLook(seat.id) ? seatSheep(seat.id) : h('span', { class: 'token-char' }, seat.traveller ? seat.traveller.icon : seat.names.map((x) => x[0]).join('')),
+            r && r.shown ? h('span', { class: 'token-shown' }, r.shown) : null,
+            r && seatLook(seat.id) ? h('span', { class: 'sheep-badge' }, seatSheep(seat.id, 'mini-sheep')) : null),
           dead.has(seat.id) ? h('span', { class: 'rv-skull', title: '†' }, '💀') : null,
           m.length ? h('span', { class: 'recap-marks', 'aria-hidden': 'true' }, [...new Set(m.map((x) => x.icon))].join('')) : null,
           h('span', { class: 'token-label' }, seat.names.join(' + ')));
