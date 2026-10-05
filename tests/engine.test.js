@@ -491,3 +491,13 @@ test('lommeboka: dagens tilbud er 30 % billigere, og innbytte gir halve prisen t
   assert.equal(wallet.coins, 0);
   delete globalThis.localStorage;
 });
+
+test('storskjermen: årstidene følger datoene (sommer 21.5, høst 16.9, vinter 16.11, vår 21.3)', async () => {
+  const { seasonFor } = await import('../public/js/screen/scenery.js');
+  const d = (m, day) => seasonFor(new Date(2026, m - 1, day));
+  assert.equal(d(5, 20), 'spring'); assert.equal(d(5, 21), 'summer');
+  assert.equal(d(9, 15), 'summer'); assert.equal(d(9, 16), 'autumn');
+  assert.equal(d(10, 5), 'autumn'); assert.equal(d(11, 15), 'autumn');
+  assert.equal(d(11, 16), 'winter'); assert.equal(d(1, 10), 'winter'); assert.equal(d(3, 20), 'winter');
+  assert.equal(d(3, 21), 'spring'); assert.equal(d(4, 15), 'spring');
+});

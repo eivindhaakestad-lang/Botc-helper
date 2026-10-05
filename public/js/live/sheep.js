@@ -728,6 +728,8 @@ export function setChampionFromBoard(board) {
 }
 export function championSeat() { return reg.champion; }
 export function seatLook(id) { return reg.looks[id] || null; }
+// Alle sauene i rommet (brukes av storskjermen, f.eks. sauen som løper over landskapet)
+export function allLooks() { return Object.values(reg.looks).filter(Boolean); }
 // Sauen til en plass, eller null hvis eleven ikke har laget sau ennå. st = { mood, ghost }
 export function seatSheep(id, cls = 'token-sheep', st = {}) {
   const l = reg.looks[id];

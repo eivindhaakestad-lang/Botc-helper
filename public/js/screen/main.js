@@ -10,15 +10,16 @@ import { sfx, enableSound, disableSound, soundEnabled, playMusic, stopMusic } fr
 import { applyTheme } from '../live/theme.js';
 import { recapCircle, recapList } from '../live/recapview.js';
 import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
-import { syncWeather } from './weather.js';
+import { syncWeather, placeLand, runSheepNow } from './weather.js';
+import { seasonFor, SEASONS } from './scenery.js';
 import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame, sheepDisc } from '../live/sheep.js';
 import { deathFxEl, DEATH_MS } from '../live/deathfx.js';
 import { playParade } from './parade.js';
 import { CHEER_MS, SAD_MS } from '../live/reveal.js';
 
 const TXT = {
-  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.', parade: 'Spill saueparaden', paradeHelp: 'Sauene marsjerer inn av seg selv når Storytelleren låser rommet.' },
-  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOff: 'Disable weather', settings: 'Settings', gearHelp: 'The gear hides when the mouse is still. Sound and fullscreen must be turned on here on this PC.', parade: 'Play the sheep parade', paradeHelp: 'The sheep march in by themselves when the Storyteller locks the room.' },
+  no: { join: 'Bli med: skann koden eller gå til', code: 'Romkode', setup: 'Venter på Storytelleren', night: 'Natt', day: 'Dag', ended: 'Spillet er slutt', alive: 'lever', votes: 'stemmer for å henrette', board: 'Drømmetoppliste', noScores: 'Hopp over hinder for å komme på lista!', good: 'Det gode laget vinner!', evil: 'Det onde laget vinner!', fullscreen: 'Fullskjerm', closed: 'Rommet er stengt.', noroom: 'Fant ikke rommet.', joined: 'inne', reveal: 'Grim reveal', hands: 'Talerekkefølge', noms: 'Nominasjoner i dag', voteNow: 'Stem nå på PC-en din!', voteClosed: 'Avstemningen er lukket', need: 'trengs', onBlock: 'På blokka', tie: 'Uavgjort – ingen er på blokka', executed: 'Henrettet i dag', noExec: 'Ingen henrettet i dag', votes2: 'stemmer', dawnPending: 'Byen våkner …', nominator: 'nominerer', nominee: 'nominert', startsIn: 'Viseren starter om', handAt: 'Viseren er hos', closed: 'Avstemningen er lukket', soundOn: 'Slå på lyd', soundOff: 'Lyd på', timer: 'Tid', timeUp: 'Tiden er ute!', voteBefore: 'Stem før viseren når deg!', champs: 'Drømmemestere', points: 'hinder', musicOn: 'Musikk på', musicOff: 'Slå på musikk', musicHelp: 'Dyster stemningsmusikk om natten', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', recap: 'Slik gikk det egentlig', whoWas: 'Hvem var hvem?', weatherOff: 'Deaktiver vær', settings: 'Innstillinger', gearHelp: 'Tannhjulet skjules når musa står stille. Lyd og fullskjerm må slås på her på denne PC-en.', parade: 'Spill saueparaden', paradeHelp: 'Sauene marsjerer inn av seg selv når Storytelleren låser rommet.', season: 'Årstid', seasonAuto: 'Automatisk', spring: 'Vår', summer: 'Sommer', autumn: 'Høst', winter: 'Vinter', runSheep: 'La en sau løpe over' },
+  en: { join: 'Join: scan the code or go to', code: 'Room code', setup: 'Waiting for the Storyteller', night: 'Night', day: 'Day', ended: 'Game over', alive: 'alive', votes: 'votes to execute', board: 'Dream leaderboard', noScores: 'Clear obstacles to get on the list!', good: 'Good wins!', evil: 'Evil wins!', fullscreen: 'Fullscreen', closed: 'The room is closed.', noroom: 'Room not found.', joined: 'joined', reveal: 'Grim reveal', hands: 'Speaking order', noms: 'Nominations today', voteNow: 'Vote now on your computer!', voteClosed: 'The vote is closed', need: 'needed', onBlock: 'On the block', tie: 'Tie – nobody is on the block', executed: 'Executed today', noExec: 'Nobody executed today', votes2: 'votes', dawnPending: 'The town wakes up …', nominator: 'nominates', nominee: 'nominated', startsIn: 'The hand starts in', handAt: 'The hand is at', closed: 'The vote is closed', soundOn: 'Turn on sound', soundOff: 'Sound on', timer: 'Time', timeUp: 'Time is up!', voteBefore: 'Vote before the hand reaches you!', champs: 'Dream champions', points: 'obstacles', musicOn: 'Music on', musicOff: 'Turn on music', musicHelp: 'Dark ambient music at night', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', recap: 'What really happened', whoWas: 'Who was who?', weatherOff: 'Disable weather', settings: 'Settings', gearHelp: 'The gear hides when the mouse is still. Sound and fullscreen must be turned on here on this PC.', parade: 'Play the sheep parade', paradeHelp: 'The sheep march in by themselves when the Storyteller locks the room.', season: 'Season', seasonAuto: 'Automatic', spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter', runSheep: 'Let a sheep run across' },
 };
 
 const S = { dying: new Map(), deadSeen: null, pub: null, room: null, claimed: {}, board: null, error: null, status: 'connecting', hands: [], vote: null, timer: null, offset: 0 };
@@ -124,7 +125,7 @@ function render() {
   const ph = p.phase;
   applyTheme(ph.type === 'ended' && p.recap ? (p.recap.type === 'night' ? 'night' : 'day') : ph.type);
   syncMusic();
-  syncWeather(p.recap ? null : ph, p.weather !== false && weatherOn(), code);
+  syncWeather(p.recap ? null : ph, p.weather !== false && weatherOn(), code, season());
   syncGear();
   if (S.shotAnim && Date.now() - S.shotAnim.start < SHOT_FLY + 400) {
     // Målet lever til pila treffer, og kunngjøringen venter.
@@ -190,7 +191,9 @@ function render() {
             ? h('ol', { class: 'board big' }, S.board.board.slice(0, 10).map((x, i) => h('li', null, seatSheep(x.seatId, 'mini-sheep'), h('span', { class: 'grow' }, (i === 0 && x.score > 0 ? '👑 ' : '') + x.name), h('span', { class: 'strong' }, String(x.score)))))
             : h('p', { class: 'muted' }, T('noScores'))) : null)));
   tick(true);
+  placeLand();
 }
+window.addEventListener('resize', () => placeLand());
 
 // ——— stearinlyset om natten: brenner sakte ned med tiden (sier ingenting om hvem som våkner) ———
 function nightStart() {
@@ -237,6 +240,11 @@ function gearPanel() {
     h('button', { class: 'btn', title: T('musicHelp'), onclick: () => { musicWanted = !musicWanted; syncMusic(); syncGear(true); } }, musicWanted ? '🎵 ' + T('musicOn') : '🎵 ' + T('musicOff')),
     h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: !weatherOn(), onchange: (e) => { try { localStorage.setItem('botc-screen-weather', e.target.checked ? 'off' : 'on'); } catch { /* */ } render(); syncGear(true); } }), T('weatherOff')),
     h('button', { class: 'btn', title: T('paradeHelp'), onclick: () => { gearOpen = false; syncGear(true); playParade(document.getElementById('screen')); } }, '🐑 ' + T('parade')),
+    S.pub && S.pub.phase.type === 'day' ? h('button', { class: 'btn', onclick: () => { gearOpen = false; syncGear(true); runSheepNow(); } }, '🏃 ' + T('runSheep')) : null,
+    h('label', { class: 'field' }, h('span', { class: 'label' }, '🍂 ' + T('season')),
+      h('select', { class: 'select', onchange: (e) => { try { localStorage.setItem('botc-screen-season', e.target.value); } catch { /* */ } render(); syncGear(true); } },
+        h('option', { value: '', selected: !seasonPick() }, `${T('seasonAuto')} (${T(seasonFor())})`),
+        SEASONS.map((x) => h('option', { value: x, selected: seasonPick() === x }, T(x))))),
     h('p', { class: 'muted small' }, T('gearHelp')));
 }
 function syncGear(rebuild = false) {
@@ -277,6 +285,14 @@ function winConfetti() {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 7000);
 }
+
+// Årstid: automatisk etter dato, eller valgt i tannhjulet (huskes på denne maskinen). ?season=winter virker også.
+function seasonPick() {
+  const q = new URLSearchParams(location.search).get('season');
+  if (SEASONS.includes(q)) return q;
+  try { const v = localStorage.getItem('botc-screen-season'); return SEASONS.includes(v) ? v : ''; } catch { return ''; }
+}
+function season() { return seasonPick() || seasonFor(); }
 
 // Skyer og regn om natten – kan slås av hvis projektor-PC-en er treg (huskes på denne maskinen)
 function weatherOn() { try { return localStorage.getItem('botc-screen-weather') !== 'off'; } catch { return true; } }
