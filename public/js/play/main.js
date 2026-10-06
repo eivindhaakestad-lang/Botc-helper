@@ -14,6 +14,9 @@ import { recapCircle, recapList } from '../live/recapview.js';
 import { playRevealCine, REVEAL_CINE_MS } from '../screen/cine.js';
 import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, sheepDisc, sheepImg, frameEl, clipSheep } from '../live/sheep.js';
 import { wallet } from './wallet.js';
+import { playIntro } from './intro.js';
+import { logoEl, LOGO_TEXT } from '../live/logo.js';
+const LOGO_T = () => LOGO_TEXT[lang()];
 import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe, fmtCoins } from './wardrobe.js';
 
 const TXT = {
@@ -94,7 +97,15 @@ const myBest = () => { const b = P.board && P.me && P.board.board.find((x) => x.
 // ——— tilkobling ———
 function connect(code) {
   P.code = code.toUpperCase();
-  history.replaceState(null, '', '?room=' + P.code);
+  history.replaceState(null, '', '?room=' + P.code + (new URLSearchParams(location.search).has('nointro') ? '&nointro' : ''));
+  // Lasteskjermen vises første gang eleven blir med i et rom (ikke ved gjenoppkobling midt i spillet)
+  const seenKey = 'botc-intro-' + P.code;
+  let seen = false;
+  try { seen = !!sessionStorage.getItem(seenKey); sessionStorage.setItem(seenKey, '1'); } catch { /* */ }
+  if (!seen && !loadCred() && !new URLSearchParams(location.search).has('nointro')) {
+    P.intro = playIntro({ code: P.code, getLang: lang });
+    P.intro.done.then(() => { P.intro = null; render(); });
+  }
   P.client = new LiveClient({
     code: P.code,
     params: { role: 'player' },
@@ -491,7 +502,7 @@ function phaseBanner() {
     P.pub.dawnPending ? h('p', { class: 'strong dawn-wait' }, T('dawnPending')) : P.pub.announcement ? h('p', { class: 'strong announce-play' }, P.pub.announcement) : null,
     h('p', { class: 'muted' }, T('daySub')));
   if (ph.type === 'ended') return h('div', { class: 'phase-hero ended' }, h('span', { class: 'display big' }, '🏁 ' + T('ended')), P.pub.winner ? h('p', { class: 'strong' }, T(P.pub.winner === 'good' ? 'winnerGood' : 'winnerEvil')) : null);
-  return h('div', { class: 'phase-hero' }, h('span', { class: 'display big' }, '✦ ' + (P.pub.title || 'Botc Helper')), h('p', { class: 'muted' }, T('setup')));
+  return h('div', { class: 'phase-hero' }, logoEl({ variant: 'stack', lang: lang(), cls: 'hero-logo' }), P.pub.title ? h('span', { class: 'display' }, P.pub.title) : null, h('p', { class: 'muted' }, T('setup')));
 }
 
 function boardView() {
@@ -952,13 +963,13 @@ function seatPicker() {
 }
 
 function codeEntry() {
-  return h('form', {
+  return h('div', { class: 'stack code-wrap' }, h('div', { class: 'code-logo' }, logoEl({ variant: 'stack', lang: lang() })), h('form', {
     class: 'stack code-form',
     onsubmit: (e) => { e.preventDefault(); const v = e.target.querySelector('input').value.trim(); if (v) connect(v); },
   },
   h('label', { class: 'label', for: 'room-code' }, T('enterCode')),
   h('input', { id: 'room-code', class: 'input code-input', autocomplete: 'off', autocapitalize: 'characters', maxlength: 8, placeholder: 'ABCDE' }),
-  h('button', { class: 'btn primary big', type: 'submit' }, T('join')));
+  h('button', { class: 'btn primary big', type: 'submit' }, T('join'))));
 }
 
 function soundToggle() {
@@ -1013,7 +1024,7 @@ function render() {
   applyTheme(P.pub && P.me ? (P.pub.recap ? (P.pub.recap.type === 'night' ? 'night' : 'day') : P.pub.phase.type) : 'none');
   let main;
   if (!P.code) main = codeEntry();
-  else if (P.error === 'closed' || P.error === 'noroom') main = h('p', { class: 'callout' }, T(P.error));
+  else if (P.error === 'closed' || P.error === 'noroom') { if (P.intro) P.intro.finish(); main = h('p', { class: 'callout' }, T(P.error)); }
   else if (!P.pub) main = h('p', { class: 'muted center' }, T('connecting'));
   else if (P.me && P.view === 'creator') main = creatorView(wctx());
   else if (P.me && P.view === 'shop') main = shopView(wctx());
@@ -1043,7 +1054,7 @@ function render() {
   const refocus = focusId && typeof act.selectionStart === 'number' ? act.selectionStart : null;
   root.replaceChildren(
     h('header', { class: 'play-top' },
-      h('span', { class: 'brand-name' }, '✦ Botc Helper'),
+      h('a', { class: 'play-brand', href: '/', title: LOGO_T() }, logoEl({ variant: 'inline', lang: lang() })),
       P.code ? h('span', { class: 'room-code display' }, P.code) : null,
       P.me ? walletChip() : null,
       h('span', { class: 'conn' }, connView()),

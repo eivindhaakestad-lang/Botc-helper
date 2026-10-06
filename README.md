@@ -1,6 +1,6 @@
-# Botc Helper
+# Eivinds Blood on the Clocktower-assistent
 
-Storyteller-assistent for *Blood on the Clocktower* i klasserommet. Appen fordeler roller, leder deg gjennom natten steg for steg og lager ferdige meldinger du kopierer til Teams. Du bestemmer alltid – appen foreslår.
+(Kodenavn: Botc Helper.) Storyteller-assistent for *Blood on the Clocktower* i klasserommet. Appen fordeler roller, leder deg gjennom natten steg for steg og lager ferdige meldinger du kopierer til Teams. Du bestemmer alltid – appen foreslår.
 
 **Status:** Milepæl 1 (Storyteller-kjernen) og milepæl 2 (live) er ferdige: elevene blir med på egne PC-er, får rollekort og nattkort rett i appen, svarer på nattvalg, spiller drømmespillet om natten, og spillet avsluttes med grim reveal på storskjermen. Trouble Brewing er fullt modellert. Andre roller fungerer i manuell modus.
 
@@ -94,6 +94,8 @@ Kopier-knappene virker fortsatt for elever uten PC.
 
 **Overgang mellom dag og natt:** Storskjermen viser byen i silhuett når fasen skifter. Sola går ned og månen opp (eller omvendt), vinduene tennes eller slukkes, og klokketårnet slår like mange slag som natt- eller dagnummeret. Om natten står et stearinlys midt i sirkelen og brenner sakte ned med tiden. Det sier ingenting om hvem eller hvor mange som vekkes. Storskjermen har også vær: om natten blir det tilfeldig regn, skyer og fullmåne eller halvmåne (av og til alt samtidig), og om dagen sol, av og til skyer og en ørn som flyr forbi nå og da. Været kan slås av med «Deaktiver vær» i Live-panelet eller under ⋯ Spill.
 
+**Logo og lasteskjerm:** Logoen «Eivinds Blood on the Clocktower-assistent» (en urskive med blodmåne, klokketårn og en bloddråpe) står midt på startsiden, i toppfeltet, på passordsiden, på elevsiden og midt i sirkelen på storskjermen før spillet starter. Når en elev trykker «Bli med», kommer en lasteskjerm på 5 sekunder med logoen øverst, roterende ringer, prosentteller, fremdriftslinje og en logg over hva som «lastes» («Henter grimoiren fra Storytelleren», «Gjemmer demonen blant innbyggerne» …). Den laster egentlig ingenting – tilkoblingen skjer i bakgrunnen samtidig. Den vises én gang per rom, ikke når eleven kobler seg til igjen midt i spillet, og forsvinner med en gang hvis rommet ikke finnes. Legg til `&nointro` i adressen for å hoppe over den (nyttig ved testing).
+
 **Landskap og årstider:** Nederst på storskjermen, svakt i bakgrunnen og under sirkelen, ligger landsbyen med klokketårnet, åsene og en eik i utkanten. Om natten lyser vinduene. Om dagen løper av og til en av elevenes sauer over enga. Landskapet følger årstiden etter dato: **vår** (21. mars–20. mai) har blomster, grønt tre, en del regn og av og til en dempet regnbue; **sommer** (21. mai–15. sep) er grønn med lite regn; **høst** (16. sep–15. nov) er oransje, rød og gul, eika får høstfarger og noen dager faller løvet sakte; **vinter** (16. nov–20. mars) har snø på bakken og takene, bar eik, gråere farger og aldri regn, men snø både dag og natt. Årstiden kan overstyres under ⚙ på storskjermen (eller med `?season=spring|summer|autumn|winter` i adressen). Landskapet vises også når været er deaktivert, men da uten nedbør, skyer og regnbue.
 
 **Storskjermen er helt ren:** Alle knapper (fullskjerm, lyd, musikk, deaktiver vær) ligger bak et lite ⚙-tannhjul øverst til høyre. Det vises de første sekundene og når musa beveges på storskjerm-PC-en, ellers er både tannhjul og musepeker skjult. Lyd og fullskjerm må slås på der, på storskjerm-PC-en selv (nettleseren krever et klikk på den maskinen).
@@ -173,10 +175,10 @@ public/                 alt som publiseres
     script.js           import av scripts og rolletekster
     text.js, sttext.js  meldinger til elever og Storyteller-tekster (NO/EN)
   js/app/               grensesnitt (vanilla JS)
-  js/live/              felles WebSocket-klient, QR, grim reveal, lyder og sauene
+  js/live/              felles WebSocket-klient, QR, grim reveal, lyder, sauene og logoen (logo.js)
     sheep.js            sauekatalogen og tegningen (SVG): farger, ansikter, frisyrer, hatter, kapper, vinger, humør, spøkelser
     deathfx.js          dødsanimasjonene (CSS-partikler)
-  js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js)
+  js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js) og lasteskjermen (intro.js)
   js/screen/            storskjerm (Town Square), overganger (cine.js), vær og saueparaden (parade.js)
   play.html, screen.html
 worker/                 Cloudflare Worker (index.js) og spillrommet (room.js, Durable Object)

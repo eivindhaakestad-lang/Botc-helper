@@ -15,6 +15,7 @@ import { seasonFor, SEASONS } from './scenery.js';
 import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame, sheepDisc } from '../live/sheep.js';
 import { deathFxEl, DEATH_MS } from '../live/deathfx.js';
 import { playParade } from './parade.js';
+import { logoEl } from '../live/logo.js';
 import { CHEER_MS, SAD_MS } from '../live/reveal.js';
 
 const TXT = {
@@ -119,8 +120,8 @@ function seatToken(seat, i, n) {
 
 function render() {
   const root = document.getElementById('screen');
-  if (S.error) { root.replaceChildren(h('div', { class: 'screen-msg display' }, T(S.error) || S.error)); return; }
-  if (!S.pub) { root.replaceChildren(h('div', { class: 'screen-msg display' }, '✦ Botc Helper')); return; }
+  if (S.error) { root.replaceChildren(h('div', { class: 'screen-msg display' }, logoEl({ variant: 'stack' }), h('p', null, T(S.error) || S.error))); return; }
+  if (!S.pub) { root.replaceChildren(h('div', { class: 'screen-msg display' }, logoEl({ variant: 'stack', anim: true }))); return; }
   let p = S.pub;
   const ph = p.phase;
   applyTheme(ph.type === 'ended' && p.recap ? (p.recap.type === 'night' ? 'night' : 'day') : ph.type);
@@ -162,7 +163,8 @@ function render() {
           h('div', { class: 'grim-ring', 'aria-hidden': 'true' }),
           h('div', { class: 'grim-center' },
             h('div', { class: 'center-text' },
-              h('span', { class: 'display screen-phase' }, phaseText),
+              ph.type === 'setup' ? logoEl({ variant: 'stack', lang: p.lang === 'en' ? 'en' : 'no', cls: 'grim-logo', anim: true }) : h('span', { class: 'display screen-phase' }, phaseText),
+              ph.type === 'setup' && p.title ? h('span', { class: 'center-stat grim-title' }, p.title) : null,
               ph.type === 'day' && p.dawnPending ? h('span', { class: 'center-stat dawn-wait' }, T('dawnPending')) : null,
               (ph.type === 'day' && !p.dawnPending) || ph.type === 'night' ? h('span', { class: 'center-stat' }, `${alive} ${T('alive')} · ${Math.ceil(alive / 2)} ${T('votes')}`) : null,
               ph.type === 'setup' ? h('span', { class: 'center-stat' }, `${joinedN} / ${p.seats.length} ${T('joined')}`) : null,

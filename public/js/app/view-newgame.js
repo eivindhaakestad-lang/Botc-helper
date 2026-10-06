@@ -15,6 +15,7 @@ import { shuffle } from '../engine/rng.js';
 import { msg } from '../engine/text.js';
 import { closeRoom } from './live.js';
 import { isUnlocked, tryUnlock } from './lock.js';
+import { logoEl } from '../live/logo.js';
 
 const STEPS = ['wzPlayers', 'wzScript', 'wzRoles', 'wzSeating', 'wzSetup'];
 
@@ -397,6 +398,7 @@ function lockScreen() {
   };
   return h('div', { class: 'page lock-page' },
     h('form', { class: 'panel lock-card', onsubmit: submit },
+      h('div', { class: 'lock-logo' }, logoEl({ variant: 'stack', lang: store.lib.settings.uiLang })),
       h('h1', { class: 'page-title' }, '🔒 ' + t('newGame')),
       h('p', null, t('lockText')),
       h('label', { class: 'label', for: 'st-pass' }, t('password')),

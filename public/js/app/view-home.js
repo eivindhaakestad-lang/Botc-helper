@@ -2,6 +2,7 @@ import { h } from './dom.js';
 import { store } from './store.js';
 import { navigate } from './core.js';
 import { t } from './i18n.js';
+import { logoEl } from '../live/logo.js';
 
 function phaseLabel(s) {
   if (s.phase.type === 'setup') return t('phaseSetup');
@@ -16,6 +17,7 @@ export function viewHome() {
   const classes = lib.classes.length;
   const students = lib.students.length;
   return h('div', { class: 'home' },
+    h('section', { class: 'home-logo' }, logoEl({ variant: 'stack', lang: store.lib.settings.uiLang, anim: true })),
     // For elevene: stort og tydelig øverst – rett til spillet
     h('section', { class: 'join-hero' },
       h('a', { class: 'join-big display', href: '/play' }, '🎮 ' + t('joinGame')),
@@ -23,8 +25,7 @@ export function viewHome() {
         h('input', { class: 'input', placeholder: t('roomCode'), 'aria-label': t('roomCode'), autocomplete: 'off', autocapitalize: 'characters', maxlength: 8 }),
         h('button', { class: 'btn primary', type: 'submit' }, t('joinGo')))),
     h('section', { class: 'home-hero' },
-      h('p', { class: 'eyebrow' }, t('homeEyebrow')),
-      h('h1', { class: 'display' }, t('homeTitle')),
+      h('h1', { class: 'visually-hidden' }, t('homeTitle')),
       h('p', { class: 'lead' }, t('homeLead'))),
     h('div', { class: 'home-grid' },
       s ? h('button', { class: 'home-card resume', onclick: () => navigate('game') },

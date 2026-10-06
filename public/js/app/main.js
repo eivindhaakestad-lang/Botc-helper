@@ -11,6 +11,7 @@ import { viewSettings, viewHistory } from './view-settings.js';
 import { t } from './i18n.js';
 import { h } from './dom.js';
 import { connectLive, syncLive } from './live.js';
+import { logoEl } from '../live/logo.js';
 
 const VIEWS = {
   home: viewHome,
@@ -32,8 +33,7 @@ function topbar() {
   const s = store.state();
   return h('header', { class: 'topbar' },
     h('button', { class: 'brand', onclick: () => navigate('home'), 'aria-label': t('navHome') },
-      h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, '✦'),
-      h('span', { class: 'brand-name' }, 'Botc Helper')),
+      logoEl({ variant: 'inline', lang: store.lib.settings.uiLang })),
     h('nav', { class: 'nav' },
       nav.map(([v, label]) => h('button', { class: 'nav-btn' + (app.view === v || (v === 'classes' && app.view === 'class') ? ' active' : ''), onclick: () => navigate(v) }, label)),
       s ? h('button', { class: 'nav-btn game-link' + (app.view === 'game' ? ' active' : ''), onclick: () => navigate('game') }, '● ' + t('navGame')) : null),
