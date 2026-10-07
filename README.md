@@ -84,7 +84,14 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 
 **Siste melding:** Alle elever har en «Hold inne for å se siste melding»-boks ved siden av rollekortet, også de som aldri får info. Da står det bare «Du har ikke fått melding ennå», så sidemannen ikke kan se hvem som får noe.
 
-**Chat:** Elevene kan skrive til deg og til de to naboene sine i sirkelen. Under **💬 Chat** i spillet ser du trådene til deg (med uleste meldinger) og svarer der. Du kan også lese all naboprat, uten at elevene ser at du leser. Nabopraten er hvisking og er åpen hele tiden, også om natten. Du kan slå den av i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
+**Chat:** Elevene kan skrive til deg og til de to naboene sine i sirkelen. **💬 Chat** er den første fanen i spillet, med rød teller for uleste meldinger. Når det kommer nye meldinger mens du står i en annen fane, lyser et varsel over fanene med hvem som skrev og hva («Svar →» åpner samtalen direkte).
+
+- **Alle meldinger (innboks):** alt i tidsrekkefølge, både til deg og mellom naboer, nyeste nederst. Nye meldinger er merket «NY». Filtrer på Alle / Til deg / Naboprat. Trykk på en melding for å åpne samtalen, eller «↩ Svar» på meldinger du ikke har svart på.
+- **Samtaler:** hver elev med sauen sin, rollen (bare synlig for deg, skjules med «Skjul roller»), siste melding og klokkeslett. Uleste ligger øverst, så naboprat (👀, du leser i smug – elevene ser ikke at du leser), og nederst elever du ikke har chattet med ennå. Grønn prikk = eleven er pålogget.
+- **Hurtigsvar:** «Ja», «Nei», «Vent litt, jeg kommer til deg», «Takk!» og 👍 med ett trykk.
+- **⤢ Bred visning** gjør chatten bredere med samtalelista ved siden av meldingene. I smal visning ligger samtalene som en rad med sauer øverst.
+
+Elevene ser chatten som en meldingsapp: Storytelleren (med logoen) og naboene øverst som runde bilder av sauene deres, bobler med sauen ved siden av, «pop» når nye meldinger kommer, og et rundt skrivefelt med send-knapp. Nabopraten er hvisking og er åpen hele tiden, også om natten. Du kan slå den av under ⚙ i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
 
 **Dag og natt:** Bakgrunnen toner over til gul om dagen og mørk blå natthimmel om natten, hos deg, på storskjermen og hos elevene.
 
@@ -175,7 +182,7 @@ public/                 alt som publiseres
     script.js           import av scripts og rolletekster
     text.js, sttext.js  meldinger til elever og Storyteller-tekster (NO/EN)
   js/app/               grensesnitt (vanilla JS)
-  js/live/              felles WebSocket-klient, QR, grim reveal, lyder, sauene og logoen (logo.js)
+  js/live/              felles WebSocket-klient, QR, grim reveal, lyder, sauene, logoen (logo.js) og chat-byggeklossene (chatui.js)
     sheep.js            sauekatalogen og tegningen (SVG): farger, ansikter, frisyrer, hatter, kapper, vinger, humør, spøkelser
     deathfx.js          dødsanimasjonene (CSS-partikler)
   js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js) og lasteskjermen (intro.js)

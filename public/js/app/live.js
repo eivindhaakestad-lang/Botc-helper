@@ -331,6 +331,25 @@ export function markChatRead(key) {
   l.chatRead = { ...(l.chatRead || {}), [key]: n };
   store.saveGame();
 }
+// Uleste meldinger i en tråd, uansett type (også naboprat). Brukes til «ny»-markering.
+export function chatUnreadAny(key) {
+  const l = L();
+  const list = live.chats[key] || [];
+  const read = (l && l.chatRead && l.chatRead[key]) || 0;
+  return list.slice(read).filter((m) => m.from !== 'st');
+}
+// Marker alle tråder som lest (lagres én gang).
+export function markAllChatRead() {
+  const l = L();
+  if (!l) return;
+  const r = { ...(l.chatRead || {}) };
+  for (const k of Object.keys(live.chats)) r[k] = live.chats[k].length;
+  l.chatRead = r;
+  store.saveGame();
+}
+export function totalWhisperUnread() {
+  return Object.keys(live.chats).filter((k) => !k.startsWith('st|')).reduce((a, k) => a + chatUnreadAny(k).length, 0);
+}
 export function totalChatUnread() {
   return Object.keys(live.chats).filter((k) => k.startsWith('st|')).reduce((a, k) => a + chatUnread(k), 0);
 }

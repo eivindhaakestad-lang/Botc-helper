@@ -9,7 +9,8 @@ import { grimCircle, roleToken } from './grim.js';
 import { charInfo, configureCharacters } from '../engine/characters.js';
 import { seatName, getSeat, aliveSeats, compromised, voteWeights } from '../engine/state.js';
 import { nightQueue, stepModel, resolveStep, defaultInput, suggestInput, deriveInput, choiceRequest, choiceToInput } from '../engine/night.js';
-import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, revealDream, sendChat, chatUnread, markChatRead, totalChatUnread } from './live.js';
+import { live, liveOpen, sendCard, cardState, seatOnline, startLive, closeRoom, setLiveSetting, setLocked, releaseSeat, lowerHand, clearHands, openVote, setVoteVoters, closeVote, clearVote, startClock, sendTimer, sendRoles, revealDream, sendChat, chatUnread, markChatRead, totalChatUnread, chatUnreadAny, markAllChatRead, totalWhisperUnread } from './live.js';
+import { chatAvatar, pairAvatar, bubbles, composer, freshTracker, fmtTime } from '../live/chatui.js';
 import { joinUrl, screenUrl, qrSvg } from '../live/client.js';
 import {
   nominationsToday, voteThreshold, exileThreshold, voteTarget, onTheBlock, nominationWarnings, virginCheck, voteWarnings, slayerCheck,
@@ -1240,65 +1241,181 @@ function liveBadge(s) {
 }
 
 // ——— chat ———
-// Du kan lese alle trådene: elev ↔ deg og nabo ↔ nabo. Du svarer bare i trådene til deg.
+// Innboksen viser alle meldinger i rekkefølge (til deg og mellom naboer). Samtalene til venstre/øverst.
+// Du kan lese alle trådene, men svarer bare i trådene til deg. Elevene ser ikke at du leser naboprat.
+const stFresh = freshTracker();
+const lastOf = (k) => (live.chats[k] || []).slice(-1)[0];
+function roleChip(seat) {
+  if (!seat || !seat.characterId || app.hideRoles) return null;
+  const c = charInfo(seat.characterId);
+  return h('span', { class: 'rc-chip team-' + c.team }, c.name);
+}
+const focusStChat = () => setTimeout(() => { const el = document.getElementById('st-chat-input'); if (el) el.focus({ preventScroll: true }); }, 0);
+const scrollChatLog = () => queueMicrotask(() => { const el = document.getElementById('chat-log'); if (el) el.scrollTop = el.scrollHeight; });
+
 function chatPanel(s) {
   const l = store.game.live;
   const settings = l.settings || {};
-  const name = (id) => (id === 'st' ? t('you') : seatName(getSeat(s, id)));
+  const seat = (id) => getSeat(s, id);
+  const nameOf = (id) => (id === 'st' ? t('you') : seat(id) ? seatName(seat(id)) : '?');
+  const ghostOf = (id) => { const x = seat(id); return !!(x && x.alive === false); };
+  const rec = (k) => (lastOf(k) || {}).at || 0;
   const stKeys = s.seats.map((x) => 'st|' + x.id);
-  const pairKeys = Object.keys(live.chats).filter((k) => !k.startsWith('st|'))
-    .sort((a, b) => ((live.chats[b].slice(-1)[0] || {}).at || 0) - ((live.chats[a].slice(-1)[0] || {}).at || 0));
-  if (!app.chatKey || !(stKeys.includes(app.chatKey) || pairKeys.includes(app.chatKey))) {
-    app.chatKey = stKeys.find((k) => chatUnread(k)) || stKeys.find((k) => (live.chats[k] || []).length) || stKeys[0];
-  }
-  const key = app.chatKey;
-  const isSt = key.startsWith('st|');
-  const list = live.chats[key] || [];
-  if (isSt && chatUnread(key)) markChatRead(key);
-  const [a, b] = key.split('|');
-  const title = isSt ? seatName(getSeat(s, b)) : `${name(a)} ↔ ${name(b)}`;
+  const activeKeys = stKeys.filter((k) => (live.chats[k] || []).length)
+    .sort((a, b) => (chatUnread(b) ? 1 : 0) - (chatUnread(a) ? 1 : 0) || rec(b) - rec(a));
+  const quietKeys = stKeys.filter((k) => !(live.chats[k] || []).length);
+  const pairKeys = Object.keys(live.chats).filter((k) => !k.startsWith('st|') && live.chats[k].length).sort((a, b) => rec(b) - rec(a));
+  let key = app.chatKey || null; // null = innboksen
+  if (key && !stKeys.includes(key) && !pairKeys.includes(key)) key = app.chatKey = null;
+  const unreadSt = totalChatUnread();
+  const unreadNb = totalWhisperUnread();
   const drafts = app.chatDraft || (app.chatDraft = {});
-  const send = () => {
-    const seatId = b;
-    if (sendChat(seatId, drafts[key])) { drafts[key] = ''; render(); }
+  const open = (k) => { app.chatKey = k; app.chatFresh = null; render(); if (k && k.startsWith('st|')) focusStChat(); };
+
+  const threadBtn = (k) => {
+    const isSt = k.startsWith('st|');
+    const [a, b] = k.split('|');
+    const m = lastOf(k);
+    const n = isSt ? chatUnread(k) : chatUnreadAny(k).length;
+    const title = isSt ? nameOf(b) : `${nameOf(a)} ↔ ${nameOf(b)}`;
+    return h('button', { class: 'ct' + (k === key ? ' active' : '') + (n ? ' unread' : '') + (m ? '' : ' quiet') + (isSt ? '' : ' pair'), onclick: () => open(k), title },
+      h('span', { class: 'ct-av' },
+        isSt ? chatAvatar(b, { name: title, ghost: ghostOf(b), size: 'md' }) : pairAvatar(a, b, { size: 'md', nameA: nameOf(a), nameB: nameOf(b) }),
+        n ? h('span', { class: 'ct-badge' + (isSt ? '' : ' nb') }, String(n)) : null,
+        isSt && seatOnline(b) ? h('span', { class: 'ct-online', title: 'online' }) : null),
+      h('span', { class: 'ct-body' },
+        h('span', { class: 'ct-top' }, h('span', { class: 'ct-name' }, title), isSt ? roleChip(seat(b)) : null, m ? h('span', { class: 'ct-time' }, fmtTime(m.at)) : null),
+        h('span', { class: 'ct-prev' }, m ? (m.from === 'st' ? t('you') + ': ' : isSt ? '' : nameOf(m.from) + ': ') + m.text : t('chatStart'))));
   };
-  const last = (k) => (live.chats[k] || []).slice(-1)[0];
-  queueMicrotask(() => { const el = document.getElementById('chat-log'); if (el) el.scrollTop = el.scrollHeight; });
-  return h('div', { class: 'stack chat-panel' },
+  const nav = h('nav', { class: 'chat-nav', 'aria-label': t('chat') },
+    h('button', { class: 'ct inbox' + (key === null ? ' active' : '') + (unreadSt ? ' unread' : ''), onclick: () => open(null) },
+      h('span', { class: 'ct-av' }, h('span', { class: 'chat-av av-md av-inbox', 'aria-hidden': 'true' }, '📥'), unreadSt ? h('span', { class: 'ct-badge' }, String(unreadSt)) : null),
+      h('span', { class: 'ct-body' },
+        h('span', { class: 'ct-top' }, h('span', { class: 'ct-name' }, t('chatInbox'))),
+        h('span', { class: 'ct-prev' }, t('chatInboxSub')))),
+    activeKeys.length ? h('span', { class: 'chat-nav-label' }, '✉ ' + t('chatToYou')) : null,
+    activeKeys.map(threadBtn),
+    pairKeys.length ? h('span', { class: 'chat-nav-label' }, '👀 ' + t('chatPairs')) : null,
+    pairKeys.map(threadBtn),
+    quietKeys.length ? h('span', { class: 'chat-nav-label' }, '· ' + t('chatQuiet')) : null,
+    quietKeys.map(threadBtn));
+
+  // ——— innboksen: alle meldinger i tidsrekkefølge ———
+  function inboxView() {
+    const f = app.chatFilter || 'all';
+    if (!app.chatFresh) app.chatFresh = new Set();
+    for (const k of Object.keys(live.chats)) for (const m of chatUnreadAny(k)) app.chatFresh.add(m.id);
+    if (unreadSt || unreadNb) markAllChatRead();
+    const all = [];
+    for (const k of Object.keys(live.chats)) {
+      const isSt = k.startsWith('st|');
+      if ((f === 'st' && !isSt) || (f === 'nb' && isSt)) continue;
+      for (const m of live.chats[k]) all.push({ k, m });
+    }
+    all.sort((x, y) => x.m.at - y.m.at);
+    const shown = all.slice(-200);
+    const fresh = stFresh('inbox|' + f, shown.map((x) => x.m));
+    const items = [];
+    shown.forEach(({ k, m }, i) => {
+      const prev = shown[i - 1];
+      if (!prev || m.at - prev.m.at > 15 * 60 * 1000) items.push(h('div', { class: 'chat-divider' }, h('span', null, fmtTime(m.at))));
+      const isSt = k.startsWith('st|');
+      const [a, b] = k.split('|');
+      const to = isSt ? (m.from === 'st' ? b : 'st') : (m.from === a ? b : a);
+      const isNew = app.chatFresh.has(m.id);
+      items.push(h('div', {
+        class: 'fi' + (isSt ? '' : ' whisper') + (m.from === 'st' ? ' mine' : '') + (isNew ? ' new' : '') + (fresh(m) ? ' fresh' : ''),
+        role: 'button', tabindex: '0', title: t('chatOpenThread'),
+        onclick: () => open(k), onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); open(k); } },
+      },
+      chatAvatar(m.from, { name: nameOf(m.from), ghost: ghostOf(m.from), size: 'md' }),
+      h('div', { class: 'fi-body' },
+        h('div', { class: 'fi-head' },
+          h('span', { class: 'fi-from' }, nameOf(m.from)),
+          m.from !== 'st' ? roleChip(seat(m.from)) : null,
+          h('span', { class: 'fi-arrow', 'aria-hidden': 'true' }, isSt ? '➜' : '👀'),
+          h('span', { class: 'fi-to' }, to === 'st' ? t('chatToYouShort') : nameOf(to)),
+          isNew ? h('span', { class: 'fi-new' }, t('chatNew')) : null,
+          h('span', { class: 'fi-time' }, fmtTime(m.at))),
+        h('div', { class: 'fi-text' }, m.text),
+        isSt && m.from !== 'st' && lastOf(k) === m ? h('button', { class: 'fi-reply', type: 'button', onclick: (e) => { e.stopPropagation(); open(k); } }, '↩ ' + t('chatReply')) : null)));
+    });
+    scrollChatLog();
+    const chip = (v, label, n) => h('button', { class: 'chip' + (f === v ? ' active' : ''), type: 'button', onclick: () => { app.chatFilter = v; render(); } }, label, n ? h('span', { class: 'chip-n' }, String(n)) : null);
+    return h('div', { class: 'chat-view' },
+      h('div', { class: 'cv-head' },
+        h('span', { class: 'chat-av av-md av-inbox', 'aria-hidden': 'true' }, '📥'),
+        h('div', { class: 'cw-who' }, h('span', { class: 'cw-name' }, t('chatInbox')), h('span', { class: 'cw-sub' }, t('chatInboxHelp'))),
+        h('div', { class: 'chip-row' }, chip('all', t('chatAll')), chip('st', '✉ ' + t('chatToYou')), chip('nb', '👀 ' + t('chatWhispers')))),
+      h('div', { class: 'chat-log feed', id: 'chat-log' }, items.length ? items : h('div', { class: 'chat-empty' }, h('span', { class: 'chat-av av-xl av-inbox', 'aria-hidden': 'true' }, '📭'), h('p', null, t('chatEmpty')))));
+  }
+
+  // ——— én samtale ———
+  function threadView(k) {
+    const isSt = k.startsWith('st|');
+    const [a, b] = k.split('|');
+    const list = live.chats[k] || [];
+    if (isSt ? chatUnread(k) : chatUnreadAny(k).length) markChatRead(k);
+    const title = isSt ? nameOf(b) : `${nameOf(a)} ↔ ${nameOf(b)}`;
+    const sg = isSt ? seat(b) : null;
+    const send = (text) => { if (sendChat(b, text)) { if (text === drafts[k]) drafts[k] = ''; render(); focusStChat(); } };
+    scrollChatLog();
+    const quick = [t('qrYes'), t('qrNo'), t('qrWait'), t('qrThanks'), '👍'];
+    return h('div', { class: 'chat-view' + (isSt ? '' : ' pair-view') },
+      h('div', { class: 'cv-head' },
+        h('button', { class: 'cv-back', type: 'button', onclick: () => open(null), title: t('chatInbox'), 'aria-label': t('chatInbox') }, '←'),
+        isSt ? chatAvatar(b, { name: title, ghost: ghostOf(b), size: 'lg' }) : pairAvatar(a, b, { size: 'lg', nameA: nameOf(a), nameB: nameOf(b) }),
+        h('div', { class: 'cw-who' },
+          h('span', { class: 'cw-name' }, title, isSt ? roleChip(sg) : null),
+          h('span', { class: 'cw-sub' }, isSt
+            ? [seatOnline(b) ? h('span', { class: 'dot on' }) : h('span', { class: 'dot' }), ' ', seatOnline(b) ? 'online' : 'offline', sg && sg.alive === false ? ' · 👻 ' + t('dead') : '']
+            : '👀 ' + t('chatReadOnly')))),
+      h('div', { class: 'chat-log', id: 'chat-log' },
+        list.length
+          ? bubbles(list, { nameOf, ghostOf, fresh: stFresh(k, list), sideOf: (m) => (isSt ? (m.from === 'st' ? 'mine' : 'left') : (m.from === a ? 'left' : 'right')) })
+          : h('div', { class: 'chat-empty' }, isSt ? chatAvatar(b, { name: title, ghost: ghostOf(b), size: 'xl' }) : null, h('p', null, isSt ? t('chatStartHelp', { name: title }) : t('chatEmpty')))),
+      isSt ? h('div', { class: 'quick-replies' }, quick.map((q) => h('button', { class: 'qreply', type: 'button', disabled: !liveOpen(), onclick: () => send(q) }, q))) : null,
+      isSt ? composer({
+        id: 'st-chat-input', value: drafts[k] || '', placeholder: t('chatPlaceholder', { name: title }), disabled: !liveOpen(), sendLabel: t('chatSend'), stopKeys: true,
+        onInput: (v) => { drafts[k] = v; }, onSend: () => send(drafts[k]),
+      }) : null);
+  }
+
+  return h('div', { class: 'chat-panel2' },
     liveOpen() ? null : h('p', { class: 'callout warn small' }, t('chatOffline')),
-    h('div', { class: 'row between wrap' },
+    h('div', { class: 'chat-toolbar' },
+      h('button', { class: 'btn small ghost', type: 'button', 'aria-pressed': app.chatWide ? 'true' : 'false', onclick: () => { app.chatWide = !app.chatWide; render(); } }, app.chatWide ? '⤡ ' + t('chatNarrow') : '⤢ ' + t('chatWideBtn')),
+      h('button', { class: 'btn small ghost', type: 'button', 'aria-expanded': app.chatSettings ? 'true' : 'false', onclick: () => { app.chatSettings = !app.chatSettings; render(); } }, '⚙ ' + t('chatNeighbours') + ': ' + (settings.chat === 'off' ? t('chatOff') : t('chatOnShort')))),
+    app.chatSettings ? h('div', { class: 'row between wrap chat-settings' },
       h('span', { class: 'label' }, t('chatNeighbours')),
-      segmented({ label: t('chatNeighbours'), value: settings.chat === 'off' ? 'off' : 'always', options: [{ value: 'always', label: t('chatAlways') }, { value: 'off', label: t('chatOff') }], onChange: (v) => { setLiveSetting('chat', v); render(); } })),
-    h('div', { class: 'chat-grid' },
-      h('nav', { class: 'chat-threads' },
-        h('span', { class: 'label' }, t('chatToYou')),
-        stKeys.map((k) => {
-          const n = chatUnread(k); const m = last(k);
-          return h('button', { class: 'chat-thread' + (k === key ? ' active' : '') + (n ? ' unread' : ''), onclick: () => { app.chatKey = k; render(); } },
-            h('span', { class: 'grow' }, seatName(getSeat(s, k.slice(3)))),
-            n ? h('span', { class: 'badge' }, String(n)) : m ? h('span', { class: 'muted small' }, '✓') : null);
-        }),
-        h('span', { class: 'label' }, t('chatPairs')),
-        pairKeys.length ? pairKeys.map((k) => {
-          const [x, y] = k.split('|');
-          return h('button', { class: 'chat-thread' + (k === key ? ' active' : ''), onclick: () => { app.chatKey = k; render(); } },
-            h('span', { class: 'grow' }, `${name(x)} ↔ ${name(y)}`), h('span', { class: 'muted small' }, String(live.chats[k].length)));
-        }) : h('p', { class: 'muted small' }, t('chatNoPairs'))),
-      h('section', { class: 'chat-thread-view' },
-        h('h3', { class: 'section-title' }, (isSt ? '💬 ' : '👀 ') + title),
-        isSt ? null : h('p', { class: 'muted small' }, t('chatReadOnly')),
-        h('div', { class: 'chat-log', id: 'chat-log' },
-          list.length ? list.map((m) => h('div', { class: 'chat-msg' + (m.from === 'st' ? ' mine st' : isSt ? '' : m.from === a ? ' left' : ' right') },
-            h('span', { class: 'chat-meta' }, `${name(m.from)} · ${new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`),
-            h('span', { class: 'chat-text' }, m.text))) : h('p', { class: 'muted small center' }, t('chatEmpty'))),
-        isSt ? h('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); send(); } },
-          h('textarea', {
-            id: 'st-chat-input', class: 'input', rows: 2, maxlength: 500, placeholder: t('chatPlaceholder', { name: title }),
-            value: drafts[key] || '',
-            oninput: (e) => { drafts[key] = e.target.value; },
-            onkeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } e.stopPropagation(); },
-          }),
-          h('button', { class: 'btn primary', type: 'submit', disabled: !liveOpen() }, t('chatSend'))) : null)));
+      segmented({ label: t('chatNeighbours'), value: settings.chat === 'off' ? 'off' : 'always', options: [{ value: 'always', label: t('chatAlways') }, { value: 'off', label: t('chatOff') }], onChange: (v) => { setLiveSetting('chat', v); render(); } })) : null,
+    h('div', { class: 'chat-shell' }, nav, h('section', { class: 'chat-main' }, key === null ? inboxView() : threadView(key))));
+}
+
+// Varsel over fanene når det har kommet nye meldinger til deg (når du ikke står i chatten).
+function inboxBanner(s) {
+  if (!store.game.live || app.gameTab === 'chat') return null;
+  const n = totalChatUnread();
+  if (!n) return null;
+  let best = null;
+  const keys = [];
+  for (const x of s.seats) {
+    const k = 'st|' + x.id;
+    const u = chatUnreadAny(k);
+    if (!u.length) continue;
+    keys.push(k);
+    const m = u[u.length - 1];
+    if (!best || m.at > best.m.at) best = { k, m };
+  }
+  if (!best) return null;
+  const g = getSeat(s, best.m.from);
+  const who = g ? seatName(g) : '?';
+  return h('button', { class: 'inbox-banner', type: 'button', onclick: () => { app.gameTab = 'chat'; app.chatKey = keys.length === 1 ? keys[0] : null; app.chatFresh = null; render(); if (keys.length === 1) focusStChat(); } },
+    chatAvatar(best.m.from, { name: who, ghost: !!(g && g.alive === false), size: 'md' }),
+    h('span', { class: 'ib-body' },
+      h('span', { class: 'ib-title' }, '💬 ' + (n === 1 ? t('chatNewOne') : t('chatNewCount', { n }))),
+      h('span', { class: 'ib-prev' }, who + ': ' + best.m.text)),
+    h('span', { class: 'ib-go' }, (keys.length === 1 ? t('chatReply') : t('chatOpenInbox')) + ' →'));
 }
 
 function livePanel(s) {
@@ -1386,8 +1503,9 @@ export function viewGame() {
     ['live', '📡 ' + t('live')],
   ];
   if (store.game.live) {
+    // Chatten ligger først, med tydelig teller for uleste meldinger til deg
     const unread = totalChatUnread();
-    tabs.splice(4, 0, ['chat', '💬 ' + t('chat') + (unread ? ` (${unread})` : '')]);
+    tabs.unshift(['chat', ['💬 ', t('chat'), unread ? h('span', { class: 'tab-badge' }, String(unread)) : null]]);
   }
   let content;
   if (app.gameTab === 'messages') content = messagesPanel(s);
@@ -1401,7 +1519,7 @@ export function viewGame() {
   else content = endPanel(s);
   if (app.gameTab !== 'phase' || s.phase.type !== 'night') current = null;
 
-  return h('div', { class: 'game' + (app.focusMode ? ' focus' : '') + (app.hideRoles ? ' roles-hidden' : '') + ' phase-' + s.phase.type },
+  return h('div', { class: 'game' + (app.focusMode ? ' focus' : '') + (app.gameTab === 'chat' && app.chatWide && store.game.live ? ' chat-wide' : '') + (app.hideRoles ? ' roles-hidden' : '') + ' phase-' + s.phase.type },
     app.hideRoles ? h('div', { class: 'hidden-banner' }, '🙈 ' + t('rolesHiddenBanner')) : null,
     gameBar(s),
     h('div', { class: 'game-body' },
@@ -1411,11 +1529,12 @@ export function viewGame() {
         grimView(s, activeIds),
         h('p', { class: 'muted small center' }, s.phase.type === 'ended' ? t('grimHintReveal') : t('grimHint'))),
       h('section', { class: 'side-pane' },
+        inboxBanner(s),
         handsBar(s),
         pendingBanner(s),
         h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([k, label]) => h('button', {
-          role: 'tab', class: 'tab' + (app.gameTab === k ? ' active' : ''), 'aria-selected': app.gameTab === k ? 'true' : 'false',
-          onclick: () => { app.gameTab = k; render(); },
+          role: 'tab', class: 'tab' + (app.gameTab === k ? ' active' : '') + (k === 'chat' ? ' tab-chat' + (totalChatUnread() ? ' has-new' : '') : ''), 'aria-selected': app.gameTab === k ? 'true' : 'false',
+          onclick: () => { if (k !== 'chat') app.chatFresh = null; app.gameTab = k; render(); },
         }, label))),
         h('div', { class: 'tab-body' }, content))));
 }

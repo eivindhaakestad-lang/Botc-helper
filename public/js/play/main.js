@@ -16,6 +16,7 @@ import { setLooks, setChampionFromBoard, championSeat, seatSheep, seatLook, shee
 import { wallet } from './wallet.js';
 import { playIntro } from './intro.js';
 import { logoEl, LOGO_TEXT } from '../live/logo.js';
+import { chatAvatar, bubbles, composer, freshTracker } from '../live/chatui.js';
 const LOGO_T = () => LOGO_TEXT[lang()];
 import { creatorView, shopView, creatorKey, coinBurst, resetWardrobe, fmtCoins } from './wardrobe.js';
 
@@ -41,7 +42,7 @@ const TXT = {
     lockedYes: '🔒 Stemmen din er låst: du stemte for', lockedNo: '🔒 Viseren har passert deg: du stemte ikke', votelocked: 'For sent – viseren har passert deg.',
     timer: 'Tid', timeUp: 'Tiden er ute!', sound: 'Lyd',
     lastMsg: 'Hold inne for å se siste melding', noMsgYet: 'Du har ikke fått melding ennå.', chat: 'Chat', chatSt: 'Storyteller',
-    chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
+    chatSub: 'Privat – bare Storytelleren ser dette', chatNbSub: 'Hvisking – bare {name} og Storytelleren ser dette', chatHi: 'Si hei til {name} 👋', chatHiSt: 'Lurer du på noe? Skriv til Storytelleren.', chatPlaceholder: 'Skriv til {name} …', chatSend: 'Send', chatEmpty: 'Ingen meldinger ennå.', chatStHelp: 'Bare Storytelleren ser dette.',
     chatNbHelp: 'Bare {name} og Storytelleren ser dette.', chatClosed: 'Naboprat er stengt akkurat nå.', chatnotneighbour: 'Du kan bare skrive til naboene dine.', chatclosed: 'Naboprat er stengt akkurat nå.',
     newChat: 'Ny melding fra {name}', proposeNom: 'Foreslå nominasjon', propHelp: 'Trykk på spilleren du vil nominere. Storytelleren godkjenner forslaget.', propTap: 'Velg en spiller', propSend: 'Send forslag', propSent: 'Forslaget er sendt til Storytelleren', propWaiting: 'Du foreslår å nominere {name} – venter på Storytelleren.', propDead: 'Døde spillere kan ikke nominere.', propAlready: 'Du har allerede nominert i dag.', propFail: 'Forslaget ble ikke sendt.', cancel: 'Avbryt', champs: 'Drømmemestere', stAlive: 'Du lever', stDeadGhost: 'Du er død – du har 1 ghost vote igjen', stDeadNoGhost: 'Du er død – ghost vote-en er brukt', stOnBlock: 'Du er på blokka', notes: 'Notater', notesDone: 'Ferdig', notesHelp: 'Bare du ser notatene dine. Marker hva du tror om hver spiller.', noteMark: 'God, ond eller usikker', noteRole: 'Rollen de sier de har', notePh: 'Notat …', grimIntro: 'Du får se grimoiren i natt.', grimOpen: 'Åpne grimoiren', grimTitle: 'Grimoiren', grimSecret: 'Hemmelig – bare du ser dette', script: 'Script', showScript: 'Se scriptet – alle roller', noScript: 'Storytelleren har ikke delt scriptet ennå.', team_townsfolk: 'Townsfolk (gode)', team_outsider: 'Outsiders (gode)', team_minion: 'Minions (onde)', team_demon: 'Demon (ond)', team_traveller: 'Travellers', shotFired: '{a} skyter mot {b} …', shotHit: '{b} dør!', shotMiss: 'Ingenting skjer.', tieWith: '{tie} = uavgjort med {block} (ingen dør)', tieStill: '{tie} = fortsatt uavgjort (ingen dør)', needFor: '{need} = {name} på blokka', dawnPending: 'Byen våkner … Storytelleren forteller snart hva som skjedde i natt.', rolesOut: 'Rollene er delt ut! Hold inne for å se din.', recap: 'Slik gikk det egentlig', tip: 'Tips:', myGrim: 'Min grim', whoWas: 'Hvem var hvem?', makeSheep: 'Lag sauen din', editSheep: 'Endre sauen', makeSheepHelp: 'Bytt ansikt med pilene og velg farge under. Sauen din vises i sirkelen for alle.', prevFace: 'Forrige ansikt', nextFace: 'Neste ansikt', face: 'Ansikt', color: 'Farge', random: 'Tilfeldig', done: 'Ferdig', moreInShop: 'Flere farger, ansikter, hatter, sko, spor og kjæledyr finner du i Saueboden.', shop: 'Saueboden', shopClosedDay: 'Saueboden er stengt på dagen – nå er det tid for å diskutere! Den åpner igjen når natten kommer.', yourCoins: 'Dine mynter', shopHelp: 'Trykk på en ting for å prøve den på sauen din. Mynter tjener du i drømmespillet: ett hinder = én mynt.', takeOff: 'Ta av', wearing: 'På', wear: 'Ta på', missing: 'Mangler {n}', buyFor: 'Kjøp – {n}', owned: 'Eid', free: 'Gratis', tampered: 'Lommeboka ble endret utenfor spillet, så myntene ble nullstilt.', mySheep: 'Sauen din', youLead: '👑 Du leder drømmetoppen – du har mesterkrona!', shopClosedShort: 'Saueboden åpner i natt', bonusJoin: 'Takk for at du var med!', bonusWin: 'Laget ditt vant!', shRound: 'Drømmerunden din', shopClosing: 'Saueboden stenger – nå er det dag!', coinsWord: 'mynter', backHome: 'Tilbake', close: 'Lukk', myGrimHelp: 'Trykk på en spiller for å notere', markGood: 'God', markEvil: 'Ond', markUnsure: 'Usikker',
     pu_magnet: '🧲 Magnet! Myntene flyr til deg i 15 sekunder', newRecord: '🎆 NY REKORD! 🎆', recordShort: 'Ny rekord!', coinsHud: 'Mynter', dealTitle: 'Dagens tilbud', dealSee: 'Se tilbudet', dealBought: 'Kjøpt – nytt tilbud i morgen', dealHelp: 'Ett nytt tilbud hver dag', sell: 'Bytt inn', sellFor: 'Bytt inn (+{n})', sellSure: 'Sikker? Trykk igjen (+{n})', sold: 'Byttet inn! +{n} mynter', fxTry: '▶ Se igjen', fxHelp: 'Slik dør sauen din på storskjermen.', cheatOk: 'Juksekode!',
@@ -67,7 +68,7 @@ const TXT = {
     lockedYes: '🔒 Your vote is locked: you voted yes', lockedNo: '🔒 The hand has passed you: you did not vote', votelocked: 'Too late – the hand has passed you.',
     timer: 'Time', timeUp: 'Time is up!', sound: 'Sound',
     lastMsg: 'Press and hold to see your latest message', noMsgYet: 'You have not received a message yet.', chat: 'Chat', chatSt: 'Storyteller',
-    chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
+    chatSub: 'Private – only the Storyteller sees this', chatNbSub: 'Whisper – only {name} and the Storyteller see this', chatHi: 'Say hi to {name} 👋', chatHiSt: 'Wondering about something? Write to the Storyteller.', chatPlaceholder: 'Write to {name} …', chatSend: 'Send', chatEmpty: 'No messages yet.', chatStHelp: 'Only the Storyteller sees this.',
     chatNbHelp: 'Only {name} and the Storyteller see this.', chatClosed: 'Neighbour chat is closed right now.', chatnotneighbour: 'You can only write to your neighbours.', chatclosed: 'Neighbour chat is closed right now.',
     newChat: 'New message from {name}', proposeNom: 'Propose a nomination', propHelp: 'Tap the player you want to nominate. The Storyteller approves the proposal.', propTap: 'Pick a player', propSend: 'Send proposal', propSent: 'The proposal was sent to the Storyteller', propWaiting: 'You propose to nominate {name} – waiting for the Storyteller.', propDead: 'Dead players cannot nominate.', propAlready: 'You have already nominated today.', propFail: 'The proposal was not sent.', cancel: 'Cancel', champs: 'Dream champions', stAlive: 'You are alive', stDeadGhost: 'You are dead – you have 1 ghost vote left', stDeadNoGhost: 'You are dead – your ghost vote is used', stOnBlock: 'You are on the block', notes: 'Notes', notesDone: 'Done', notesHelp: 'Only you see your notes. Mark what you think about each player.', noteMark: 'Good, evil or unsure', noteRole: 'The character they claim', notePh: 'Note …', grimIntro: 'You get to see the Grimoire tonight.', grimOpen: 'Open the Grimoire', grimTitle: 'Grimoire', grimSecret: 'Secret – only you can see this', script: 'Script', showScript: 'See the script – all characters', noScript: 'The Storyteller has not shared the script yet.', team_townsfolk: 'Townsfolk (good)', team_outsider: 'Outsiders (good)', team_minion: 'Minions (evil)', team_demon: 'Demon (evil)', team_traveller: 'Travellers', shotFired: '{a} shoots at {b} …', shotHit: '{b} dies!', shotMiss: 'Nothing happens.', tieWith: '{tie} = tie with {block} (nobody dies)', tieStill: '{tie} = still a tie (nobody dies)', needFor: '{need} = {name} on the block', dawnPending: 'The town wakes up … The Storyteller will soon tell what happened last night.', rolesOut: 'Characters are out! Press and hold to see yours.', recap: 'What really happened', tip: 'Tip:', myGrim: 'My grim', whoWas: 'Who was who?', makeSheep: 'Make your sheep', editSheep: 'Change sheep', makeSheepHelp: 'Switch faces with the arrows and pick a colour below. Your sheep is shown in the circle for everyone.', prevFace: 'Previous face', nextFace: 'Next face', face: 'Face', color: 'Colour', random: 'Random', done: 'Done', moreInShop: 'More colours, faces, hats, shoes, trails and pets in the Sheep Shop.', shop: 'Sheep Shop', shopClosedDay: 'The Sheep Shop is closed during the day – time to discuss! It opens again when night falls.', yourCoins: 'Your coins', shopHelp: 'Tap something to try it on your sheep. You earn coins in the dream game: one obstacle = one coin.', takeOff: 'Take off', wearing: 'On', wear: 'Wear', missing: 'Need {n} more', buyFor: 'Buy – {n}', owned: 'Owned', free: 'Free', tampered: 'Your wallet was changed outside the game, so your coins were reset.', mySheep: 'Your sheep', youLead: '👑 You lead the dream board – you wear the champion crown!', shopClosedShort: 'The Sheep Shop opens tonight', bonusJoin: 'Thanks for playing!', bonusWin: 'Your team won!', shRound: 'Your dream run', shopClosing: 'The Sheep Shop closes – it is daytime!', coinsWord: 'coins', backHome: 'Back', close: 'Close', myGrimHelp: 'Tap a player to take notes', markGood: 'Good', markEvil: 'Evil', markUnsure: 'Unsure',
     pu_magnet: '🧲 Magnet! Coins fly to you for 15 seconds', newRecord: '🎆 NEW RECORD! 🎆', recordShort: 'New record!', coinsHud: 'Coins', dealTitle: 'Deal of the day', dealSee: 'See the deal', dealBought: 'Bought – new deal tomorrow', dealHelp: 'A new deal every day', sell: 'Trade in', sellFor: 'Trade in (+{n})', sellSure: 'Sure? Tap again (+{n})', sold: 'Traded in! +{n} coins', fxTry: '▶ Watch again', fxHelp: 'This is how your sheep dies on the big screen.', cheatOk: 'Cheat code!',
@@ -551,6 +552,7 @@ function unread(key) {
   return list.slice(read).filter((m) => m.from !== P.me.seatId).length;
 }
 
+const chatFresh = freshTracker();
 function chatView() {
   const nbs = P.pub.chat === 'off' ? [] : neighbours();
   if (P.chatTab !== 'st' && !nbs.includes(P.chatTab)) P.chatTab = 'st';
@@ -561,6 +563,8 @@ function chatView() {
   const isSt = tab === 'st';
   const closed = !isSt && !neighbourChatOpen();
   const who = isSt ? T('chatSt') : seatName(tab);
+  const nameOf = (id) => (id === 'st' ? T('chatSt') : id === P.me.seatId ? T('you') : seatName(id));
+  const ghostOf = (id) => { const x = P.pub.seats.find((y) => y.id === id); return !!(x && x.alive === false); };
   const send = () => {
     const text = (P.chatDraft[key] || '').trim();
     if (!text) return;
@@ -574,27 +578,33 @@ function chatView() {
     P.client.send({ t: 'chat', to: tab, text: text.slice(0, 500) });
     P.chatDraft[key] = '';
     render();
+    setTimeout(() => { const el = document.getElementById('chat-input'); if (el) el.focus({ preventScroll: true }); }, 0);
   };
+  const fresh = chatFresh(key, list);
   queueMicrotask(() => { const el = document.getElementById('chat-log'); if (el) el.scrollTop = el.scrollHeight; });
-  return h('div', { class: 'panel chat-box' },
-    h('h3', { class: 'section-title' }, '💬 ' + T('chat')),
-    h('div', { class: 'segmented chat-tabs' }, ['st', ...nbs].map((id) => {
-      const n = unread(chatKeyFor(id));
-      return h('button', { type: 'button', class: 'seg' + (id === tab ? ' active' : ''), onclick: () => { P.chatTab = id; render(); } },
-        id === 'st' ? '🕯 ' + T('chatSt') : seatName(id), n && id !== tab ? h('span', { class: 'badge' }, String(n)) : null);
-    })),
-    h('p', { class: 'muted small' }, isSt ? T('chatStHelp') : T('chatNbHelp', { name: who })),
-    h('div', { class: 'chat-log', id: 'chat-log' },
-      list.length ? list.map((m) => h('div', { class: 'chat-msg' + (m.from === P.me.seatId ? ' mine' : m.from === 'st' ? ' st' : '') },
-        h('span', { class: 'chat-meta' }, (m.from === P.me.seatId ? T('you') : m.from === 'st' ? T('chatSt') : seatName(m.from)) + ' · ' + new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })),
-        h('span', { class: 'chat-text' }, m.text))) : h('p', { class: 'muted small center' }, T('chatEmpty'))),
-    closed ? h('p', { class: 'small warn-text' }, T('chatClosed')) : h('form', { class: 'chat-form', onsubmit: (e) => { e.preventDefault(); send(); } },
-      h('textarea', {
-        id: 'chat-input', class: 'input', rows: 2, maxlength: 500, placeholder: T('chatPlaceholder', { name: who }), value: P.chatDraft[key] || '',
-        oninput: (e) => { P.chatDraft[key] = e.target.value; },
-        onkeydown: (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } },
-      }),
-      h('button', { class: 'btn primary', type: 'submit' }, T('chatSend'))));
+  return h('div', { class: 'panel chat-box chat-fancy' + (isSt ? ' with-st' : ' with-nb') },
+    h('div', { class: 'chat-top' },
+      h('h3', { class: 'section-title' }, '💬 ' + T('chat')),
+      h('div', { class: 'chat-people', role: 'tablist' }, ['st', ...nbs].map((id) => {
+        const n = unread(chatKeyFor(id));
+        return h('button', { type: 'button', role: 'tab', 'aria-selected': id === tab ? 'true' : 'false', class: 'cp' + (id === tab ? ' active' : '') + (n && id !== tab ? ' has-new' : ''), onclick: () => { P.chatTab = id; render(); } },
+          h('span', { class: 'cp-av' }, chatAvatar(id, { name: nameOf(id), ghost: ghostOf(id), size: 'md' }), n && id !== tab ? h('span', { class: 'cp-badge' }, String(n)) : null),
+          h('span', { class: 'cp-name' }, id === 'st' ? T('chatSt') : seatName(id)));
+      }))),
+    h('div', { class: 'chat-window' },
+      h('div', { class: 'cw-head' },
+        chatAvatar(tab, { name: who, ghost: ghostOf(tab), size: 'md' }),
+        h('div', { class: 'cw-who' },
+          h('span', { class: 'cw-name' }, who),
+          h('span', { class: 'cw-sub' }, '🔒 ' + (isSt ? T('chatSub') : T('chatNbSub', { name: who }))))),
+      h('div', { class: 'chat-log', id: 'chat-log' },
+        list.length
+          ? bubbles(list, { nameOf, ghostOf, fresh, sideOf: (m) => (m.from === P.me.seatId ? 'mine' : 'left') })
+          : h('div', { class: 'chat-empty' }, chatAvatar(tab, { name: who, ghost: ghostOf(tab), size: 'xl' }), h('p', null, isSt ? T('chatHiSt') : T('chatHi', { name: who })))),
+      closed ? h('p', { class: 'small warn-text chat-closed' }, T('chatClosed')) : composer({
+        id: 'chat-input', value: P.chatDraft[key] || '', placeholder: T('chatPlaceholder', { name: who }), sendLabel: T('chatSend'),
+        onInput: (v) => { P.chatDraft[key] = v; }, onSend: send,
+      })));
 }
 
 function blockId() {
