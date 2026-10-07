@@ -609,6 +609,8 @@ export class Room {
         const m = await this.addChat(key, seatId, text);
         for (const p of [...this.playersOf(seatId), ...targets]) send(p, { t: 'chat', key, msg: m });
         this.toSt({ t: 'chat', key, msg: m });
+        // Storskjermen viser en konvolutt fra avsender til mottaker (bare hvem, aldri teksten)
+        if (to !== 'st') for (const sc of this.sockets('screen')) send(sc, { t: 'letter', from: seatId, to });
         break;
       }
       case 'voteCast': {

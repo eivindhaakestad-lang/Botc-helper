@@ -91,7 +91,7 @@ Vil du bare bruke Storyteller-delen med Teams-kopiering, kan du laste opp mappen
 - **Hurtigsvar:** «Ja», «Nei», «Vent litt, jeg kommer til deg», «Takk!» og 👍 med ett trykk.
 - **⤢ Bred visning** gjør chatten bredere med samtalelista ved siden av meldingene. I smal visning ligger samtalene som en rad med sauer øverst.
 
-Elevene ser chatten som en meldingsapp: Storytelleren (med logoen) og naboene øverst som runde bilder av sauene deres, bobler med sauen ved siden av, «pop» når nye meldinger kommer, og et rundt skrivefelt med send-knapp. Nabopraten er hvisking og er åpen hele tiden, også om natten. Du kan slå den av under ⚙ i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
+Elevene ser chatten som en meldingsapp: Storytelleren (med logoen) og naboene øverst som runde bilder av sauene deres, bobler med sauen ved siden av, «pop» når nye meldinger kommer, og et rundt skrivefelt med send-knapp. Nabopraten er hvisking og er åpen hele tiden, også om natten. Når en elev hvisker til en nabo, flyr en svak, gjennomsiktig konvolutt fra avsenderen til mottakeren på storskjermen (som i den offisielle appen). Storskjermen får bare vite hvem som skrev til hvem, aldri hva som står, og meldinger til deg gir ingen konvolutt. Du kan slå nabopraten av under ⚙ i Chat-fanen. Meldinger til deg går alltid. Chatten lagres bare i live-rommet og slettes med det.
 
 **Dag og natt:** Bakgrunnen toner over til gul om dagen og mørk blå natthimmel om natten, hos deg, på storskjermen og hos elevene.
 
@@ -186,7 +186,7 @@ public/                 alt som publiseres
     sheep.js            sauekatalogen og tegningen (SVG): farger, ansikter, frisyrer, hatter, kapper, vinger, humør, spøkelser
     deathfx.js          dødsanimasjonene (CSS-partikler)
   js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js) og lasteskjermen (intro.js)
-  js/screen/            storskjerm (Town Square), overganger (cine.js), vær og saueparaden (parade.js)
+  js/screen/            storskjerm (Town Square), overganger (cine.js), vær, saueparaden (parade.js) og konvoluttene (letters.js)
   play.html, screen.html
 worker/                 Cloudflare Worker (index.js) og spillrommet (room.js, Durable Object)
 tests/                  motortester og romtester: node --test tests/*.test.js

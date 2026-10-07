@@ -1892,3 +1892,7 @@ body.intro-open { overflow: hidden; }
 .game.chat-wide .game-body { grid-template-columns: minmax(0, 0.85fr) minmax(620px, 1.35fr); }
 @media (max-width: 1100px) { .game.chat-wide .game-body { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .cp.active .cp-av::before, .cp.has-new .cp-av::before, .inbox-banner, .fi-new, .chat-empty .chat-av { animation: none; } }
+/* Konvolutter som flyr mellom naboer som hvisker (storskjermen) */
+.letters { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; }
+.letter { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform, opacity; filter: drop-shadow(0 4px 10px rgb(0 0 0 / 0.35)); }
+.letter svg { display: block; width: 100%; height: auto; }

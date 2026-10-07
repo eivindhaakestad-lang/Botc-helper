@@ -16,6 +16,7 @@ import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame, sheepDi
 import { deathFxEl, DEATH_MS } from '../live/deathfx.js';
 import { playParade } from './parade.js';
 import { logoEl } from '../live/logo.js';
+import { flyLetter } from './letters.js';
 import { CHEER_MS, SAD_MS } from '../live/reveal.js';
 
 const TXT = {
@@ -450,6 +451,7 @@ if (!code) {
     params: { role: 'screen' },
     onStatus: (st) => { S.status = st; },
     onMessage: (m) => {
+      if (m.t === 'letter') { flyLetter(m.from, m.to); return; }
       if (m.t === 'public') {
         // Bare nye stemmer i en pågående avstemning? Da oppdateres sirkelen direkte uten å tegne alt på nytt.
         const prev = lastPublic;
