@@ -251,13 +251,21 @@ export const WINGS = [
 
 // ——— dødsanimasjoner: hvordan sauen dør på storskjermen (tegnes i deathfx.js) ———
 const fxDef = (id, name, price, icon) => ({ id, name, price, icon });
+// Standard (ingen valgt) + to gratis. De tre dyreste går ut over hele skjermen.
 export const DEATHFX = [
+  fxDef('bubble', N('Såpeboble', 'Soap bubble'), 0, '🧼'),
+  fxDef('melt', N('Smelter', 'Meltdown'), 0, '💧'),
   fxDef('puff', N('Ullpuff', 'Wool puff'), 500, '💨'),
   fxDef('leaves', N('Løvvirvel', 'Leaf swirl'), 800, '🍂'),
   fxDef('confetti', N('Konfettikanon', 'Confetti cannon'), 1100, '🎉'),
+  fxDef('fireworks', N('Fyrverkeri', 'Fireworks'), 1300, '🎆'),
   fxDef('lightning', N('Lynnedslag', 'Lightning strike'), 1600, '⚡'),
+  fxDef('anvil', N('Ambolt', 'Anvil'), 2000, '💫'),
   fxDef('ufo', N('UFO-bortføring', 'UFO abduction'), 2500, '🛸'),
   fxDef('vortex', N('Sort hull', 'Black hole'), 3500, '🌀'),
+  fxDef('rocket', N('Rakettferd', 'Rocket ride'), 4500, '🚀'),
+  fxDef('meteor', N('Meteornedslag', 'Meteor strike'), 6000, '☄️'),
+  fxDef('dragon', N('Dragen', 'The dragon'), 9000, '🐉'),
 ];
 
 export const CATS = [

@@ -3,7 +3,7 @@
 
 import { h } from '../app/dom.js';
 import { CATS, COLORS, FACES, REMOVABLE, item, itemName, sheepImg, sheepUrl, randomLook, frameEl, clipSheep } from '../live/sheep.js';
-import { deathFxEl } from '../live/deathfx.js';
+import { deathFxEl, playDeathSound, BIG_FX, bigDeathFx } from '../live/deathfx.js';
 import { wallet } from './wallet.js';
 import { sfx } from '../live/sound.js';
 
@@ -12,6 +12,7 @@ let tab = 'color';
 let sel = null; // { cat, id } som prøves i butikken
 let sellArm = null; // ting som venter på «trykk igjen» for å byttes inn
 let fxRun = 0; // teller som starter dødsanimasjonen på nytt i forhåndsvisningen
+let fxPlayed = 0; // siste fxRun som har spilt lyd / stor animasjon
 
 export function resetWardrobe() { draft = null; sel = null; sellArm = null; }
 
@@ -174,6 +175,11 @@ export function shopView(ctx) {
   }
   // Dødsanimasjon valgt: forhåndsvisningen spiller den av (sauen forsvinner og blir et spøkelse)
   const fx = sel && sel.cat === 'deathfx' ? sel.id : null;
+  // Lyden og de store animasjonene (rakett, meteor, drage) spilles én gang per «Prøv» / valg
+  if (fx && fxPlayed !== fxRun) {
+    fxPlayed = fxRun;
+    setTimeout(() => { playDeathSound(fx); if (BIG_FX.has(fx)) bigDeathFx(fx, document.querySelector('.shop-preview-wrap')); }, 40);
+  }
   const previewPic = fx
     ? h('div', { class: 'shop-preview-wrap dying fx-' + fx, key: 'fx' + fxRun },
       sheepImg(preview, { cls: 'shop-preview fx-target', champion: ctx.champion }),

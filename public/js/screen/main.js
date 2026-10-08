@@ -13,7 +13,7 @@ import { playPhaseCine, playRevealCine, REVEAL_CINE_MS } from './cine.js';
 import { syncWeather, placeLand, runSheepNow } from './weather.js';
 import { seasonFor, SEASONS } from './scenery.js';
 import { setLooks, setChampionFromBoard, seatSheep, seatLook, seatFrame, sheepDisc } from '../live/sheep.js';
-import { deathFxEl, DEATH_MS } from '../live/deathfx.js';
+import { deathFxEl, DEATH_MS, playDeathSound, BIG_FX, bigDeathFx } from '../live/deathfx.js';
 import { playParade } from './parade.js';
 import { logoEl } from '../live/logo.js';
 import { flyLetter } from './letters.js';
@@ -57,7 +57,6 @@ function shotLayer(p, n) {
 // Sauer med kjøpt dødsanimasjon får sin egen (ullpuff, lyn, UFO …), ellers den vanlige.
 // Alle de andre sauene ser overrasket ut et øyeblikk.
 const SURPRISE_MS = 2000;
-const FX_SOUND = { puff: () => setTimeout(() => sfx.poof(), 450), leaves: () => sfx.rustle(), confetti: () => setTimeout(() => sfx.confetti(), 380), lightning: () => sfx.zap(), ufo: () => sfx.ufo(), vortex: () => sfx.vortex() };
 function detectDeaths(p) {
   const dead = new Set(p.seats.filter((x) => !x.alive).map((x) => x.id));
   if (!S.deadSeen) { S.deadSeen = dead; return; }
@@ -70,8 +69,14 @@ function detectDeaths(p) {
   // Slayer/Gunslinger-skuddet har allerede sin egen lyd
   const shotTarget = S.shotAnim && S.shotAnim.shot.hit ? S.shotAnim.shot.to : null;
   const fxs = fresh.filter((id) => id !== shotTarget).map((id) => (seatLook(id) || {}).deathfx || '');
-  fxs.filter((x) => FX_SOUND[x]).forEach((x) => FX_SOUND[x]());
-  if (fxs.some((x) => !FX_SOUND[x])) sfx.death();
+  let plain = false;
+  for (const x of fxs) if (!playDeathSound(x)) plain = true;
+  if (plain) sfx.death();
+  // De store animasjonene (rakett, meteor, drage) går ut over hele storskjermen
+  for (const id of fresh) {
+    const fx = (seatLook(id) || {}).deathfx;
+    if (BIG_FX.has(fx)) requestAnimationFrame(() => bigDeathFx(fx, document.querySelector(`#screen .grim-slot[data-seat="${CSS.escape(id)}"] .token-disc`)));
+  }
   setTimeout(render, SURPRISE_MS + 30);
   setTimeout(() => { const t = Date.now(); for (const [id, d] of S.dying) if (d.until <= t) S.dying.delete(id); render(); }, DEATH_MS + 50);
 }

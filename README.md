@@ -119,7 +119,7 @@ Kopier-knappene virker fortsatt for elever uten PC.
 - **Frisyrer** (400–1150) endrer formen på ulla: topp-dott, afro, musefletter, superkrøller, hanekam (barbert på sidene, rosa tupper) og piggsveis.
 - **Kapper** (600–2800) henger bak sauen og flagrer i drømmespillet: superhelt, vampyr (med høy krage), stjernekappe, kongekappe og ildkappe.
 - **Vinger** (1200–3200) slår med vingene både i grimen og i drømmespillet: flaggermus, engel, sommerfugl, fe og drage.
-- **Dødsanimasjoner** (500–3500) bestemmer hvordan sauen dør på storskjermen: ullpuff («POFF!»), løvvirvel, konfettikanon, lynnedslag, UFO-bortføring og sort hull. I Saueboden spilles animasjonen av når eleven prøver den. Uten kjøpt animasjon brukes den vanlige (risting, rødt glimt og hodeskalle).
+- **Dødsanimasjoner** bestemmer hvordan sauen dør på storskjermen. Standard (risting, rødt glimt og hodeskalle) og to til er gratis: **Såpeboble** (sauen svever opp i en boble som sprekker) og **Smelter** (sauen smelter ned til en dam). Resten kjøpes: ullpuff («POFF!») 500, løvvirvel 800, konfettikanon 1100, fyrverkeri 1300, lynnedslag 1600, ambolt («BONK!») 2000, UFO-bortføring 2500 og sort hull 3500. De tre dyreste går ut over hele skjermen: **Rakettferd** 4500 (sauen skytes til værs og ut av skjermen med røyksøyle), **Meteornedslag** 6000 (en meteor fra hjørnet, smell og sjokkbølge over skjermen) og **Dragen** 9000 (en drage flyr inn, spruter ild på sauen og flyr videre). I Saueboden spilles animasjonen av med lyd når eleven prøver den, også de store over hele mobilskjermen.
 - **Dagens tilbud:** hver dag er én tilfeldig ting eleven ikke har 30 % billigere (vises øverst i Saueboden og med «−30 %» i rutenettet). Tilbudet er det samme hele dagen, også etter kjøp.
 - **Bytt inn:** en kjøpt ting kan byttes inn for halve (vanlige) prisen. Det krever to trykk, så det ikke skjer ved et uhell.
 - **Mesterkrona:** den som leder drømmetoppen akkurat nå, får en animert gullkrone med juveler og gnister i stedet for hatten. Den kan ikke kjøpes, og den går videre til nestemann som tar ledelsen.
@@ -184,7 +184,8 @@ public/                 alt som publiseres
   js/app/               grensesnitt (vanilla JS)
   js/live/              felles WebSocket-klient, QR, grim reveal, lyder, sauene, logoen (logo.js) og chat-byggeklossene (chatui.js)
     sheep.js            sauekatalogen og tegningen (SVG): farger, ansikter, frisyrer, hatter, kapper, vinger, humør, spøkelser
-    deathfx.js          dødsanimasjonene (CSS-partikler)
+    deathfx.js          dødsanimasjonene (CSS-partikler og lyder)
+    bigdeath.js         de store dødsanimasjonene over hele skjermen (rakett, meteor, drage)
   js/play/              elevvisning, drømmespillet, Saueboden (wardrobe.js) og lommeboka (wallet.js) og lasteskjermen (intro.js)
   js/screen/            storskjerm (Town Square), overganger (cine.js), vær, saueparaden (parade.js) og konvoluttene (letters.js)
   play.html, screen.html

@@ -94,6 +94,13 @@ export const sfx = {
   zap() { noise(0.09, { gain: 0.5, freq: 3400, q: 1.4 }); noise(0.3, { gain: 0.32, freq: 1800, q: 0.8, delay: 0.05 }); tone(62, 2.4, { gain: 0.45, slideTo: 28, release: 2.4, delay: 0.08 }); noise(1.8, { gain: 0.2, freq: 160, q: 0.4, type: 'lowpass', delay: 0.12 }); },
   ufo() { warble({ freq: 520, to: 980, dur: 1.9, vib: 9, vibDepth: 70, gain: 0.07, type: 'sine', filter: 3000, q: 0.5 }); warble({ freq: 980, to: 1500, dur: 0.6, vib: 14, vibDepth: 90, gain: 0.05, type: 'triangle', filter: 4000, q: 0.5, delay: 1.9 }); },
   vortex() { tone(420, 1.8, { type: 'sawtooth', gain: 0.05, slideTo: 38 }); noise(1.8, { gain: 0.22, freq: 420, q: 0.7 }); tone(55, 2, { gain: 0.25, release: 2, delay: 0.3 }); },
+  blub() { tone(260, 0.18, { type: 'sine', gain: 0.14, slideTo: 620 }); tone(420, 0.14, { type: 'sine', gain: 0.08, slideTo: 900, delay: 0.12 }); },
+  melt() { warble({ freq: 640, to: 150, dur: 1.6, vib: 5, vibDepth: 40, gain: 0.09, type: 'sine', filter: 1600, q: 0.4 }); [0.5, 0.9, 1.3].forEach((d) => tone(900, 0.08, { type: 'sine', gain: 0.07, slideTo: 380, delay: d })); },
+  whistle() { tone(2100, 0.62, { type: 'sine', gain: 0.07, slideTo: 520 }); },
+  clank(delay = 0) { noise(0.12, { gain: 0.45, freq: 2600, q: 2, delay }); bellAt(740, delay, 0.16, 1.1); tone(110, 0.4, { gain: 0.35, slideTo: 55, delay }); },
+  rocket() { noise(0.7, { gain: 0.3, freq: 160, q: 0.5, type: 'lowpass' }); noise(1.3, { gain: 0.34, freq: 900, q: 0.5, delay: 0.62 }); tone(160, 1.3, { type: 'sawtooth', gain: 0.05, slideTo: 1100, delay: 0.62 }); },
+  meteor() { noise(0.7, { gain: 0.28, freq: 2400, q: 0.7 }); tone(1800, 0.7, { type: 'triangle', gain: 0.05, slideTo: 180 }); tone(70, 2.8, { gain: 0.55, slideTo: 28, release: 2.8, delay: 0.7 }); noise(2, { gain: 0.38, freq: 240, q: 0.4, type: 'lowpass', delay: 0.7 }); },
+  dragon() { warble({ freq: 150, to: 85, dur: 1.2, vib: 17, vibDepth: 28, trem: 28, tremDepth: 0.6, gain: 0.22, type: 'sawtooth', filter: 650, q: 1.4, delay: 0.3 }); noise(0.95, { gain: 0.32, freq: 650, q: 0.4, delay: 0.95 }); noise(0.95, { gain: 0.18, freq: 2400, q: 0.6, delay: 0.95 }); },
   rustle() { noise(0.9, { gain: 0.22, freq: 2600, q: 0.5 }); noise(0.9, { gain: 0.16, freq: 1400, q: 0.6, delay: 0.5 }); },
   confetti() { [0, 0.06, 0.12].forEach((d, i) => tone(600 + i * 250, 0.12, { gain: 0.12, delay: d, slideTo: 1400 })); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.25, { type: 'triangle', gain: 0.08, delay: 0.25 + i * 0.08 })); },
   // Fyrverkeri (ny rekord i drømmespillet)
